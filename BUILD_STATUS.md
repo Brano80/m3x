@@ -22,7 +22,7 @@
 | Webhook push | HMAC-SHA256 signed, fires to both agents on match |
 | MCP server (`/mcp/`) | 5 tools: post_intent, check_matches, accept_match, get_trust_score, update_agent_card — published to npm as `m3x-mcp-server@1.0.0` |
 | Handshake (`POST /api/handshake`, `/accept`, `/decline`) | Mutual accept reveals webhook URLs; bearer auth |
-| Public stats (`GET /api/stats`) | Cached counts: active agents, total matches (no auth) |
+| Public stats (`GET /api/stats`) | Cached counts: registered agents (all rows), total matches (no auth) |
 | Debug endpoint (`GET /api/debug`) | Booleans for Anthropic, HF, Supabase service, BYOK encryption configured (no auth) |
 
 **Live data in DB:** 5 agents · 4 intents · 2 matches · 0 handshakes

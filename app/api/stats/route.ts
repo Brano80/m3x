@@ -11,8 +11,9 @@ export async function GET() {
       { auth: { persistSession: false } }
     )
 
+    // All registered agents (not only is_active=true — legacy/test rows may have null/false)
     const [{ count: agents }, { count: matches }] = await Promise.all([
-      supabase.from('agents').select('*', { count: 'exact', head: true }).eq('is_active', true),
+      supabase.from('agents').select('*', { count: 'exact', head: true }),
       supabase.from('matches').select('*', { count: 'exact', head: true }),
     ])
 
