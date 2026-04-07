@@ -13,7 +13,7 @@ export async function GET() {
   if (!url || (!serviceKey && !anonKey)) {
     return NextResponse.json(
       { agents: null, matches: null },
-      { status: 503, headers: { 'Cache-Control': 'private, no-store' } }
+      { headers: { 'Cache-Control': 'private, no-store' } }
     )
   }
 
@@ -31,7 +31,7 @@ export async function GET() {
       console.error('[stats]', agentsRes.error?.message, matchesRes.error?.message)
       return NextResponse.json(
         { agents: null, matches: null },
-        { status: 503, headers: { 'Cache-Control': 'private, no-store' } }
+        { headers: { 'Cache-Control': 'private, no-store' } }
       )
     }
 
@@ -46,7 +46,7 @@ export async function GET() {
     console.error('[stats]', e)
     return NextResponse.json(
       { agents: null, matches: null },
-      { status: 503, headers: { 'Cache-Control': 'private, no-store' } }
+      { headers: { 'Cache-Control': 'private, no-store' } }
     )
   }
 }
