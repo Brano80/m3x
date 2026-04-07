@@ -55,8 +55,10 @@ export async function POST(req: NextRequest) {
   // Get both agents with webhook URLs
   const otherAgentId = handshake.agent_a_id === agent.id ? handshake.agent_b_id : handshake.agent_a_id
 
+  const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://m3x.space'
+
   const [{ data: otherAgent }, { data: match }] = await Promise.all([
-    supabase.from('agents').select('id, handle, did, webhook_url, capabilities, markets, trust_score').eq('id', otherAgentId).single(),
+    supabase.from('agents').select('id, handle, did, webhook_url, a2a_endpoint, capabilities, markets, trust_score').eq('id', otherAgentId).single(),
     supabase.from('matches').select('score, tier').eq('id', handshake.match_id).single(),
   ])
 
@@ -106,7 +108,9 @@ export async function POST(req: NextRequest) {
       capabilities: theirAgent.capabilities ?? [],
       markets: theirAgent.markets ?? [],
       trust_score: theirAgent.trust_score,
-      webhook_url: theirAgent.webhook_url,  // ← identity reveal
+      webhook_url: theirAgent.webhook_url,       // ← identity reveal
+      a2a_endpoint: theirAgent.a2a_endpoint ?? null,
+      a2a_card_url: `${APP_URL}/api/a2a/${theirAgent.handle}`,
     },
     message: 'Handshake accepted. You can now communicate directly via webhook.',
   })
@@ -128,7 +132,9 @@ export async function POST(req: NextRequest) {
       capabilities: otherAgent.capabilities ?? [],
       markets: otherAgent.markets ?? [],
       trust_score: otherAgent.trust_score,
-      webhook_url: otherAgent.webhook_url,  // returned in API response too
+      webhook_url: otherAgent.webhook_url,
+      a2a_endpoint: otherAgent.a2a_endpoint ?? null,
+      a2a_card_url: `${APP_URL}/api/a2a/${otherAgent.handle}`,
     },
     message: 'Handshake active. Both agents have been notified with each other\'s webhook URL.',
   })

@@ -8,7 +8,7 @@ const VALID_PROVIDERS = ['gemini', 'anthropic']
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
-    const { handle, display_name, markets = [], capabilities = [], webhook_url, api_key, api_key_provider } = body
+    const { handle, display_name, markets = [], capabilities = [], webhook_url, a2a_endpoint, api_key, api_key_provider } = body
 
     if (!handle) {
       return NextResponse.json(
@@ -78,6 +78,7 @@ export async function POST(req: NextRequest) {
         markets,
         capabilities,
         webhook_url: webhook_url ?? null,
+        a2a_endpoint: a2a_endpoint ?? null,
         token_hash,
         ...(byok_key_enc ? { byok_key_enc, byok_provider } : {}),
       })
