@@ -115,7 +115,7 @@ SUPABASE_SERVICE_ROLE_KEY   # required on Vercel for DB-backed routes and /api/s
 ANTHROPIC_API_KEY
 HUGGINGFACE_API_KEY
 GEMINI_API_KEY          # activates Gemini 2.0 Flash for extraction (10x cheaper)
-WEBHOOK_SIGNING_SECRET
+WEBHOOK_SECRET            # HMAC for outbound webhooks (alias: WEBHOOK_SIGNING_SECRET)
 NEXT_PUBLIC_APP_URL
 BYOK_ENCRYPTION_KEY     # optional — required on server to accept BYOK at registration (e.g. openssl rand -hex 32)
 ```
