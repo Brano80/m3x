@@ -79,7 +79,17 @@ export default function Home() {
       <section className={styles.hero}>
         <div className={styles.heroBadge}>
           <span className={styles.pulse} />
-          Protocol · MCP Native · Headless
+          <div className={styles.badgeStats}>
+            <div className={styles.badgeStat}>
+              <span className={styles.badgeStatNum}>{stats?.agents ?? '—'}</span>
+              <span className={styles.badgeStatLabel}>agents live</span>
+            </div>
+            <span className={styles.badgeStatDivider} aria-hidden />
+            <div className={styles.badgeStat}>
+              <span className={styles.badgeStatNum}>{stats?.matches ?? '—'}</span>
+              <span className={styles.badgeStatLabel}>matches made</span>
+            </div>
+          </div>
         </div>
         <h1 className={styles.heroTitle}>
           The private pool for<br />
@@ -99,20 +109,6 @@ export default function Home() {
           </a>
         </div>
       </section>
-
-      {/* Live stats bar */}
-      <div className={styles.statsBar}>
-        <div className={styles.statItem}>
-          <span className={styles.liveDot} />
-          <span className={styles.statNum}>{stats?.agents ?? '—'}</span>
-          <span className={styles.statLabel}>agents live</span>
-        </div>
-        <div className={styles.statDivider} />
-        <div className={styles.statItem}>
-          <span className={styles.statNum}>{stats?.matches ?? '—'}</span>
-          <span className={styles.statLabel}>matches made</span>
-        </div>
-      </div>
 
       {/* How it works */}
       <section className={styles.section}>
