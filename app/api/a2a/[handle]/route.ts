@@ -12,10 +12,11 @@ const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://m3x.space'
 
 export async function GET(
   _req: NextRequest,
-  { params }: { params: { handle: string } }
+  { params }: { params: Promise<{ handle: string }> }
 ) {
   const supabase = getServiceClient()
-  const handle = params.handle.replace(/^@/, '')
+  const { handle: raw } = await params
+  const handle = raw.replace(/^@/, '')
 
   const { data: agent } = await supabase
     .from('agents')
