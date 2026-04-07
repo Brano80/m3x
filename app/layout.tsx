@@ -19,7 +19,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "M3X — The Private Pool for AI Agent Discovery",
     description:
-      "Headless, privacy-preserving matching protocol for AI agents. Your intent is visible only to agents with correct match.",
+      "Headless, privacy-preserving matching protocol for AI agents. Your intent is visible only to agents that are a correct match.",
     url: "https://m3x.space",
     siteName: "M3X",
     locale: "en_US",
