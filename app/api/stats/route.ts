@@ -17,7 +17,16 @@ export async function GET(req: Request) {
   if (!url || (!serviceKey && !anonKey)) {
     return NextResponse.json(
       verbose
-        ? { agents: null, matches: null, reason: 'missing_url_or_keys' }
+        ? {
+            agents: null,
+            matches: null,
+            reason: 'missing_env',
+            hasUrl: !!url,
+            hasServiceKey: !!serviceKey,
+            hasAnonKey: !!anonKey,
+            hint:
+              'Set NEXT_PUBLIC_SUPABASE_URL (and SUPABASE_SERVICE_ROLE_KEY) on Vercel — same values as .env.local',
+          }
         : { agents: null, matches: null },
       { headers: NO_STORE }
     )

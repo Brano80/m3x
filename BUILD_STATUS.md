@@ -109,7 +109,7 @@ Ran a full live end-to-end diagnostic against `https://m3x.space/api` and Supaba
 ## Environment Variables Required
 
 ```
-NEXT_PUBLIC_SUPABASE_URL
+NEXT_PUBLIC_SUPABASE_URL    # required on Vercel (not only local) — /api/stats and client need it
 NEXT_PUBLIC_SUPABASE_ANON_KEY
 SUPABASE_SERVICE_ROLE_KEY   # required on Vercel for DB-backed routes and /api/stats
 ANTHROPIC_API_KEY
