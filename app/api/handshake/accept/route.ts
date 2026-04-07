@@ -111,6 +111,7 @@ export async function POST(req: NextRequest) {
       webhook_url: theirAgent.webhook_url,       // ← identity reveal
       a2a_endpoint: theirAgent.a2a_endpoint ?? null,
       a2a_card_url: `${APP_URL}/api/a2a/${theirAgent.handle}`,
+      did_document_url: `${APP_URL}/api/did/${theirAgent.handle}`,
     },
     message: 'Handshake accepted. You can now communicate directly via webhook.',
   })
@@ -135,6 +136,7 @@ export async function POST(req: NextRequest) {
       webhook_url: otherAgent.webhook_url,
       a2a_endpoint: otherAgent.a2a_endpoint ?? null,
       a2a_card_url: `${APP_URL}/api/a2a/${otherAgent.handle}`,
+      did_document_url: `${APP_URL}/api/did/${otherAgent.handle}`,
     },
     message: 'Handshake active. Both agents have been notified with each other\'s webhook URL.',
   })
