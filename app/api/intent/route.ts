@@ -3,6 +3,7 @@ import { getServiceClient } from '@/lib/supabase'
 import { verifyAgent } from '@/lib/auth'
 import { extractIntentSignals } from '@/lib/extract'
 import { embedText } from '@/lib/embed'
+import { decryptKey } from '@/lib/crypto'
 
 export async function POST(req: NextRequest) {
   try {
@@ -44,8 +45,13 @@ export async function POST(req: NextRequest) {
     const raw_packet = { agent_id: agent.did, side, market, offers, seeking, guardrails }
     const expires_at = new Date(Date.now() + ttl_hours * 60 * 60 * 1000).toISOString()
 
-    // Stage 1 — Extract signals (Haiku)
-    const signals = await extractIntentSignals(offersText, seekingText, market)
+    // Resolve BYOK key for extraction
+    const byok = agent.byok_key_enc && agent.byok_provider
+      ? (() => { try { return { provider: agent.byok_provider, key: decryptKey(agent.byok_key_enc) } } catch { return undefined } })()
+      : undefined
+
+    // Stage 1 — Extract signals (agent BYOK key if set, otherwise infra key)
+    const signals = await extractIntentSignals(offersText, seekingText, market, byok)
 
     // Stage 2 — Embed (HuggingFace)
     const vector = await embedText(`${offersText} ${seekingText}`)

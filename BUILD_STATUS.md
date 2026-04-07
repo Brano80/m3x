@@ -1,0 +1,119 @@
+# BUILD_STATUS.md — M3X Agentic Matchmaking Network
+**Last updated:** 2026-04-07
+**Updated by:** Claude (Cowork session)
+
+---
+
+## Current State: Phase 1 — Core Network (In Progress)
+
+### ✅ Done
+
+| Item | Notes |
+|------|-------|
+| Supabase DB — all 5 tables | agents, intents, matches, handshakes, trust_events — RLS enabled |
+| Agent registration (`POST /api/agent/register`) | Bearer token issued, SHA-256 hashed before storage |
+| Agent card (`GET /api/agent/:id`) | Public profile, never exposes raw intent or webhook |
+| My agent (`GET /api/agent/me`) | Auth-gated, returns full agent record |
+| Post intent (`POST /api/intent`) | Haiku extraction + HuggingFace embedding pipeline |
+| Get/delete intent (`GET /DELETE /api/intent/:id`) | Owner-only |
+| Run matching (`POST /api/matches/run`) | pgvector top-50 → Haiku scoring → webhook push |
+| Get matches (`GET /api/matches`) | Tier + score filter, paginated |
+| Trust score (`GET /api/trust/:agent_id`) | Returns public trust score |
+| Webhook push | HMAC-SHA256 signed, fires to both agents on match |
+| MCP server (`/mcp/`) | 5 tools: post_intent, check_matches, accept_match, get_trust_score, update_agent_card — published to npm as `m3x-mcp-server@1.0.0` |
+| Debug endpoint (`GET /api/debug`) | Auth check + env vars status |
+
+**Live data in DB:** 5 agents · 4 intents · 2 matches · 0 handshakes
+
+---
+
+## ❌ Not Built Yet (Phase 1 remaining)
+
+| Item | Priority | Notes |
+|------|----------|-------|
+| **Intent TTL expiry** | ✅ Done | Handled inside scheduler Edge Function on every run. |
+| **BYOK (Bring Your Own Key)** | ✅ Done | Pass `api_key` + `api_key_provider` at registration. Key stored AES-256 encrypted. Used for all AI calls for that agent. |
+| **OpenClaw connector docs** | 🟡 Medium | Setup guide + one-line config snippet for OpenClaw users. |
+
+---
+
+## ❌ Not Built Yet (Phase 2)
+
+| Item | Notes |
+|------|-------|
+| ~~`POST /api/handshake`~~ | ✅ Done — initiate + accept + decline. Identity revealed on mutual acceptance. |
+| Response rate tracking → trust score updates | trust_events table is empty |
+| W3C DID-based identity | Upgrade from simple did:m3x: prefix |
+| A2A protocol compatibility | Google agent-to-agent task delegation |
+| NATS message bus | Replace direct webhook calls at scale (~10k agents) |
+| Anti-spam / rate limiting on intent posting | |
+
+---
+
+## ❌ Not Built Yet (Phase 3)
+
+| Item | Notes |
+|------|-------|
+| x402 / AP2 agent payment protocol | |
+| ERC-8004 on-chain reputation | Optional layer |
+| NANDA index compatibility | |
+| M3X mobile cockpit | Control plane app |
+| Network health analytics dashboard | |
+
+---
+
+## Cost Optimisation Plan
+
+Target: **~$120/month at 1,000 agents** (vs ~$800/month without optimisations)
+
+| Optimisation | Impact | Status |
+|---|---|---|
+| Gemini 2.0 Flash for extraction | Extraction cost: $75 → $1/month | ✅ Done — `lib/extract.ts`, falls back to Haiku if no GEMINI_API_KEY |
+| 7-day score cache per agent pair | Scoring calls: -80% | ✅ Done — `score_cache` table + `lib/score.ts` |
+| Rate limit: 5 match runs/day/agent | Prevents runaway costs | ✅ Done — `matches/run/route.ts`, resets at UTC midnight |
+| BYOK for paid tier | Infra AI cost → $0 for power users | ✅ Done — AES-256 encrypted, injected at extract + score time |
+
+**Required env var to activate Gemini:** Add `GEMINI_API_KEY` to Vercel environment variables.
+
+---
+
+## Next Task to Build
+
+> **One blocker to resolve first:** Add `ANTHROPIC_API_KEY` (and optionally `GEMINI_API_KEY`) to **Supabase Edge Function secrets** (not just Vercel). The scheduler Edge Function uses `Deno.env.get()` — it reads from Supabase secrets, not Vercel env vars. Without this, the scheduler finds candidates but can't score them and creates 0 matches. Fix: Supabase dashboard → Project Settings → Edge Functions → Secrets → add both keys.
+>
+> After that: **Phase 2** — W3C DID-based identity, A2A protocol compatibility, response rate tracking → trust score updates.
+
+---
+
+## E2E Test Results (2026-04-07)
+
+Ran a full live end-to-end diagnostic against `https://m3x.space/api` and Supabase:
+
+| Layer | Status | Notes |
+|---|---|---|
+| Agent registration | ✅ | 5 agents live |
+| Intent posting + embedding | ✅ | 4 intents, all with 1024d embeddings |
+| pgvector similarity search | ✅ | `match_intents_by_intent_id` returns candidates at 0.88+ similarity |
+| AI scoring (Next.js API path) | ✅ | Original 3 matches created via `/api/matches/run` |
+| Score cache writes | 🔧 Fixed | Was fire-and-forget → lost in Vercel serverless. Now `await`ed. |
+| Infra Gemini path in lib/score.ts | 🔧 Fixed | Was missing — only BYOK Gemini existed. Now falls back to `GEMINI_API_KEY` env var before Haiku. |
+| Scheduler auth | 🔧 Fixed | v2 compared `SUPABASE_ANON_KEY` env var which mismatched. Switched to `verify_jwt: true` (Supabase validates the JWT natively). |
+| Scheduler embedding bug | 🔧 Fixed | Scheduler was passing `intent.embedding` (returned as string by REST API) to the RPC — fails silently. Fixed with new `match_intents_by_intent_id` SQL function (vector stays in Postgres). |
+| Scheduler AI keys | ❌ Needs action | `ANTHROPIC_API_KEY` not in Supabase secrets → scoring always returns null → 0 matches from scheduler. See above. |
+| Webhook push | ✅ (code) | Fires on match with score ≥75% — untested at scale since test agents scored 65-70% (expected for agents with empty capabilities). |
+| Handshake flow | ✅ (code) | Endpoints exist, identity reveal on mutual acceptance. No handshakes yet (no matches above 75% threshold). |
+
+---
+
+## Environment Variables Required
+
+```
+NEXT_PUBLIC_SUPABASE_URL
+NEXT_PUBLIC_SUPABASE_ANON_KEY
+SUPABASE_SERVICE_ROLE_KEY
+ANTHROPIC_API_KEY
+HUGGINGFACE_API_KEY
+GEMINI_API_KEY          # activates Gemini 2.0 Flash for extraction (10x cheaper)
+WEBHOOK_SIGNING_SECRET
+NEXT_PUBLIC_APP_URL
+BYOK

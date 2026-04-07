@@ -3,6 +3,36 @@ import { getServiceClient } from '@/lib/supabase'
 import { verifyAgent } from '@/lib/auth'
 import { scorePair } from '@/lib/score'
 import { sendWebhook } from '@/lib/webhook'
+import { decryptKey } from '@/lib/crypto'
+
+const MAX_RUNS_PER_DAY = 5
+
+async function checkRateLimit(supabase: any, agent: any): Promise<{ allowed: boolean; remaining: number }> {
+  const now = new Date()
+  const resetAt = agent.match_runs_reset_at ? new Date(agent.match_runs_reset_at) : new Date(0)
+  const isNewDay = now.toDateString() !== resetAt.toDateString()
+
+  if (isNewDay) {
+    // Reset counter for new day
+    await supabase
+      .from('agents')
+      .update({ daily_match_runs: 1, match_runs_reset_at: now.toISOString() })
+      .eq('id', agent.id)
+    return { allowed: true, remaining: MAX_RUNS_PER_DAY - 1 }
+  }
+
+  const runs = agent.daily_match_runs ?? 0
+  if (runs >= MAX_RUNS_PER_DAY) {
+    return { allowed: false, remaining: 0 }
+  }
+
+  await supabase
+    .from('agents')
+    .update({ daily_match_runs: runs + 1 })
+    .eq('id', agent.id)
+
+  return { allowed: true, remaining: MAX_RUNS_PER_DAY - runs - 1 }
+}
 
 export async function POST(req: NextRequest) {
   const supabase = getServiceClient()
@@ -14,6 +44,24 @@ export async function POST(req: NextRequest) {
     )
   }
 
+  // Rate limit: 5 match runs per agent per day
+  const { allowed, remaining } = await checkRateLimit(supabase, agent)
+  if (!allowed) {
+    return NextResponse.json(
+      { error: { message: `Rate limit reached: ${MAX_RUNS_PER_DAY} match runs per day. Resets at midnight UTC.`, code: 'RATE_LIMIT_EXCEEDED' } },
+      {
+        status: 429,
+        headers: { 'X-RateLimit-Limit': String(MAX_RUNS_PER_DAY), 'X-RateLimit-Remaining': '0' }
+      }
+    )
+  }
+
+  // Resolve BYOK key for this agent
+  const byok = agent.byok_key_enc && agent.byok_provider
+    ? { provider: agent.byok_provider, key: (() => { try { return decryptKey(agent.byok_key_enc) } catch { return null } })() }
+    : null
+  const resolvedByok = byok?.key ? (byok as { provider: string; key: string }) : undefined
+
   const { data: myIntents } = await supabase
     .from('intents')
     .select('*')
@@ -21,7 +69,10 @@ export async function POST(req: NextRequest) {
     .eq('status', 'active')
 
   if (!myIntents?.length) {
-    return NextResponse.json({ matches_found: 0, matches: [], message: 'No active intents' })
+    return NextResponse.json(
+      { matches_found: 0, matches: [], message: 'No active intents', rate_limit: { remaining } },
+      { headers: { 'X-RateLimit-Limit': String(MAX_RUNS_PER_DAY), 'X-RateLimit-Remaining': String(remaining) } }
+    )
   }
 
   const newMatches = []
@@ -60,7 +111,8 @@ export async function POST(req: NextRequest) {
       const minTrust = intent.guardrails?.min_trust_score ?? 0
       if (candidateAgent.trust_score < minTrust) continue
 
-      const scoreResult = await scorePair(intent, candidate, agent, candidateAgent)
+      // Pass supabase + BYOK key — agent's own key used if available, otherwise infra key
+      const scoreResult = await scorePair(intent, candidate, agent, candidateAgent, supabase, resolvedByok)
       if (!scoreResult || scoreResult.final_score < 0.50) continue
 
       const ttlDays = scoreResult.tier === 'near_match' ? 7 : 14
@@ -118,5 +170,8 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  return NextResponse.json({ matches_found: newMatches.length, matches: newMatches })
+  return NextResponse.json(
+    { matches_found: newMatches.length, matches: newMatches, rate_limit: { remaining } },
+    { headers: { 'X-RateLimit-Limit': String(MAX_RUNS_PER_DAY), 'X-RateLimit-Remaining': String(remaining) } }
+  )
 }
