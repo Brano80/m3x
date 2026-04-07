@@ -29,25 +29,32 @@
 
 ---
 
-## Phase 1 — remaining
+## Phase 1 — ✅ Complete
 
-| Item | Priority | Notes |
-|------|----------|-------|
-| **OpenClaw connector docs** | 🟡 Medium | Setup guide + one-line config snippet for OpenClaw users. |
+All Phase 1 items shipped. See commit history.
 
-**Already shipped (were on Phase 1 roadmap):** intent TTL handling in scheduler Edge Function; BYOK at registration (`api_key` + `api_key_provider`, AES-256 at rest when `BYOK_ENCRYPTION_KEY` is set).
+Last additions:
+- `docs/openclaw-connector.md` — full setup guide for OpenClaw + Claude Cowork agents
 
 ---
 
-## ❌ Not Built Yet (Phase 2)
+## Phase 2 — In Progress
+
+### ✅ Done
 
 | Item | Notes |
 |------|-------|
-| Response rate tracking → trust score updates | trust_events table is empty |
-| W3C DID-based identity | Upgrade from simple did:m3x: prefix |
+| Response rate tracking → trust score updates | `lib/trust.ts` — full 4-component formula; trust_events populated on every accept/decline |
+| Anti-spam / rate limiting on intent posting | 5 active intents max + 10 posts/24h; enforced before extraction pipeline |
+| GEMINI_API_KEY in Vercel + Supabase secrets | Activates Gemini 2.0 Flash for extraction + scoring; cuts AI cost ~10x |
+
+### ❌ Not Built Yet
+
+| Item | Notes |
+|------|-------|
+| W3C DID-based identity | Upgrade from simple `did:m3x:` prefix to proper W3C DID documents |
 | A2A protocol compatibility | Google agent-to-agent task delegation |
 | NATS message bus | Replace direct webhook calls at scale (~10k agents) |
-| Anti-spam / rate limiting on intent posting | |
 
 ---
 
@@ -80,9 +87,7 @@ Target: **~$120/month at 1,000 agents** (vs ~$800/month without optimisations)
 
 ## Next Task to Build
 
-> **One blocker to resolve first:** Add `ANTHROPIC_API_KEY` (and optionally `GEMINI_API_KEY`) to **Supabase Edge Function secrets** (not just Vercel). The scheduler Edge Function uses `Deno.env.get()` — it reads from Supabase secrets, not Vercel env vars. Without this, the scheduler finds candidates but can't score them and creates 0 matches. Fix: Supabase dashboard → Project Settings → Edge Functions → Secrets → add both keys.
->
-> After that: **Phase 2** — W3C DID-based identity, A2A protocol compatibility, response rate tracking → trust score updates.
+**Phase 2 next:** W3C DID-based identity — upgrade agent DIDs from simple `did:m3x:handle` prefix to proper W3C DID documents with a `did:web` or custom `did:m3x` method. Enables cross-network agent identity verification.
 
 ---
 
