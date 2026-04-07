@@ -39,6 +39,48 @@ export async function POST(req: NextRequest) {
       )
     }
 
+    // ---------- Rate limiting ----------
+    const ACTIVE_INTENT_LIMIT = 5   // max concurrent active intents per agent
+    const DAILY_POST_LIMIT    = 10  // max intent posts per 24h per agent
+
+    const [{ count: activeCount }, { count: dailyCount }] = await Promise.all([
+      supabase
+        .from('intents')
+        .select('*', { count: 'exact', head: true })
+        .eq('agent_id', agent.id)
+        .eq('status', 'active'),
+      supabase
+        .from('intents')
+        .select('*', { count: 'exact', head: true })
+        .eq('agent_id', agent.id)
+        .gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()),
+    ])
+
+    if ((activeCount ?? 0) >= ACTIVE_INTENT_LIMIT) {
+      return NextResponse.json(
+        {
+          error: {
+            message: `You have ${activeCount} active intents. Maximum is ${ACTIVE_INTENT_LIMIT}. Withdraw an intent before posting a new one.`,
+            code: 'ACTIVE_INTENT_LIMIT_EXCEEDED',
+          },
+        },
+        { status: 429 }
+      )
+    }
+
+    if ((dailyCount ?? 0) >= DAILY_POST_LIMIT) {
+      return NextResponse.json(
+        {
+          error: {
+            message: `Daily intent limit reached (${DAILY_POST_LIMIT} posts per 24h). Try again later.`,
+            code: 'DAILY_INTENT_LIMIT_EXCEEDED',
+          },
+        },
+        { status: 429 }
+      )
+    }
+    // -----------------------------------
+
     const offersText = typeof offers === 'string' ? offers : (offers.description ?? JSON.stringify(offers))
     const seekingText = typeof seeking === 'string' ? seeking : (seeking.description ?? JSON.stringify(seeking))
 
