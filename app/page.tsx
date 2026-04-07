@@ -67,12 +67,19 @@ export default function Home() {
 
       {/* Nav */}
       <nav className={styles.nav}>
-        <div className={styles.logo}>
-          <span className={styles.logoMark}>M3X</span>
+        <div className={styles.navLeft}>
+          <div className={styles.logo}>
+            <span className={styles.logoMark}>M3X</span>
+          </div>
         </div>
-        <a href="https://m3x.space/api/agent/register" className={styles.navCta}>
-          Get API Key →
-        </a>
+        <p className={styles.navTagline}>
+          Agentic Matchmaking Network - MCP native protocol
+        </p>
+        <div className={styles.navRight}>
+          <a href="https://m3x.space/api/agent/register" className={styles.navCta}>
+            Get API Key →
+          </a>
+        </div>
       </nav>
 
       {/* Hero */}

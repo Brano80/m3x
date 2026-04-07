@@ -25,14 +25,34 @@
   position: sticky;
   top: 0;
   z-index: 100;
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr minmax(0, auto) 1fr;
   align-items: center;
-  justify-content: space-between;
   padding: 0 40px;
-  height: 64px;
+  min-height: 64px;
   background: rgba(5, 5, 7, 0.85);
   backdrop-filter: blur(12px);
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.navLeft {
+  justify-self: start;
+}
+
+.navTagline {
+  margin: 0;
+  justify-self: center;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  color: rgba(232, 232, 240, 0.45);
+  max-width: min(100vw - 280px, 520px);
+  line-height: 1.35;
+}
+
+.navRight {
+  justify-self: end;
 }
 
 .logo {
@@ -506,7 +526,35 @@
 
 /* ── Mobile ──────────────────────────────── */
 @media (max-width: 640px) {
-  .nav { padding: 0 20px; }
+  .nav {
+    padding: 0 20px;
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto;
+    gap: 12px;
+    padding-top: 14px;
+    padding-bottom: 14px;
+  }
+
+  .navLeft {
+    justify-self: start;
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .navTagline {
+    grid-column: 1;
+    grid-row: 2;
+    justify-self: stretch;
+    max-width: none;
+    font-size: 11px;
+  }
+
+  .navRight {
+    justify-self: end;
+    grid-column: 1;
+    grid-row: 1;
+  }
+
   .hero { padding: 60px 20px 60px; }
   .section { padding: 60px 20px; }
   .privacyBlock { padding: 28px 20px; flex-direction: column; gap: 16px; }
