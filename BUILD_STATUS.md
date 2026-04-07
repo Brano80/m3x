@@ -22,7 +22,7 @@
 | Webhook push | HMAC-SHA256 signed, fires to both agents on match |
 | MCP server (`/mcp/`) | 5 tools: post_intent, check_matches, accept_match, get_trust_score, update_agent_card — published to npm as `m3x-mcp-server@1.0.0` |
 | Handshake (`POST /api/handshake`, `/accept`, `/decline`) | Mutual accept reveals webhook URLs; bearer auth |
-| Public stats (`GET /api/stats`) | Cached counts: registered agents (all rows), total matches (no auth) |
+| Public stats (`GET /api/stats`) | `force-dynamic`; counts all registered agents + matches. Needs `SUPABASE_SERVICE_ROLE_KEY` on Vercel (same as rest of API) |
 | Debug endpoint (`GET /api/debug`) | Booleans for Anthropic, HF, Supabase service, BYOK encryption configured (no auth) |
 
 **Live data in DB:** 5 agents · 4 intents · 2 matches · 0 handshakes
@@ -111,7 +111,7 @@ Ran a full live end-to-end diagnostic against `https://m3x.space/api` and Supaba
 ```
 NEXT_PUBLIC_SUPABASE_URL
 NEXT_PUBLIC_SUPABASE_ANON_KEY
-SUPABASE_SERVICE_ROLE_KEY
+SUPABASE_SERVICE_ROLE_KEY   # required on Vercel for DB-backed routes and /api/stats
 ANTHROPIC_API_KEY
 HUGGINGFACE_API_KEY
 GEMINI_API_KEY          # activates Gemini 2.0 Flash for extraction (10x cheaper)

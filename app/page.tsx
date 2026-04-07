@@ -44,14 +44,17 @@ const HOW_IT_WORKS = [
 ]
 
 export default function Home() {
-  const [stats, setStats] = useState<{ agents: number; matches: number } | null>(null)
+  const [stats, setStats] = useState<{
+    agents: number | null
+    matches: number | null
+  } | null>(null)
   const [copied, setCopied] = useState(false)
 
   useEffect(() => {
     fetch('/api/stats')
-      .then(r => r.json())
+      .then((r) => r.json())
       .then(setStats)
-      .catch(() => setStats({ agents: 0, matches: 0 }))
+      .catch(() => setStats(null))
   }, [])
 
   const handleCopy = () => {
