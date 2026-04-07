@@ -6,6 +6,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServiceClient } from '@/lib/supabase'
 import { verifyAgent } from '@/lib/auth'
 import { sendWebhook } from '@/lib/webhook'
+import { recalculateTrust } from '@/lib/trust'
 
 export async function POST(req: NextRequest) {
   const supabase = getServiceClient()
@@ -52,6 +53,9 @@ export async function POST(req: NextRequest) {
     .from('matches')
     .update({ state: 'declined' })
     .eq('id', handshake.match_id)
+
+  // Declining counts as responding — improves response_rate for the decliner
+  await recalculateTrust(agent.id, supabase, 'handshake_declined')
 
   // Notify the initiator — no identity revealed, no score penalty
   const initiatorId = handshake.initiated_by

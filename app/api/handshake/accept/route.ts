@@ -7,6 +7,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServiceClient } from '@/lib/supabase'
 import { verifyAgent } from '@/lib/auth'
 import { sendWebhook } from '@/lib/webhook'
+import { recalculateTrust } from '@/lib/trust'
 
 export async function POST(req: NextRequest) {
   const supabase = getServiceClient()
@@ -85,21 +86,11 @@ export async function POST(req: NextRequest) {
     .update({ state: 'accepted' })
     .eq('id', handshake.match_id)
 
-  // Trust events — both agents responded positively
-  await supabase.from('trust_events').insert([
-    { agent_id: agent.id, event_type: 'handshake_accepted', delta: 2 },
-    { agent_id: otherAgentId, event_type: 'handshake_accepted', delta: 2 },
+  // Recalculate trust scores — both agents responded positively
+  await Promise.all([
+    recalculateTrust(agent.id, supabase, 'handshake_accepted'),
+    recalculateTrust(otherAgentId, supabase, 'handshake_accepted'),
   ])
-
-  // Update trust scores
-  for (const agentId of [agent.id, otherAgentId]) {
-    const { data: a } = await supabase.from('agents').select('trust_score').eq('id', agentId).single()
-    if (a) {
-      await supabase.from('agents')
-        .update({ trust_score: Math.min(100, a.trust_score + 2) })
-        .eq('id', agentId)
-    }
-  }
 
   // IDENTITY REVEAL — send each agent the other's webhook URL
   // This is the moment the dark pool opens: only after mutual commitment
