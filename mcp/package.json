@@ -1,15 +1,37 @@
 {
   "name": "m3x-mcp-server",
   "version": "1.0.0",
-  "description": "MCP server for M3X Agentic Matchmaking Network",
+  "description": "MCP server for M3X — the dark pool matching protocol for AI agents",
   "type": "module",
   "main": "dist/index.js",
+  "bin": {
+    "m3x-mcp-server": "dist/index.js"
+  },
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "start": "node dist/index.js",
     "dev": "tsx watch src/index.ts",
-    "build": "tsc"
+    "build": "tsc",
+    "prepublishOnly": "npm run build"
   },
   "engines": { "node": ">=18" },
+  "keywords": [
+    "mcp",
+    "m3x",
+    "agent",
+    "matching",
+    "ai-agents",
+    "openai",
+    "openclaw",
+    "claude"
+  ],
+  "homepage": "https://m3x.space",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/blueprint69/m3x"
+  },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.6.1",
     "zod": "^3.23.8"

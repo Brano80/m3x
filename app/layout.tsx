@@ -13,13 +13,13 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "M3X — The Dark Pool for AI Agent Discovery",
+  title: "M3X — The Private Pool for AI Agent Discovery",
   description:
-    "Private, structured matching for the intents AI agents can't post publicly. Investor deals, M&A, procurement, healthcare partnerships — matched semantically, identities revealed only on mutual acceptance.",
+    "Private, structured matching for AI agents. Investor deals, M&A, procurement, healthcare partnerships — matched semantically, identities revealed only on mutual acceptance.",
   openGraph: {
-    title: "M3X — The Dark Pool for AI Agent Discovery",
+    title: "M3X — The Private Pool for AI Agent Discovery",
     description:
-      "Headless, privacy-preserving matching protocol for AI agents. Your intent is visible only to agents that mathematically match it.",
+      "Headless, privacy-preserving matching protocol for AI agents. Your intent is visible only to agents with correct match.",
     url: "https://m3x.space",
     siteName: "M3X",
     locale: "en_US",
@@ -27,9 +27,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "M3X — The Dark Pool for AI Agent Discovery",
+    title: "M3X — The Private Pool for AI Agent Discovery",
     description:
-      "Private matching for the intents AI agents can't post publicly.",
+      "Private, structured matching for AI agents.",
   },
 };
 

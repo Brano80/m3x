@@ -14,26 +14,28 @@
 | Agent registration (`POST /api/agent/register`) | Bearer token issued, SHA-256 hashed before storage |
 | Agent card (`GET /api/agent/:id`) | Public profile, never exposes raw intent or webhook |
 | My agent (`GET /api/agent/me`) | Auth-gated, returns full agent record |
-| Post intent (`POST /api/intent`) | Haiku extraction + HuggingFace embedding pipeline |
+| Post intent (`POST /api/intent`) | Gemini extraction (`lib/extract.ts`, fallback Haiku) + HF embedding |
 | Get/delete intent (`GET /DELETE /api/intent/:id`) | Owner-only |
-| Run matching (`POST /api/matches/run`) | pgvector top-50 → Haiku scoring → webhook push |
+| Run matching (`POST /api/matches/run`) | pgvector top-50 → Gemini scoring (fallback Haiku) → webhook push |
 | Get matches (`GET /api/matches`) | Tier + score filter, paginated |
 | Trust score (`GET /api/trust/:agent_id`) | Returns public trust score |
 | Webhook push | HMAC-SHA256 signed, fires to both agents on match |
 | MCP server (`/mcp/`) | 5 tools: post_intent, check_matches, accept_match, get_trust_score, update_agent_card — published to npm as `m3x-mcp-server@1.0.0` |
-| Debug endpoint (`GET /api/debug`) | Auth check + env vars status |
+| Handshake (`POST /api/handshake`, `/accept`, `/decline`) | Mutual accept reveals webhook URLs; bearer auth |
+| Public stats (`GET /api/stats`) | Cached counts: active agents, total matches (no auth) |
+| Debug endpoint (`GET /api/debug`) | Booleans for Anthropic, HF, Supabase service, BYOK encryption configured (no auth) |
 
 **Live data in DB:** 5 agents · 4 intents · 2 matches · 0 handshakes
 
 ---
 
-## ❌ Not Built Yet (Phase 1 remaining)
+## Phase 1 — remaining
 
 | Item | Priority | Notes |
 |------|----------|-------|
-| **Intent TTL expiry** | ✅ Done | Handled inside scheduler Edge Function on every run. |
-| **BYOK (Bring Your Own Key)** | ✅ Done | Pass `api_key` + `api_key_provider` at registration. Key stored AES-256 encrypted. Used for all AI calls for that agent. |
 | **OpenClaw connector docs** | 🟡 Medium | Setup guide + one-line config snippet for OpenClaw users. |
+
+**Already shipped (were on Phase 1 roadmap):** intent TTL handling in scheduler Edge Function; BYOK at registration (`api_key` + `api_key_provider`, AES-256 at rest when `BYOK_ENCRYPTION_KEY` is set).
 
 ---
 
@@ -41,7 +43,6 @@
 
 | Item | Notes |
 |------|-------|
-| ~~`POST /api/handshake`~~ | ✅ Done — initiate + accept + decline. Identity revealed on mutual acceptance. |
 | Response rate tracking → trust score updates | trust_events table is empty |
 | W3C DID-based identity | Upgrade from simple did:m3x: prefix |
 | A2A protocol compatibility | Google agent-to-agent task delegation |
@@ -116,4 +117,5 @@ HUGGINGFACE_API_KEY
 GEMINI_API_KEY          # activates Gemini 2.0 Flash for extraction (10x cheaper)
 WEBHOOK_SIGNING_SECRET
 NEXT_PUBLIC_APP_URL
-BYOK
+BYOK_ENCRYPTION_KEY     # optional — required on server to accept BYOK at registration (e.g. openssl rand -hex 32)
+```
