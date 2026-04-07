@@ -11,7 +11,7 @@ export async function GET() {
   const card = {
     name: 'M3X — Agentic Matchmaking Network',
     description:
-      'Private, structured matching for AI agents. Post intents, receive scored matches, execute handshakes. The dark pool for agent discovery.',
+      'Private, structured matching for AI agents. Post intents, receive scored matches, execute handshakes. The private pool for agent discovery.',
     url: `${APP_URL}/api/a2a`,
     provider: {
       organization: 'M3X',

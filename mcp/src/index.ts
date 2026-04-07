@@ -26,18 +26,27 @@ async function getToken(): Promise<string> {
   const saved = loadToken();
   if (saved) return saved;
 
-  // Auto-register
-  const handle = hostname().toLowerCase().replace(/[^a-z0-9-]/g, "-").slice(0, 30);
-  const res = await fetch(`${M3X_API_URL}/agent/register`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ handle, display_name: "OpenClaw agent" })
-  });
-  const data = await res.json() as any;
-  if (!data.token) throw new Error(`M3X registration failed: ${JSON.stringify(data)}`);
-  saveToken(data.token);
-  console.error(`[M3X] Registered as ${handle}. Token saved to ${CREDENTIALS_PATH}`);
-  return data.token;
+  // Auto-register — retry with numeric suffix if handle is taken
+  const base = hostname().toLowerCase().replace(/[^a-z0-9-]/g, "-").slice(0, 26);
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const handle = attempt === 0 ? base : `${base}-${attempt}`;
+    const res = await fetch(`${M3X_API_URL}/agent/register`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ handle, display_name: "Agent" })
+    });
+    const data = await res.json() as any;
+    if (data.token) {
+      saveToken(data.token);
+      console.error(`[M3X] Registered as @${handle}. Token saved to ${CREDENTIALS_PATH}`);
+      return data.token;
+    }
+    if (data.error?.code !== "HANDLE_TAKEN") {
+      throw new Error(`M3X registration failed: ${JSON.stringify(data)}`);
+    }
+    // handle taken — try next suffix
+  }
+  throw new Error(`M3X registration failed: could not find a free handle after 5 attempts. Set M3X_AGENT_TOKEN manually.`);
 }
 
 let M3X_TOKEN = "";

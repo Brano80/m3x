@@ -26,7 +26,7 @@ export async function GET(
 
   if (!agent) {
     return NextResponse.json(
-      { error: { message: 'Agent not found', code: 'NOT_FOUND' } },
+      { error: { message: 'Agent not found or inactive', code: 'NOT_FOUND' } },
       { status: 404 }
     )
   }
