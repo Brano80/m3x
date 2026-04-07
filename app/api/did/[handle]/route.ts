@@ -15,12 +15,13 @@ import { buildDidDocument } from '@/lib/did'
 
 export async function GET(
   _req: NextRequest,
-  { params }: { params: { handle: string } }
+  { params }: { params: Promise<{ handle: string }> }
 ) {
   const supabase = getServiceClient()
+  const { handle: rawHandle } = await params
 
   // Normalise: strip did:m3x: prefix, @ sign
-  const raw = decodeURIComponent(params.handle)
+  const raw = decodeURIComponent(rawHandle)
   const handle = raw
     .replace(/^did:m3x:/, '')
     .replace(/^@/, '')

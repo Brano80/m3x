@@ -18,10 +18,11 @@ import { buildDidDocument } from '@/lib/did'
 
 export async function GET(
   _req: NextRequest,
-  { params }: { params: { handle: string } }
+  { params }: { params: Promise<{ handle: string }> }
 ) {
   const supabase = getServiceClient()
-  const handle = params.handle.replace(/^@/, '').toLowerCase()
+  const { handle: rawHandle } = await params
+  const handle = rawHandle.replace(/^@/, '').toLowerCase()
 
   const { data: agent } = await supabase
     .from('agents')
