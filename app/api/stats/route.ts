@@ -19,7 +19,7 @@ export async function GET() {
 
   const supabase = serviceKey
     ? getServiceClient()
-    : createClient(url, anonKey, { auth: { persistSession: false } })
+    : createClient(url, anonKey!, { auth: { persistSession: false } })
 
   try {
     const [agentsRes, matchesRes] = await Promise.all([
