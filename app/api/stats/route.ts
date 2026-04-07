@@ -9,9 +9,9 @@ export const dynamic = 'force-dynamic'
 const NO_STORE = { 'Cache-Control': 'private, no-store, max-age=0' } as const
 
 export async function GET() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim()
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim()
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim()
 
   if (!url || (!serviceKey && !anonKey)) {
     return NextResponse.json({ agents: null, matches: null }, { headers: NO_STORE })
@@ -30,7 +30,13 @@ export async function GET() {
 
       if (agents.count === null || matches.count === null) {
         // Fallback: supabase-js (older behaviour)
-        const supabase = getServiceClient()
+        let supabase
+        try {
+          supabase = getServiceClient()
+        } catch (e) {
+          console.error('[stats] getServiceClient', e)
+          return NextResponse.json({ agents: null, matches: null }, { headers: NO_STORE })
+        }
         const [aRes, mRes] = await Promise.all([
           supabase.from('agents').select('id', { count: 'exact', head: true }),
           supabase.from('matches').select('id', { count: 'exact', head: true }),

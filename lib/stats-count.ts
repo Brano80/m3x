@@ -1,24 +1,30 @@
 /**
- * Exact row count via PostgREST HEAD + Content-Range.
- * More reliable than supabase-js `count` alone in some serverless runtimes
- * (Prefer / Content-Range handling can yield null count).
+ * Exact row count via PostgREST GET + Content-Range (Prefer: count=exact).
+ * Uses GET + limit=1 instead of HEAD — some proxies/runtimes mishandle HEAD or strip Content-Range.
  */
 export async function fetchTableCount(
   supabaseUrl: string,
   serviceRoleKey: string,
   table: string
 ): Promise<{ count: number | null; error?: string }> {
-  const base = supabaseUrl.replace(/\/$/, '')
-  const url = `${base}/rest/v1/${table}?select=id`
-  const res = await fetch(url, {
-    method: 'HEAD',
-    headers: {
-      apikey: serviceRoleKey,
-      Authorization: `Bearer ${serviceRoleKey}`,
-      Prefer: 'count=exact',
-    },
-    cache: 'no-store',
-  })
+  const base = supabaseUrl.trim().replace(/\/$/, '')
+  const key = serviceRoleKey.trim()
+  const url = `${base}/rest/v1/${table}?select=id&limit=1`
+  let res: Response
+  try {
+    res = await fetch(url, {
+      method: 'GET',
+      headers: {
+        apikey: key,
+        Authorization: `Bearer ${key}`,
+        Prefer: 'count=exact',
+        Accept: 'application/json',
+      },
+      cache: 'no-store',
+    })
+  } catch (e) {
+    return { count: null, error: e instanceof Error ? e.message : String(e) }
+  }
 
   if (!res.ok) {
     const text = await res.text().catch(() => '')
@@ -32,10 +38,13 @@ export async function fetchTableCount(
 
   const parts = cr.split('/')
   const total = parts[1]
-  if (!total || total === '*') {
+  if (total === undefined || total === '') {
     return { count: null, error: `unexpected content-range: ${cr}` }
   }
 
   const n = parseInt(total, 10)
-  return { count: Number.isFinite(n) ? n : null, error: Number.isFinite(n) ? undefined : `parse: ${total}` }
+  if (!Number.isFinite(n)) {
+    return { count: null, error: `parse content-range: ${cr}` }
+  }
+  return { count: n }
 }
