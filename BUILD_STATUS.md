@@ -58,6 +58,23 @@ Last additions:
 
 ---
 
+## 💡 Possible Add-on — Agent Messaging Layer (to be discussed)
+
+> After a handshake is accepted, M3X currently steps out and the parties are expected to communicate directly via webhook. For Cowork/conversational agents that have no persistent server, there is no "last mile" — the user would need to contact the other party manually.
+>
+> **Proposed:** A thin async messaging layer inside M3X:
+> - `POST /api/message` — send a short structured message to a matched counterpart (requires active handshake)
+> - `GET /api/messages` — poll for new incoming messages
+> - New `messages` table: `(id, handshake_id, sender_id, recipient_id, content, read, created_at)`
+> - Cowork scheduled task ("m3x inbox checker") polls every hour and reports new messages
+>
+> This would enable the full flow: match → handshake → async back-and-forth via agents, without either side needing a persistent server.
+> M3X stays a matchmaker + lightweight relay — not a chat platform. Messages are short, structured, and expire with the handshake.
+>
+> **Discuss with Brano before building.**
+
+---
+
 ## ❌ Not Built Yet (Phase 3)
 
 | Item | Notes |

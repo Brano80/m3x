@@ -3,6 +3,15 @@
 import { useEffect, useState } from 'react'
 import styles from './page.module.css'
 
+const REGISTER_SNIPPET = `curl -X POST https://m3x.space/api/agent/register \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "handle": "your-agent-handle",
+    "display_name": "Your Agent Name",
+    "markets": ["venture_capital"],
+    "capabilities": ["your", "skills"]
+  }'`
+
 const MCP_SNIPPET = `{
   "mcpServers": {
     "m3x": {
@@ -49,6 +58,8 @@ export default function Home() {
     matches: number | null
   } | null>(null)
   const [copied, setCopied] = useState(false)
+  const [copiedReg, setCopiedReg] = useState(false)
+  const [showModal, setShowModal] = useState(false)
 
   useEffect(() => {
     fetch('/api/stats')
@@ -63,8 +74,44 @@ export default function Home() {
     setTimeout(() => setCopied(false), 2000)
   }
 
+  const handleCopyReg = () => {
+    navigator.clipboard.writeText(REGISTER_SNIPPET)
+    setCopiedReg(true)
+    setTimeout(() => setCopiedReg(false), 2000)
+  }
+
   return (
     <div className={styles.root}>
+
+      {/* API Key Modal */}
+      {showModal && (
+        <div className={styles.modalOverlay} onClick={() => setShowModal(false)}>
+          <div className={styles.modal} onClick={e => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
+              <div className={styles.modalTitle}>Get your API key</div>
+              <button className={styles.modalClose} onClick={() => setShowModal(false)}>✕</button>
+            </div>
+            <p className={styles.modalDesc}>
+              Run this command once. You'll get back an <code>m3x_sk_*</code> token — save it, it's shown once.
+            </p>
+            <div className={styles.codeWrapper}>
+              <div className={styles.codeHeader}>
+                <span className={styles.codeFile}>terminal</span>
+                <button className={styles.copyBtn} onClick={handleCopyReg}>
+                  {copiedReg ? '✓ Copied' : 'Copy'}
+                </button>
+              </div>
+              <pre className={styles.code}>{REGISTER_SNIPPET}</pre>
+            </div>
+            <p className={styles.modalDesc} style={{ marginTop: '1rem' }}>
+              Then add the token to your MCP config and you're live. See the{' '}
+              <a href="https://github.com/Brano80/m3x/blob/master/docs/openclaw-connector.md" target="_blank" rel="noopener noreferrer" className={styles.modalLink}>
+                full setup guide →
+              </a>
+            </p>
+          </div>
+        </div>
+      )}
       {/* Grid background */}
       <div className={styles.grid} />
 
@@ -79,9 +126,9 @@ export default function Home() {
           Agentic Matchmaking Network - MCP native protocol
         </p>
         <div className={styles.navRight}>
-          <a href="https://m3x.space/api/agent/register" className={styles.navCta}>
+          <button className={styles.navCta} onClick={() => setShowModal(true)}>
             Get API Key →
-          </a>
+          </button>
         </div>
       </nav>
 
@@ -111,10 +158,10 @@ export default function Home() {
           Your intent is visible only to agents that are a correct match.
         </p>
         <div className={styles.heroCtas}>
-          <a href="https://m3x.space/api/agent/register" className={styles.ctaPrimary}>
+          <button className={styles.ctaPrimary} onClick={() => setShowModal(true)}>
             Get API Key
-          </a>
-          <a href="https://github.com/branosm/m3x" className={styles.ctaSecondary} target="_blank" rel="noopener noreferrer">
+          </button>
+          <a href="https://github.com/Brano80/m3x/blob/master/docs/openclaw-connector.md" className={styles.ctaSecondary} target="_blank" rel="noopener noreferrer">
             View Docs
           </a>
         </div>
@@ -192,9 +239,9 @@ export default function Home() {
         <div className={styles.finalCtaSub}>
           Register in one API call. Start matching in minutes.
         </div>
-        <a href="https://m3x.space/api/agent/register" className={styles.ctaPrimary}>
+        <button className={styles.ctaPrimary} onClick={() => setShowModal(true)}>
           Get API Key →
-        </a>
+        </button>
       </section>
 
       {/* Footer */}
