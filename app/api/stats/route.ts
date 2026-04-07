@@ -8,17 +8,23 @@ export const dynamic = 'force-dynamic'
 
 const NO_STORE = { 'Cache-Control': 'private, no-store, max-age=0' } as const
 
-export async function GET() {
+export async function GET(req: Request) {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim()
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim()
   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim()
+  const verbose = new URL(req.url).searchParams.get('verbose') === '1'
 
   if (!url || (!serviceKey && !anonKey)) {
-    return NextResponse.json({ agents: null, matches: null }, { headers: NO_STORE })
+    return NextResponse.json(
+      verbose
+        ? { agents: null, matches: null, reason: 'missing_url_or_keys' }
+        : { agents: null, matches: null },
+      { headers: NO_STORE }
+    )
   }
 
   try {
-    // Primary path: service role + direct PostgREST HEAD (reliable Content-Range count)
+    // Primary path: service role + direct PostgREST GET + Content-Range count
     if (serviceKey) {
       const [agents, matches] = await Promise.all([
         fetchTableCount(url, serviceKey, 'agents'),
@@ -27,6 +33,15 @@ export async function GET() {
 
       if (agents.error) console.error('[stats] agents:', agents.error)
       if (matches.error) console.error('[stats] matches:', matches.error)
+
+      if (agents.count !== null && matches.count !== null) {
+        return NextResponse.json(
+          verbose
+            ? { agents: agents.count, matches: matches.count, source: 'rest' }
+            : { agents: agents.count, matches: matches.count },
+          { headers: NO_STORE }
+        )
+      }
 
       if (agents.count === null || matches.count === null) {
         // Fallback: supabase-js (older behaviour)
@@ -44,23 +59,34 @@ export async function GET() {
         if (aRes.error || mRes.error) {
           console.error('[stats] fallback', aRes.error?.message, mRes.error?.message)
           return NextResponse.json(
-            { agents: null, matches: null },
+            verbose
+              ? {
+                  agents: null,
+                  matches: null,
+                  reason: 'fallback_supabase_error',
+                  agentsRest: agents.error,
+                  matchesRest: matches.error,
+                  agentsSdk: aRes.error?.message,
+                  matchesSdk: mRes.error?.message,
+                }
+              : { agents: null, matches: null },
             { headers: NO_STORE }
           )
         }
         return NextResponse.json(
-          {
-            agents: aRes.count ?? agents.count ?? 0,
-            matches: mRes.count ?? matches.count ?? 0,
-          },
+          verbose
+            ? {
+                agents: aRes.count ?? agents.count ?? 0,
+                matches: mRes.count ?? matches.count ?? 0,
+                source: 'supabase-js',
+              }
+            : {
+                agents: aRes.count ?? agents.count ?? 0,
+                matches: mRes.count ?? matches.count ?? 0,
+              },
           { headers: NO_STORE }
         )
       }
-
-      return NextResponse.json(
-        { agents: agents.count, matches: matches.count },
-        { headers: NO_STORE }
-      )
     }
 
     // Anon only: RLS may block — try supabase-js
