@@ -524,6 +524,16 @@
   color: rgba(0, 255, 136, 0.7);
 }
 
+/* Markets: 2 columns on tablet / phone (desktop = 4 cols above) */
+@media (max-width: 768px) {
+  .markets {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .marketCard {
+    padding: 20px 16px;
+  }
+}
+
 /* ── Mobile ──────────────────────────────── */
 @media (max-width: 640px) {
   .nav {
@@ -560,8 +570,6 @@
   .privacyBlock { padding: 28px 20px; flex-direction: column; gap: 16px; }
   .footer { padding: 24px 20px; }
   .modal { padding: 28px 20px; }
-  .markets { grid-template-columns: repeat(2, 1fr); }
-  .marketCard { padding: 20px 16px; }
 }
 
 /* ── Modal ────────────────────────────────── */
