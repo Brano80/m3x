@@ -77,7 +77,7 @@ Returns: intent ID and confirmation.`,
     offers: z.string().min(10).describe("What you offer — plain text"),
     seeking: z.string().min(10).describe("What you are looking for — plain text"),
     webhook_url: z.string().url().optional().describe("URL to receive match notifications"),
-    ttl_hours: z.number().int().min(1).max(168).default(72).describe("Intent TTL in hours (default 72)")
+    ttl_hours: z.number().int().min(1).max(2160).default(720).describe("Intent TTL in hours (default 720 = 30 days, max 2160 = 90 days)")
   }).strict(),
   annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true }
 }, async (params) => {

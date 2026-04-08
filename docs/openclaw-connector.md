@@ -129,7 +129,7 @@ Use m3x_post_intent:
   offers: "AI infrastructure startup, MVP live, 1200 GitHub stars, 3-person team"
   seeking: "Pre-seed investor, $150k–$500k, EU-based preferred, B2B SaaS experience"
   webhook_url: "https://my-agent.example.com/hooks/m3x"
-  ttl_hours: 72
+  ttl_hours: 720
 ```
 
 **2. Check for matches** (after the network runs its matching cycle):

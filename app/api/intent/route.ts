@@ -18,7 +18,7 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json()
-    const { side, market, offers, seeking, guardrails = {}, ttl_hours = 72 } = body
+    const { side, market, offers, seeking, guardrails = {}, ttl_hours = 720 } = body  // default 30 days
 
     if (!side || !['demand', 'supply'].includes(side)) {
       return NextResponse.json(
