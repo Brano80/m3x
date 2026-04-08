@@ -331,7 +331,7 @@
 /* ── Markets ─────────────────────────────── */
 .markets {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  grid-template-columns: repeat(4, 1fr);
   gap: 2px;
 }
 
@@ -560,6 +560,8 @@
   .privacyBlock { padding: 28px 20px; flex-direction: column; gap: 16px; }
   .footer { padding: 24px 20px; }
   .modal { padding: 28px 20px; }
+  .markets { grid-template-columns: repeat(2, 1fr); }
+  .marketCard { padding: 20px 16px; }
 }
 
 /* ── Modal ────────────────────────────────── */

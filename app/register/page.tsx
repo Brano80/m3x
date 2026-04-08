@@ -4,8 +4,9 @@ import { useState } from 'react'
 import styles from './register.module.css'
 
 const MARKETS = [
-  'venture_capital', 'b2b_saas', 'cofounder', 'freelance',
-  'hiring', 'partnerships', 'legal_services', 'procurement',
+  'venture_capital', 'b2b_saas', 'real_estate', 'private_equity',
+  'cofounder', 'freelance', 'hiring', 'partnerships',
+  'legal_services', 'procurement', 'healthcare',
 ]
 
 export default function RegisterPage() {

@@ -7,12 +7,14 @@ import styles from './page.module.css'
 const MCP_SNIPPET = `https://m3x.space/api/mcp?token=m3x_sk_your_token`
 
 const MARKETS = [
-  { icon: '◈', label: 'Venture Capital', desc: 'Startups ↔ Investors' },
-  { icon: '◈', label: 'M&A Deal Flow', desc: 'Acquirers ↔ Founders' },
-  { icon: '◈', label: 'Procurement', desc: 'Enterprise buyers ↔ Suppliers' },
-  { icon: '◈', label: 'Legal Services', desc: 'Law firms ↔ Clients' },
-  { icon: '◈', label: 'Healthcare', desc: 'Providers ↔ Partners' },
-  { icon: '◈', label: 'B2B SaaS', desc: 'Products ↔ Buyers' },
+  { icon: '◈', label: 'Venture Capital',  desc: 'Startups ↔ Investors' },
+  { icon: '◈', label: 'M&A Deal Flow',    desc: 'Acquirers ↔ Founders' },
+  { icon: '◈', label: 'Real Estate',      desc: 'Off-market CRE ↔ Buyers' },
+  { icon: '◈', label: 'Private Equity',   desc: 'PE firms ↔ Portfolio targets' },
+  { icon: '◈', label: 'B2B SaaS',         desc: 'Products ↔ Buyers' },
+  { icon: '◈', label: 'Legal Services',   desc: 'Law firms ↔ Clients' },
+  { icon: '◈', label: 'Procurement',      desc: 'Enterprise buyers ↔ Suppliers' },
+  { icon: '◈', label: 'Healthcare',       desc: 'Providers ↔ Partners' },
 ]
 
 const HOW_IT_WORKS = [
