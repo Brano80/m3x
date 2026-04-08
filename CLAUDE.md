@@ -14,7 +14,7 @@
 ## What We Are Building
 
 **M3X** is a **headless, privacy-preserving matching protocol for AI agents.**
-It is strictly infrastructure — no UI, no consumer product, no social network.
+It is strictly infrastructure — no product UI (beyond a minimal marketing page), no consumer product, no social network.
 
 **The one-line pitch:**
 *"The dark pool for AI agent discovery — structured, private, and legally safe
@@ -36,7 +36,7 @@ execute without revealing intent to the open market. M3X is the dark pool
 for agent intent.
 
 **What it is NOT:**
-- ❌ Not a website users browse
+- ❌ Not a browsable directory of intents (marketing landing at `/` only)
 - ❌ Not a social network or open directory
 - ❌ Not a chat or conversation platform
 - ❌ Not a consumer app
@@ -79,7 +79,7 @@ Private negotiation begins in the agent's own environment
 8. Webhook fires to both agents: score, tier, matched agent's public
    capabilities only — raw intent NEVER exposed
 9. Both agents decide independently whether to accept
-10. On mutual acceptance: webhook URLs revealed, private negotiation begins
+10. On mutual acceptance: each party receives the other’s **`webhook_url`**, **`a2a_card_url`**, and **`did_document_url`** (where applicable); private negotiation begins
 
 **The matched agent never learns your intent. Only what you're capable of.**
 
@@ -165,6 +165,8 @@ Score rounded to nearest 5% to avoid false precision.
 | GET      | /api/matches            | List matches for your agent              |
 | POST     | /api/matches/run        | Trigger matching run manually            |
 | POST     | /api/handshake          | Initiate handshake with a match          |
+| POST     | /api/handshake/accept   | Accept a handshake                       |
+| POST     | /api/handshake/decline  | Decline a handshake                      |
 | GET      | /api/trust/:agent_id    | Get trust score for any agent            |
 
 All endpoints: `Authorization: Bearer <agent_token>`
@@ -214,8 +216,7 @@ trust_score =
 
 Trust score is public. Agents filter matches by minimum trust via guardrails.
 
-Phase 2: Upgrade to W3C DID-based identity + optional ERC-8004 on-chain
-reputation layer.
+W3C-compatible DID documents (MVP) live in `lib/did.ts` and well-known routes — see BUILD_STATUS.md. Phase 2+: richer identity guarantees + optional ERC-8004 on-chain reputation layer.
 
 ---
 
@@ -301,7 +302,7 @@ After a match is pushed to both agents:
 1. Agent A calls `POST /api/handshake` with the match_id
 2. M3X marks handshake as `pending` — Agent B notified via webhook
 3. Agent B calls `POST /api/handshake/accept` (or decline)
-4. On mutual acceptance: both agents receive each other's webhook URL
+4. On mutual acceptance: both agents receive each other's **`webhook_url`**, **`a2a_card_url`**, and **`did_document_url`** (when set)
 5. Private negotiation begins in each agent's own environment
 6. M3X is not in the conversation loop — it only facilitated the introduction
 
@@ -315,7 +316,7 @@ This is intentional. M3X does not relay messages. Agents talk directly.
 |---------------|---------------------------------------|----------|
 | MCP           | Agents call M3X as an MCP server      | ✅ MVP   |
 | REST/Webhook  | Universal fallback for any HTTP agent | ✅ MVP   |
-| A2A (Google)  | Agent-to-agent task delegation        | Phase 2  |
+| A2A (Google)  | Agent-to-agent task delegation        | ✅ MVP (`/api/a2a`, `/api/a2a/:handle`) |
 | ANP / NANDA   | Decentralized agent discovery         | Phase 3  |
 | x402 / AP2    | Agent-to-agent payments               | Phase 3  |
 
@@ -364,7 +365,7 @@ Target: ~$55/month at 1,000 agents.
 | Gemini 2.0 Flash scoring    | ✅ Done | `lib/score.ts`                             |
 | 7-day score cache           | ✅ Done | `score_cache` table in Supabase            |
 | Rate limit 5 runs/day       | ✅ Done | `matches/run/route.ts`                     |
-| BYOK (Bring Your Own Key)   | ❌ Todo | Agents register with their own API key     |
+| BYOK (Bring Your Own Key)   | ✅ Done | `lib/crypto.ts` — optional `api_key` / `api_key_provider` at registration when `BYOK_ENCRYPTION_KEY` is set on the server |
 
 **Env vars required:**
 ```
@@ -376,6 +377,8 @@ GEMINI_API_KEY              # primary — activates Gemini 2.0 Flash
 HUGGINGFACE_API_KEY
 WEBHOOK_SECRET (or WEBHOOK_SIGNING_SECRET — same purpose)
 NEXT_PUBLIC_APP_URL
+BYOK_ENCRYPTION_KEY         # optional — required to persist encrypted BYOK keys
+M3X_PUBLIC_KEY_MULTIBASE    # optional — network DID verification key in /.well-known/did.json
 ```
 
 ---
@@ -491,7 +494,7 @@ trust_events (
 
 ## Build Phases
 
-### Phase 1 — Core Network ✅ Mostly Done
+### Phase 1 — Core Network ✅ Complete
 - [x] Supabase project + all DB tables + RLS
 - [x] Agent registration + bearer token auth
 - [x] `POST /api/intent` with embedding + extraction pipeline
@@ -502,15 +505,15 @@ trust_events (
 - [x] Agent Card API
 - [x] MCP server (5 tools)
 - [x] Rate limiting (5 match runs/day)
+- [x] `POST /api/handshake` + `/accept` + `/decline` — mutual accept reveals `webhook_url`, `a2a_card_url`, `did_document_url`
+- [x] BYOK — optional agent API keys at registration (`lib/crypto.ts`, server `BYOK_ENCRYPTION_KEY`)
+- [x] Publish MCP server to npm as `m3x-mcp-server`
 - [ ] Match scheduler (Supabase Edge Function cron, every 15 min)
 - [ ] Intent TTL expiry cron (mark expired intents)
-- [ ] `POST /api/handshake` + accept/decline flow
-- [ ] BYOK — agents register with their own Gemini/Anthropic key
-- [ ] Publish MCP server to npm as `m3x-mcp-server`
 
 ### Phase 2 — Identity + Scale
-- [ ] W3C DID-based identity
-- [ ] A2A protocol compatibility
+- [x] W3C DID-based identity (MVP — `lib/did.ts`, `/.well-known/did.json`, `/api/did/:handle`, `/agents/:handle/did.json`)
+- [x] A2A protocol compatibility (MVP — `POST /api/a2a`, `GET /api/a2a/:handle`)
 - [ ] Response rate tracking → trust score updates
 - [ ] NATS message bus for webhook delivery at scale
 - [ ] Remote MCP server (HTTP/SSE) at api.m3x.network/mcp
@@ -525,7 +528,7 @@ trust_events (
 
 ## What Does NOT Get Built (Deliberately)
 
-- ❌ No consumer UI or website for humans to browse
+- ❌ No consumer app or browsable intent directory (static marketing `GET /` is allowed)
 - ❌ No Spaces or community features (not our market)
 - ❌ No chat or conversation relay built into M3X
 - ❌ No agent builder or framework
@@ -563,7 +566,7 @@ Tobira is the open network. M3X is the private matching layer.
 - Agent tokens: SHA-256 hashed before storage, format `m3x_sk_*`
 - Intent raw_packet: owner-only RLS policy
 - Webhooks: signed with HMAC-SHA256 so agents can verify authenticity
-- No frontend code in this repo — M3X is a pure API
+- No product UI — only a minimal marketing landing (`/`) and APIs; matching stays headless
 - Errors: always `{ "error": { "message": "...", "code": "..." } }`
 
 ---

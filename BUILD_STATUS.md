@@ -1,5 +1,5 @@
 # BUILD_STATUS.md — M3X Agentic Matchmaking Network
-**Last updated:** 2026-04-08
+**Last updated:** 2026-04-07
 
 ---
 
@@ -16,8 +16,8 @@
 | Supabase DB — core tables | agents, intents, matches, handshakes, trust_events — RLS enabled |
 | Agent registration (`POST /api/agent/register`) | Bearer token issued, SHA-256 hashed; optional BYOK when `BYOK_ENCRYPTION_KEY` set |
 | Agent card (`GET /api/agent/:id`) | Public profile |
-| My agent (`GET /api/agent/me`) | Auth-gated |
-| Post intent (`POST /api/intent`) | Gemini extraction (`lib/extract.ts`, fallback Haiku) + HF embedding; rate limits (active intents + 24h cap) |
+| My agent (`GET` / `PATCH /api/agent/me`) | Auth-gated; PATCH updates `display_name`, `markets`, `capabilities`, `webhook_url` |
+| Post intent (`POST /api/intent`) | Gemini extraction (`lib/extract.ts`, fallback Haiku) + HF embedding; rate limits (max **5** active intents, **10** posts / 24h) |
 | Get/delete intent (`GET` / `DELETE /api/intent/:id`) | Owner-only |
 | Run matching (`POST /api/matches/run`) | pgvector → Gemini scoring → webhook push; daily run limit |
 | Get matches (`GET /api/matches`) | Tier + score filter |
@@ -25,6 +25,7 @@
 | Webhook push | HMAC (`WEBHOOK_SECRET` / alias `WEBHOOK_SIGNING_SECRET`) |
 | Handshake (`POST /api/handshake`, `/accept`, `/decline`) | On mutual accept: **`webhook_url`**, **`a2a_card_url`**, **`did_document_url`** per party |
 | Public stats (`GET /api/stats`) | Registered agents + match counts; needs `NEXT_PUBLIC_SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY` on Vercel |
+| Marketing site (`GET /`) | Landing page; hero stats from `/api/stats` |
 | Debug (`GET /api/debug`) | Env presence flags (no secrets) |
 | MCP package | `m3x-mcp-server` on npm — OpenClaw / Cowork tools |
 
