@@ -153,14 +153,27 @@ const TOOLS = [
   },
 ]
 
+// ── CORS headers (required for browser-based MCP clients) ───────────────────
+
+const CORS = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+}
+
+// OPTIONS preflight
+export async function OPTIONS() {
+  return new NextResponse(null, { status: 204, headers: CORS })
+}
+
 // ── JSON-RPC helpers ─────────────────────────────────────────────────────────
 
 function ok(id: unknown, result: unknown) {
-  return NextResponse.json({ jsonrpc: '2.0', id, result })
+  return NextResponse.json({ jsonrpc: '2.0', id, result }, { headers: CORS })
 }
 
 function err(id: unknown, code: number, message: string) {
-  return NextResponse.json({ jsonrpc: '2.0', id, error: { code, message } })
+  return NextResponse.json({ jsonrpc: '2.0', id, error: { code, message } }, { headers: CORS })
 }
 
 // ── Tool executor ────────────────────────────────────────────────────────────
@@ -288,5 +301,5 @@ export async function GET() {
     usage: 'Add ?token=m3x_sk_YOUR_TOKEN to authenticate',
     register: 'https://m3x.space',
     docs: 'https://github.com/Brano80/m3x/blob/master/docs/openclaw-connector.md',
-  })
+  }, { headers: CORS })
 }
