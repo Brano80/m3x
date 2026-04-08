@@ -107,9 +107,8 @@ export async function POST(req: NextRequest) {
       match_id,
       score: match.score,
       tier: match.tier,
+      // Identity NOT revealed here — only on mutual acceptance
       from_agent: {
-        did: agent.did,
-        handle: agent.handle,
         capabilities: agent.capabilities ?? [],
         markets: agent.markets ?? [],
         trust_score: agent.trust_score,
