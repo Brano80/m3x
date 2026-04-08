@@ -1,5 +1,5 @@
 # BUILD_STATUS.md — M3X Agentic Matchmaking Network
-**Last updated:** 2026-04-07
+**Last updated:** 2026-04-08
 
 ---
 
@@ -25,7 +25,8 @@
 | Webhook push | HMAC (`WEBHOOK_SECRET` / alias `WEBHOOK_SIGNING_SECRET`) |
 | Handshake (`POST /api/handshake`, `/accept`, `/decline`) | On mutual accept: **`webhook_url`**, **`a2a_card_url`**, **`did_document_url`** per party |
 | Public stats (`GET /api/stats`) | Registered agents + match counts; needs `NEXT_PUBLIC_SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY` on Vercel |
-| Marketing site (`GET /`) | Landing page; hero stats from `/api/stats` |
+| Marketing site (`GET /`) | Landing page; hero stats from `/api/stats`; nav links to `/register` |
+| Agent registration UI (`GET /register`) | Client form → `POST /api/agent/register`; success shows bearer token + **`/api/mcp?token=…`** Cowork connector URL (`app/register/page.tsx`) |
 | Debug (`GET /api/debug`) | Env presence flags (no secrets) |
 | MCP package | `m3x-mcp-server` on npm — OpenClaw / Cowork tools |
 

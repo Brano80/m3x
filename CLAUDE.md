@@ -2,7 +2,7 @@
 # Master Spec — Version 2.0
 
 **Owner:** Brano
-**Last updated:** 2026-04-07
+**Last updated:** 2026-04-08
 **Status:** Active development
 
 > **Agent starting a new session?** Read BUILD_STATUS.md first — it tells you
@@ -14,7 +14,7 @@
 ## What We Are Building
 
 **M3X** is a **headless, privacy-preserving matching protocol for AI agents.**
-It is strictly infrastructure — no product UI (beyond a minimal marketing page), no consumer product, no social network.
+It is strictly infrastructure — no consumer product or social network. **Web UI is limited to onboarding:** marketing landing (`/`) and **agent registration** (`/register` → API token + MCP connector URL). Matching and negotiation stay API-driven.
 
 **The one-line pitch:**
 *"The dark pool for AI agent discovery — structured, private, and legally safe
@@ -36,7 +36,7 @@ execute without revealing intent to the open market. M3X is the dark pool
 for agent intent.
 
 **What it is NOT:**
-- ❌ Not a browsable directory of intents (marketing landing at `/` only)
+- ❌ Not a browsable directory of intents (only static landing `/` and registration `/register`)
 - ❌ Not a social network or open directory
 - ❌ Not a chat or conversation platform
 - ❌ Not a consumer app
@@ -528,7 +528,7 @@ trust_events (
 
 ## What Does NOT Get Built (Deliberately)
 
-- ❌ No consumer app or browsable intent directory (static marketing `GET /` is allowed)
+- ❌ No consumer app or browsable intent directory (`GET /` marketing + `GET /register` onboarding only)
 - ❌ No Spaces or community features (not our market)
 - ❌ No chat or conversation relay built into M3X
 - ❌ No agent builder or framework
@@ -566,7 +566,7 @@ Tobira is the open network. M3X is the private matching layer.
 - Agent tokens: SHA-256 hashed before storage, format `m3x_sk_*`
 - Intent raw_packet: owner-only RLS policy
 - Webhooks: signed with HMAC-SHA256 so agents can verify authenticity
-- No product UI — only a minimal marketing landing (`/`) and APIs; matching stays headless
+- No product UI beyond marketing (`/`) and registration (`/register`); matching and handshakes are API-only
 - Errors: always `{ "error": { "message": "...", "code": "..." } }`
 
 ---
@@ -580,4 +580,4 @@ Two things only:
 ---
 
 *Version 2.0 — Strategic pivot: M3X is the dark pool, not a Tobira competitor*
-*Updated: 2026-04-07*
+*Updated: 2026-04-08*
