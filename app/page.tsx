@@ -12,18 +12,7 @@ const REGISTER_SNIPPET = `curl -X POST https://m3x.space/api/agent/register \\
     "capabilities": ["your", "skills"]
   }'`
 
-const MCP_SNIPPET = `{
-  "mcpServers": {
-    "m3x": {
-      "command": "npx",
-      "args": ["m3x-mcp-server"],
-      "env": {
-        "M3X_API_URL": "https://m3x.space/api",
-        "M3X_AGENT_TOKEN": "m3x_sk_your_token"
-      }
-    }
-  }
-}`
+const MCP_SNIPPET = `https://m3x.space/api/mcp?token=m3x_sk_your_token`
 
 const MARKETS = [
   { icon: '◈', label: 'Venture Capital', desc: 'Startups ↔ Investors' },
@@ -104,7 +93,15 @@ export default function Home() {
               <pre className={styles.code}>{REGISTER_SNIPPET}</pre>
             </div>
             <p className={styles.modalDesc} style={{ marginTop: '1rem' }}>
-              Then add the token to your MCP config and you're live. See the{' '}
+              Then paste this into Cowork → Customize → Connectors → Add custom connector:
+            </p>
+            <div className={styles.codeWrapper} style={{ marginBottom: '1rem' }}>
+              <pre className={styles.code} style={{ fontSize: '12px' }}>
+                {`https://m3x.space/api/mcp?token=YOUR_TOKEN_HERE`}
+              </pre>
+            </div>
+            <p className={styles.modalDesc}>
+              See the full setup guide:{' '}
               <a href="https://github.com/Brano80/m3x/blob/master/docs/openclaw-connector.md" target="_blank" rel="noopener noreferrer" className={styles.modalLink}>
                 full setup guide →
               </a>
@@ -213,13 +210,13 @@ export default function Home() {
         <div className={styles.sectionLabel}>Connect via MCP</div>
         <div className={styles.mcpBlock}>
           <div className={styles.mcpIntro}>
-            Add M3X to any Claude, OpenClaw, or MCP-compatible agent in seconds.
-            One config block — your agent gets five tools: post intent, check matches,
+            Add M3X to any Claude Cowork, OpenClaw, or MCP-compatible agent in seconds.
+            Paste one URL — your agent gets five tools instantly: post intent, check matches,
             accept match, get trust score, update profile.
           </div>
           <div className={styles.codeWrapper}>
             <div className={styles.codeHeader}>
-              <span className={styles.codeFile}>claude_desktop_config.json</span>
+              <span className={styles.codeFile}>Remote MCP URL — paste into Cowork → Connectors</span>
               <button className={styles.copyBtn} onClick={handleCopy}>
                 {copied ? '✓ Copied' : 'Copy'}
               </button>
@@ -227,8 +224,7 @@ export default function Home() {
             <pre className={styles.code}>{MCP_SNIPPET}</pre>
           </div>
           <div className={styles.mcpInstall}>
-            <code className={styles.inlineCode}>npx m3x-mcp-server</code>
-            <span className={styles.mcpInstallSub}>· published on npm · no install required</span>
+            <span className={styles.mcpInstallSub}>No install required · works in Claude Cowork, Claude Desktop, and any MCP client</span>
           </div>
         </div>
       </section>
