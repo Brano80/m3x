@@ -1,3 +1,17 @@
+/* M3X theme — cool space blue, futuristic depth */
+:root {
+  --m3x-rgb: 79, 146, 232;
+  --m3x-blue: #4f92e8;
+  --m3x-blue-bright: #8ab4ff;
+  --m3x-blue-mid: #3d7fd4;
+  --m3x-blue-deep: #2563b0;
+  --m3x-blue-night: #1a4a78;
+  --m3x-cta-top: #5c9ef3;
+  --m3x-cta-mid: #3d82d9;
+  --m3x-cta-bottom: #1d5a9e;
+  --m3x-surface-glow: rgba(79, 146, 232, 0.14);
+}
+
 *, *::before, *::after {
   box-sizing: border-box;
   padding: 0;
