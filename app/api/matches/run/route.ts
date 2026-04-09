@@ -68,6 +68,8 @@ export async function POST(req: NextRequest) {
     .eq('agent_id', agent.id)
     .eq('status', 'active')
 
+  console.log(`[run] agent=${agent.handle} intents=${myIntents?.length ?? 0}`)
+
   if (!myIntents?.length) {
     return NextResponse.json(
       { matches_found: 0, matches: [], message: 'No active intents', rate_limit: { remaining } },
@@ -78,7 +80,7 @@ export async function POST(req: NextRequest) {
   const newMatches = []
 
   for (const intent of myIntents) {
-    if (!intent.embedding) continue
+    if (!intent.embedding) { console.log(`[run] skip intent ${intent.id}: no embedding`); continue }
 
     const oppositeSide = intent.side === 'supply' ? 'demand' : 'supply'
 
@@ -89,6 +91,8 @@ export async function POST(req: NextRequest) {
       match_count: 50
     })
 
+    console.log(`[run] intent=${intent.id} side=${intent.side} candidates=${candidates?.length ?? 0}`)
+
     if (!candidates?.length) continue
 
     for (const candidate of candidates) {
@@ -98,7 +102,7 @@ export async function POST(req: NextRequest) {
         .or(`and(intent_a_id.eq.${intent.id},intent_b_id.eq.${candidate.id}),and(intent_a_id.eq.${candidate.id},intent_b_id.eq.${intent.id})`)
         .maybeSingle()
 
-      if (existing) continue
+      if (existing) { console.log(`[run] skip ${candidate.id}: existing match`); continue }
 
       const { data: candidateAgent } = await supabase
         .from('agents')
@@ -106,13 +110,14 @@ export async function POST(req: NextRequest) {
         .eq('id', candidate.agent_id)
         .single()
 
-      if (!candidateAgent) continue
+      if (!candidateAgent) { console.log(`[run] skip ${candidate.id}: no agent`); continue }
 
       const minTrust = intent.guardrails?.min_trust_score ?? 0
-      if (candidateAgent.trust_score < minTrust) continue
+      if (candidateAgent.trust_score < minTrust) { console.log(`[run] skip ${candidate.id}: trust too low`); continue }
 
       // Pass supabase + BYOK key — agent's own key used if available, otherwise infra key
       const scoreResult = await scorePair(intent, candidate, agent, candidateAgent, supabase, resolvedByok)
+      console.log(`[run] scored ${candidate.id}: ${scoreResult?.final_score ?? 'null'} tier=${scoreResult?.tier}`)
       if (!scoreResult || scoreResult.final_score < 0.50) continue
 
       const ttlDays = scoreResult.tier === 'near_match' ? 7 : 14
