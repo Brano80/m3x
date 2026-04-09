@@ -10,6 +10,9 @@
   --m3x-cta-mid: #3d82d9;
   --m3x-cta-bottom: #1d5a9e;
   --m3x-surface-glow: rgba(79, 146, 232, 0.14);
+  /* Live stats — original accent green */
+  --m3x-stat-rgb: 0, 255, 136;
+  --m3x-stat-green: #00ff88;
 }
 
 *, *::before, *::after {
