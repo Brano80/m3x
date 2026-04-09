@@ -128,7 +128,8 @@ export async function POST(req: NextRequest) {
 
       // Pass supabase + BYOK key — agent's own key used if available, otherwise infra key
       const scoreResult = await scorePair(intent, candidate, agent, candidateAgent, supabase, resolvedByok)
-      diag.score = { candidate: candidate.id, final: scoreResult?.final_score ?? null, tier: scoreResult?.tier }
+      const scoreErrors = (scorePair as any)._lastErrors
+      diag.score = { candidate: candidate.id, final: scoreResult?.final_score ?? null, tier: scoreResult?.tier, errors: scoreErrors }
       if (!scoreResult || scoreResult.final_score < 0.50) continue
 
       const ttlDays = scoreResult.tier === 'near_match' ? 7 : 14
