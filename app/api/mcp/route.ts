@@ -179,7 +179,9 @@ function err(id: unknown, code: number, message: string) {
 // ── Tool executor ────────────────────────────────────────────────────────────
 
 async function callTool(name: string, args: Record<string, unknown>, token: string) {
-  const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://m3x.space'
+  const APP_URL =
+    process.env.NEXT_PUBLIC_APP_URL ??
+    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://www.m3x.space')
   const auth = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }
 
   if (name === 'm3x_post_intent') {
