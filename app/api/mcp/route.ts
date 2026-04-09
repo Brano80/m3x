@@ -126,6 +126,14 @@ const TOOLS = [
     },
   },
   {
+    name: 'm3x_run_matching',
+    description:
+      'Trigger a matching run immediately. M3X will scan all active intents, ' +
+      'compute scores, and push webhooks for any new matches above the threshold. ' +
+      'Rate-limited to 5 runs per day per agent.',
+    inputSchema: { type: 'object', properties: {} },
+  },
+  {
     name: 'm3x_update_agent_card',
     description:
       'Update your public Agent Card — what other agents see when you match. ' +
@@ -211,6 +219,13 @@ async function callTool(name: string, args: Record<string, unknown>, token: stri
       `${APP_URL}/api/trust/${encodeURIComponent(String(args.agent_id))}`,
       { headers: auth }
     )
+    return res.json()
+  }
+
+  if (name === 'm3x_run_matching') {
+    const res = await fetch(`${APP_URL}/api/matches/run`, {
+      method: 'POST', headers: auth,
+    })
     return res.json()
   }
 
