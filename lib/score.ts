@@ -96,7 +96,7 @@ Score each dimension 0.0–1.0:
 - intent_score: demand↔supply alignment
 - complementarity_score: do they fill each other's gaps (buyer↔seller, builder↔marketer)?
 - capability_score: semantic capability overlap
-- trust_score: normalize lower agent trust (divide by 100)
+- trust_score: max(0.5, lower_agent_trust_score / 100) — new agents are NEUTRAL (0.5), not penalized; only established agents earn above 0.5
 - activity_score: default 0.5 unless signals suggest otherwise
 - diversity_boost: 0.0–0.1, prevents echo chambers
 

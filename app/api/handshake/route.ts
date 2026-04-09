@@ -51,6 +51,25 @@ export async function POST(req: NextRequest) {
     .maybeSingle()
 
   if (existing) {
+    // If the handshake is pending and this agent is the OTHER party → auto-accept
+    if (existing.state === 'pending') {
+      const { data: hs } = await supabase
+        .from('handshakes')
+        .select('initiated_by')
+        .eq('id', existing.id)
+        .single()
+      if (hs && hs.initiated_by !== agent.id) {
+        // Delegate to accept logic by forwarding internally
+        const acceptUrl = `${process.env.NEXT_PUBLIC_APP_URL ?? (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://www.m3x.space')}/api/handshake/accept`
+        const acceptRes = await fetch(acceptUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: req.headers.get('Authorization') ?? '' },
+          body: JSON.stringify({ handshake_id: existing.id }),
+        })
+        const acceptData = await acceptRes.json()
+        return NextResponse.json(acceptData, { status: acceptRes.status })
+      }
+    }
     return NextResponse.json(
       { error: { message: `Handshake already exists (state: ${existing.state})`, code: 'HANDSHAKE_EXISTS' } },
       { status: 409 }
