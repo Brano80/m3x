@@ -64,15 +64,15 @@ export async function POST(req: NextRequest) {
 
   const { data: myIntents } = await supabase
     .from('intents')
-    .select('*')
+    .select('id, agent_id, side, market, intent_type, raw_packet, guardrails, status, expires_at, created_at')
     .eq('agent_id', agent.id)
     .eq('status', 'active')
 
-  console.log(`[run] agent=${agent.handle} intents=${myIntents?.length ?? 0}`)
+  const diag: Record<string, unknown> = { agent: agent.handle, intent_count: myIntents?.length ?? 0 }
 
   if (!myIntents?.length) {
     return NextResponse.json(
-      { matches_found: 0, matches: [], message: 'No active intents', rate_limit: { remaining } },
+      { matches_found: 0, matches: [], message: 'No active intents', diag, rate_limit: { remaining } },
       { headers: { 'X-RateLimit-Limit': String(MAX_RUNS_PER_DAY), 'X-RateLimit-Remaining': String(remaining) } }
     )
   }
@@ -80,18 +80,29 @@ export async function POST(req: NextRequest) {
   const newMatches = []
 
   for (const intent of myIntents) {
-    if (!intent.embedding) { console.log(`[run] skip intent ${intent.id}: no embedding`); continue }
+    // Fetch embedding separately to avoid type issues
+    const { data: intentWithEmbedding } = await supabase
+      .from('intents')
+      .select('embedding')
+      .eq('id', intent.id)
+      .single()
+    const embedding = intentWithEmbedding?.embedding
+
+    if (!embedding) {
+      diag.skip = `intent ${intent.id}: no embedding`
+      continue
+    }
 
     const oppositeSide = intent.side === 'supply' ? 'demand' : 'supply'
 
-    const { data: candidates } = await supabase.rpc('match_intents', {
-      query_embedding: intent.embedding,
+    const { data: candidates, error: rpcError } = await supabase.rpc('match_intents', {
+      query_embedding: embedding,
       match_side: oppositeSide,
       exclude_agent_id: agent.id,
       match_count: 50
     })
 
-    console.log(`[run] intent=${intent.id} side=${intent.side} candidates=${candidates?.length ?? 0}`)
+    diag.rpc = { intent: intent.id, side: intent.side, candidates: candidates?.length ?? 0, error: rpcError?.message }
 
     if (!candidates?.length) continue
 
@@ -102,7 +113,7 @@ export async function POST(req: NextRequest) {
         .or(`and(intent_a_id.eq.${intent.id},intent_b_id.eq.${candidate.id}),and(intent_a_id.eq.${candidate.id},intent_b_id.eq.${intent.id})`)
         .maybeSingle()
 
-      if (existing) { console.log(`[run] skip ${candidate.id}: existing match`); continue }
+      if (existing) { diag.skip = `candidate ${candidate.id}: existing match`; continue }
 
       const { data: candidateAgent } = await supabase
         .from('agents')
@@ -110,14 +121,14 @@ export async function POST(req: NextRequest) {
         .eq('id', candidate.agent_id)
         .single()
 
-      if (!candidateAgent) { console.log(`[run] skip ${candidate.id}: no agent`); continue }
+      if (!candidateAgent) { diag.skip = `candidate ${candidate.id}: no agent`; continue }
 
       const minTrust = intent.guardrails?.min_trust_score ?? 0
-      if (candidateAgent.trust_score < minTrust) { console.log(`[run] skip ${candidate.id}: trust too low`); continue }
+      if (candidateAgent.trust_score < minTrust) { diag.skip = `candidate ${candidate.id}: trust too low`; continue }
 
       // Pass supabase + BYOK key — agent's own key used if available, otherwise infra key
       const scoreResult = await scorePair(intent, candidate, agent, candidateAgent, supabase, resolvedByok)
-      console.log(`[run] scored ${candidate.id}: ${scoreResult?.final_score ?? 'null'} tier=${scoreResult?.tier}`)
+      diag.score = { candidate: candidate.id, final: scoreResult?.final_score ?? null, tier: scoreResult?.tier }
       if (!scoreResult || scoreResult.final_score < 0.50) continue
 
       const ttlDays = scoreResult.tier === 'near_match' ? 7 : 14
@@ -176,7 +187,7 @@ export async function POST(req: NextRequest) {
   }
 
   return NextResponse.json(
-    { matches_found: newMatches.length, matches: newMatches, rate_limit: { remaining } },
+    { matches_found: newMatches.length, matches: newMatches, diag, rate_limit: { remaining } },
     { headers: { 'X-RateLimit-Limit': String(MAX_RUNS_PER_DAY), 'X-RateLimit-Remaining': String(remaining) } }
   )
 }
