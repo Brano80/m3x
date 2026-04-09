@@ -66,7 +66,8 @@ export async function POST(req: NextRequest) {
       byok_provider = api_key_provider
     }
 
-    const token = generateToken()
+    const rawToken = generateToken()
+    const token = `m3x_sk_${rawToken}`
     const token_hash = hashToken(token)
 
     const { data: agent, error } = await supabase
