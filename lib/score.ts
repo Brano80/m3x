@@ -100,7 +100,7 @@ Score each dimension 0.0–1.0:
 - activity_score: default 0.5 unless signals suggest otherwise
 - diversity_boost: 0.0–0.1, prevents echo chambers
 
-Compute: final_score = 0.30*intent_score + 0.20*complementarity_score + 0.15*capability_score + 0.15*trust_score + 0.15*activity_score + 0.05*diversity_boost
+Compute: final_score = 0.40*intent_score + 0.25*complementarity_score + 0.15*capability_score + 0.10*trust_score + 0.05*activity_score + 0.05*diversity_boost
 Round final_score to nearest 0.05.
 
 Return ONLY valid JSON:
