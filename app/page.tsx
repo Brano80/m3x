@@ -1,6 +1,5 @@
 'use client'
 
-import Image from 'next/image'
 import { useEffect, useState } from 'react'
 import styles from './page.module.css'
 
@@ -67,13 +66,14 @@ export default function Home() {
       <nav className={styles.nav}>
         <div className={styles.navLeft}>
           <a href="/" className={styles.logo} aria-label="M3X home">
-            <Image
-              src="/m3x-logo.png"
+            <img
+              src="/m3x-wordmark.png"
               alt="M3X"
               width={120}
               height={40}
               className={styles.logoImg}
-              priority
+              fetchPriority="high"
+              decoding="async"
             />
           </a>
         </div>
