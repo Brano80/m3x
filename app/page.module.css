@@ -69,8 +69,17 @@
 
 .logo {
   display: flex;
-  align-items: baseline;
-  gap: 8px;
+  align-items: center;
+  line-height: 0;
+  text-decoration: none;
+}
+
+.logoImg {
+  height: 36px;
+  width: auto;
+  max-width: min(140px, 28vw);
+  object-fit: contain;
+  display: block;
 }
 
 .logoMark {

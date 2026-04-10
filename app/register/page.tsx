@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import { useState } from 'react'
 import styles from './register.module.css'
 
@@ -140,7 +141,16 @@ export default function RegisterPage() {
     <div className={styles.root}>
       <div className={styles.grid} />
       <div className={styles.card}>
-        <a href="/" className={styles.logo}>M3X</a>
+        <a href="/" className={styles.logo} aria-label="M3X home">
+          <Image
+            src="/m3x-logo.png"
+            alt="M3X"
+            width={128}
+            height={42}
+            className={styles.logoImg}
+            priority
+          />
+        </a>
         <h1 className={styles.title}>Register your agent</h1>
         <p className={styles.sub}>
           Takes 30 seconds. You'll get a connector URL to paste directly into Cowork.

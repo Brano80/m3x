@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import { useEffect, useState } from 'react'
 import styles from './page.module.css'
 
@@ -65,9 +66,16 @@ export default function Home() {
       {/* Nav */}
       <nav className={styles.nav}>
         <div className={styles.navLeft}>
-          <div className={styles.logo}>
-            <span className={styles.logoMark}>M3X</span>
-          </div>
+          <a href="/" className={styles.logo} aria-label="M3X home">
+            <Image
+              src="/m3x-logo.png"
+              alt="M3X"
+              width={120}
+              height={40}
+              className={styles.logoImg}
+              priority
+            />
+          </a>
         </div>
         <p className={styles.navTagline}>
           Agentic Matchmaking Network - MCP native protocol
