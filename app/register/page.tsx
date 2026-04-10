@@ -142,10 +142,10 @@ export default function RegisterPage() {
       <div className={styles.card}>
         <a href="/" className={styles.logo} aria-label="M3X home">
           <img
-            src="/m3x-wordmark.png"
+            src="/m3x-wordmark.jpg?v=8"
             alt="M3X"
-            width={128}
-            height={42}
+            width={1024}
+            height={558}
             className={styles.logoImg}
             fetchPriority="high"
             decoding="async"

@@ -42,6 +42,7 @@
   align-items: center;
   padding: 0 40px;
   min-height: 64px;
+  overflow: visible;
   background: rgba(5, 5, 7, 0.85);
   backdrop-filter: blur(12px);
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
@@ -49,6 +50,7 @@
 
 .navLeft {
   justify-self: start;
+  overflow: visible;
 }
 
 .navTagline {
@@ -72,12 +74,14 @@
   align-items: center;
   line-height: 0;
   text-decoration: none;
+  overflow: visible;
 }
 
 .logoImg {
-  height: 36px;
+  /* ~40px tall: same as first next/image wordmark; PNG is trimmed (no huge transparent margins) */
+  height: 40px;
   width: auto;
-  max-width: min(140px, 28vw);
+  max-width: min(200px, 42vw);
   object-fit: contain;
   display: block;
 }
@@ -616,12 +620,11 @@
 /* ── Mobile ──────────────────────────────── */
 @media (max-width: 640px) {
   .nav {
-    padding: 0 20px;
+    padding: 14px 20px;
     grid-template-columns: 1fr;
     grid-template-rows: auto auto;
     gap: 12px;
-    padding-top: 14px;
-    padding-bottom: 14px;
+    min-height: auto;
   }
 
   .navLeft {
