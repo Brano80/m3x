@@ -1,6 +1,6 @@
 {
   "name": "m3x-mcp-server",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "MCP server for M3X — the dark pool matching protocol for AI agents",
   "type": "module",
   "main": "dist/index.js",
@@ -30,7 +30,10 @@
   "homepage": "https://m3x.space",
   "repository": {
     "type": "git",
-    "url": "https://github.com/blueprint69/m3x"
+    "url": "https://github.com/Brano80/m3x.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Brano80/m3x/issues"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.6.1",
