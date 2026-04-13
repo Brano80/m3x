@@ -13,7 +13,6 @@ async function checkRateLimit(supabase: any, agent: any): Promise<{ allowed: boo
   const isNewDay = now.toDateString() !== resetAt.toDateString()
 
   if (isNewDay) {
-    // Reset counter for new day
     await supabase
       .from('agents')
       .update({ daily_match_runs: 1, match_runs_reset_at: now.toISOString() })
@@ -44,7 +43,6 @@ export async function POST(req: NextRequest) {
     )
   }
 
-  // Rate limit: 5 match runs per agent per day
   const { allowed, remaining } = await checkRateLimit(supabase, agent)
   if (!allowed) {
     return NextResponse.json(
@@ -56,7 +54,6 @@ export async function POST(req: NextRequest) {
     )
   }
 
-  // Resolve BYOK key for this agent
   const byok = agent.byok_key_enc && agent.byok_provider
     ? { provider: agent.byok_provider, key: (() => { try { return decryptKey(agent.byok_key_enc) } catch { return null } })() }
     : null
@@ -68,11 +65,9 @@ export async function POST(req: NextRequest) {
     .eq('agent_id', agent.id)
     .eq('status', 'active')
 
-  const diag: Record<string, unknown> = { agent: agent.handle, intent_count: myIntents?.length ?? 0 }
-
   if (!myIntents?.length) {
     return NextResponse.json(
-      { matches_found: 0, matches: [], message: 'No active intents', diag, rate_limit: { remaining } },
+      { matches_found: 0, matches: [], message: 'No active intents', rate_limit: { remaining } },
       { headers: { 'X-RateLimit-Limit': String(MAX_RUNS_PER_DAY), 'X-RateLimit-Remaining': String(remaining) } }
     )
   }
@@ -80,7 +75,7 @@ export async function POST(req: NextRequest) {
   const newMatches = []
 
   for (const intent of myIntents) {
-    // Fetch embedding separately to avoid type issues
+    // Fetch embedding separately to avoid vector type issues with REST API
     const { data: intentWithEmbedding } = await supabase
       .from('intents')
       .select('embedding')
@@ -88,21 +83,16 @@ export async function POST(req: NextRequest) {
       .single()
     const embedding = intentWithEmbedding?.embedding
 
-    if (!embedding) {
-      diag.skip = `intent ${intent.id}: no embedding`
-      continue
-    }
+    if (!embedding) continue
 
     const oppositeSide = intent.side === 'supply' ? 'demand' : 'supply'
 
-    const { data: candidates, error: rpcError } = await supabase.rpc('match_intents', {
+    const { data: candidates } = await supabase.rpc('match_intents', {
       query_embedding: embedding,
       match_side: oppositeSide,
       exclude_agent_id: agent.id,
       match_count: 50
     })
-
-    diag.rpc = { intent: intent.id, side: intent.side, candidates: candidates?.length ?? 0, error: rpcError?.message }
 
     if (!candidates?.length) continue
 
@@ -113,7 +103,7 @@ export async function POST(req: NextRequest) {
         .or(`and(intent_a_id.eq.${intent.id},intent_b_id.eq.${candidate.id}),and(intent_a_id.eq.${candidate.id},intent_b_id.eq.${intent.id})`)
         .maybeSingle()
 
-      if (existing) { diag.skip = `candidate ${candidate.id}: existing match`; continue }
+      if (existing) continue
 
       const { data: candidateAgent } = await supabase
         .from('agents')
@@ -121,15 +111,12 @@ export async function POST(req: NextRequest) {
         .eq('id', candidate.agent_id)
         .single()
 
-      if (!candidateAgent) { diag.skip = `candidate ${candidate.id}: no agent`; continue }
+      if (!candidateAgent) continue
 
       const minTrust = intent.guardrails?.min_trust_score ?? 0
-      if (candidateAgent.trust_score < minTrust) { diag.skip = `candidate ${candidate.id}: trust too low`; continue }
+      if (candidateAgent.trust_score < minTrust) continue
 
-      // Pass supabase + BYOK key — agent's own key used if available, otherwise infra key
       const scoreResult = await scorePair(intent, candidate, agent, candidateAgent, supabase, resolvedByok)
-      const scoreErrors = (scorePair as any)._lastErrors
-      diag.score = { candidate: candidate.id, final: scoreResult?.final_score ?? null, tier: scoreResult?.tier, errors: scoreErrors }
       if (!scoreResult || scoreResult.final_score < 0.50) continue
 
       const ttlDays = scoreResult.tier === 'near_match' ? 7 : 14
@@ -154,7 +141,6 @@ export async function POST(req: NextRequest) {
       if (!match) continue
       newMatches.push(match)
 
-      // Fire webhooks to both agents — non-blocking
       const webhookPayload = (recipientAgent: any, matchedAgent: any, myIntent: any, theirIntent: any) => ({
         event: 'match.found',
         match_id: match.id,
@@ -177,7 +163,6 @@ export async function POST(req: NextRequest) {
         sendWebhook(candidateAgent.webhook_url, webhookPayload(candidateAgent, agent, candidate, intent))
       }
 
-      // Mark match as notified if at least one webhook fired
       if (agent.webhook_url || candidateAgent.webhook_url) {
         await supabase
           .from('matches')
@@ -188,7 +173,7 @@ export async function POST(req: NextRequest) {
   }
 
   return NextResponse.json(
-    { matches_found: newMatches.length, matches: newMatches, diag, rate_limit: { remaining } },
+    { matches_found: newMatches.length, matches: newMatches, rate_limit: { remaining } },
     { headers: { 'X-RateLimit-Limit': String(MAX_RUNS_PER_DAY), 'X-RateLimit-Remaining': String(remaining) } }
   )
 }

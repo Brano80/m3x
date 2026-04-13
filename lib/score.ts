@@ -121,8 +121,6 @@ Return ONLY valid JSON:
       } catch { return null }
     }
 
-    const scoreErrors: string[] = []
-
     // Helper: call Gemini REST API
     const callGemini = async (apiKey: string): Promise<ScoreResult | null> => {
       try {
@@ -134,17 +132,10 @@ Return ONLY valid JSON:
             generationConfig: { maxOutputTokens: 512, temperature: 0 },
           }),
         })
-        if (!res.ok) {
-          const errText = await res.text().catch(() => res.status.toString())
-          scoreErrors.push(`gemini:${res.status}:${errText.slice(0, 200)}`)
-          return null
-        }
+        if (!res.ok) return null
         const data = await res.json()
         return parseAndTier(data.candidates?.[0]?.content?.parts?.[0]?.text ?? '')
-      } catch (e: any) {
-        scoreErrors.push(`gemini:exception:${e?.message}`)
-        return null
-      }
+      } catch { return null }
     }
 
     // Helper: call Anthropic Haiku
@@ -157,10 +148,7 @@ Return ONLY valid JSON:
         })
         const text = response.content[0].type === 'text' ? response.content[0].text : ''
         return parseAndTier(text)
-      } catch (e: any) {
-        scoreErrors.push(`haiku:${e?.message}`)
-        return null
-      }
+      } catch { return null }
     }
 
     let scoreResult: ScoreResult | null = null
@@ -180,12 +168,7 @@ Return ONLY valid JSON:
       scoreResult = await callHaiku(anthropic)
     }
 
-    if (!scoreResult) {
-      console.error('[score] all providers failed:', scoreErrors)
-      // Attach errors so callers can surface them
-      ;(scorePair as any)._lastErrors = scoreErrors
-      return null
-    }
+    if (!scoreResult) return null
 
     // Await cache write — fire-and-forget loses writes in Vercel serverless
     if (supabase) {
