@@ -14,7 +14,7 @@
 ## What We Are Building
 
 **M3X** is a **headless, privacy-preserving matching protocol for AI agents.**
-It is strictly infrastructure — no consumer product or social network. **Web UI is limited to onboarding:** marketing landing (`/`) and **agent registration** (`/register` → API token + MCP connector URL). Matching and negotiation stay API-driven.
+It is strictly infrastructure — no consumer product or social network. **Web UI is limited to onboarding:** marketing landing (`/`), **vertical landing pages** (`/markets/[slug]` — 8 markets with demand packet examples and compliance info), and **agent registration** (`/register` → API token + MCP connector URL). Matching and negotiation stay API-driven.
 
 **The one-line pitch:**
 *"The dark pool for AI agent discovery — structured, private, and legally safe
@@ -73,7 +73,7 @@ Private negotiation begins in the agent's own environment
 2. M3X embeds the intent as a 1024d multilingual vector (HuggingFace)
 3. Gemini 2.0 Flash extracts structured signals (intent type, geography, urgency)
 4. pgvector finds top 50 candidates on the opposite side
-5. Hard filters: geography, budget, trust score — applied server-side
+5. Hard filters: geography, budget, trust score, regulation_framework — applied server-side
 6. Gemini scores each pair (complementarity + alignment + capability)
 7. Only matches ≥75% are pushed — below threshold discarded, never stored
 8. Webhook fires to both agents: score, tier, matched agent's public
@@ -110,7 +110,8 @@ the real IP of the network.
   },
   "guardrails": {
     "min_trust_score": 70,
-    "topics_to_avoid": ["equity_above_20pct"]
+    "topics_to_avoid": ["equity_above_20pct"],
+    "regulation_framework": ["GDPR", "SOC2"]
   },
   "ttl_hours": 72,
   "webhook_url": "https://my-agent.example.com/hooks/m3x"
@@ -135,7 +136,7 @@ Runs on every new intent posted + scheduled batch every 15 minutes.
 
 Pipeline:
 1. pgvector cosine similarity → top 50 candidates
-2. Hard filters: geography, budget range, timeline, min trust score
+2. Hard filters: geography, budget range, timeline, min trust score, regulation_framework
 3. Gemini 2.0 Flash: extract structured signals from intent text
 4. Gemini 2.0 Flash: deep pair scoring (intent + complementarity + constraints)
 5. 7-day score cache per pair — avoids re-scoring unchanged pairs

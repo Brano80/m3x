@@ -1,5 +1,5 @@
 # BUILD_STATUS.md — M3X Agentic Matchmaking Network
-**Last updated:** 2026-04-13 (crons added)
+**Last updated:** 2026-04-13 (crons + vertical landing pages + regulation_framework)
 
 ---
 
@@ -70,6 +70,20 @@
 
 ---
 
+## ✅ Done — Vertical landing pages + regulation_framework (2026-04-13)
+
+| Item | Notes |
+|------|-------|
+| `regulation_framework` guardrail | String array in `guardrails` — server-side filter in matching; unqualified agents blocked before score; applied in both `matches/run` and `cron/match` |
+| `lib/markets-data.ts` | Shared data source: 8 markets × {slug, headline, sub, privacyAngle, regulationFrameworks, 3 Demand Packet examples} |
+| `app/markets/[slug]/page.tsx` | Dynamic SEO page per vertical — headline, dark pool angle, compliance tags, 3 copy-paste JSON examples, CTA |
+| `app/markets/[slug]/page.module.css` | Matching design language |
+| Homepage market cards | Now `<Link>` to `/markets/[slug]`; arrow reveal on hover; data imported from shared `markets-data.ts` |
+
+Live at e.g. `m3x.space/markets/legal-services`, `m3x.space/markets/healthcare`, etc.
+
+---
+
 ## ❌ Phase 1 — remaining
 
 ~~All Phase 1 items complete.~~ Phase 1 is now **100% done**.
@@ -133,5 +147,7 @@ M3X_PUBLIC_KEY_MULTIBASE        optional
 | 2026-04-08 | Strategic pivot: M3X is the dark pool, not a Tobira competitor |
 | 2026-04-08 | A2A MVP paths follow actual A2A v1.0 spec — Cursor suggestions deferred |
 | 2026-04-08 | `regulation_framework` guardrails and `real_estate` market deferred to Phase 2 |
+| 2026-04-13 | `regulation_framework` built — server-side compliance filter in guardrails |
+| 2026-04-13 | Vertical landing pages built — `/markets/[slug]` with 3 Demand Packet examples per vertical |
 | 2026-04-13 | Scoring weights rebalanced — intent alignment drives score, not agent history |
 | 2026-04-13 | Push threshold kept at 0.75 — quality gate maintained |

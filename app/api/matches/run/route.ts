@@ -116,6 +116,14 @@ export async function POST(req: NextRequest) {
       const minTrust = intent.guardrails?.min_trust_score ?? 0
       if (candidateAgent.trust_score < minTrust) continue
 
+      // regulation_framework filter — requester's required frameworks must overlap with candidate's declared frameworks
+      const requiredFrameworks: string[] = intent.guardrails?.regulation_framework ?? []
+      if (requiredFrameworks.length > 0) {
+        const candidateFrameworks: string[] = candidate.guardrails?.regulation_framework ?? []
+        const hasOverlap = requiredFrameworks.some((f) => candidateFrameworks.includes(f))
+        if (!hasOverlap) continue
+      }
+
       const scoreResult = await scorePair(intent, candidate, agent, candidateAgent, supabase, resolvedByok)
       if (!scoreResult || scoreResult.final_score < 0.50) continue
 
