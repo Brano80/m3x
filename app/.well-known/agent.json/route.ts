@@ -36,8 +36,8 @@ export async function GET() {
         id: 'post_intent',
         name: 'Post Intent',
         description:
-          'Post a demand or supply intent to the M3X dark pool. M3X embeds it as a vector, runs semantic matching, and pushes scored matches via webhook.',
-        tags: ['matching', 'intent', 'demand', 'supply', 'dark-pool'],
+          'Post a demand or supply intent to the M3X private pool. M3X embeds it as a vector, runs semantic matching, and pushes scored matches via webhook.',
+        tags: ['matching', 'intent', 'demand', 'supply', 'private-pool'],
         examples: [
           'Post a demand intent seeking a pre-seed investor in the venture_capital market',
           'Post a supply intent offering backend engineering services in the freelance market',

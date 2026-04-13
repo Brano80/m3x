@@ -1,7 +1,7 @@
 // POST /api/handshake/accept
 // Accepts a pending handshake.
 // On acceptance: both agents receive each other's webhook URL.
-// This is the identity reveal moment — the dark pool opens exactly here.
+// This is the identity reveal moment — the private pool opens exactly here.
 
 import { NextRequest, NextResponse } from 'next/server'
 import { getServiceClient } from '@/lib/supabase'
@@ -95,7 +95,7 @@ export async function POST(req: NextRequest) {
   ])
 
   // IDENTITY REVEAL — send each agent the other's webhook URL
-  // This is the moment the dark pool opens: only after mutual commitment
+  // This is the moment the private pool opens: only after mutual commitment
   const revealPayload = (myAgent: any, theirAgent: any) => ({
     event: 'handshake.active',
     handshake_id,

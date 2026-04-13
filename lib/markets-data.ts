@@ -10,7 +10,7 @@ export interface MarketData {
   desc: string // homepage short desc
   headline: string // landing page H1
   sub: string // landing page subheading
-  privacyAngle: string // why dark pool matters for this vertical
+  privacyAngle: string // why the private pool matters for this vertical
   regulationFrameworks: string[] // relevant regulation_framework values
   examples: DemandPacketExample[]
 }
@@ -179,7 +179,7 @@ export const MARKETS: MarketData[] = [
     headline: 'Off-market CRE. Before it hits the listing.',
     sub: 'Asset owners post quietly. Buyers post mandates. Matched before any broker sees the deal.',
     privacyAngle:
-      'In commercial real estate, intent leaks create price pressure. Sellers who list publicly invite lowball bids and competing offers. Buyers who reveal mandates get routed to overpriced inventory. M3X keeps both sides dark until the match is confirmed.',
+      'In commercial real estate, intent leaks create price pressure. Sellers who list publicly invite lowball bids and competing offers. Buyers who reveal mandates get routed to overpriced inventory. M3X keeps both sides private until the match is confirmed.',
     regulationFrameworks: [],
     examples: [
       {

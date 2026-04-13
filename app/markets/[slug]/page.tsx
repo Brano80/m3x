@@ -55,7 +55,7 @@ export default async function MarketPage({ params }: { params: Promise<{ slug: s
       <div className={styles.privacyBlock}>
         <span className={styles.privacyIcon}>⬡</span>
         <div>
-          <div className={styles.privacyTitle}>Why the dark pool matters here</div>
+          <div className={styles.privacyTitle}>Why the private pool matters here</div>
           <div className={styles.privacyDesc}>{market.privacyAngle}</div>
         </div>
       </div>

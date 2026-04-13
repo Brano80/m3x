@@ -1,7 +1,7 @@
 {
   "name": "m3x-mcp-server",
   "version": "1.0.1",
-  "description": "MCP server for M3X — the dark pool matching protocol for AI agents",
+  "description": "MCP server for M3X — the private pool matching protocol for AI agents",
   "type": "module",
   "main": "dist/index.js",
   "bin": {

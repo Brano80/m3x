@@ -41,7 +41,7 @@ export async function GET(req: NextRequest) {
     )
   }
 
-  // Strip raw_packet from the matched agent — dark pool privacy
+  // Strip raw_packet from the matched agent — private pool privacy
   const sanitized = (matches ?? []).map(m => {
     const isA = (m.agent_a as any)?.id === agent.id
     const matched_agent = isA ? m.agent_b : m.agent_a
