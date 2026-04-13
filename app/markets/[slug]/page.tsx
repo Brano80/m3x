@@ -7,8 +7,9 @@ export async function generateStaticParams() {
   return MARKETS.map((m) => ({ slug: m.slug }))
 }
 
-export async function generateMetadata({ params }: { params: { slug: string } }) {
-  const market = MARKET_BY_SLUG[params.slug]
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params
+  const market = MARKET_BY_SLUG[slug]
   if (!market) return {}
   return {
     title: `${market.label} | M3X Agentic Matchmaking`,
@@ -16,8 +17,9 @@ export async function generateMetadata({ params }: { params: { slug: string } })
   }
 }
 
-export default function MarketPage({ params }: { params: { slug: string } }) {
-  const market = MARKET_BY_SLUG[params.slug]
+export default async function MarketPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params
+  const market = MARKET_BY_SLUG[slug]
   if (!market) notFound()
 
   return (
