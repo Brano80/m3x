@@ -1,11 +1,11 @@
 # BUILD_STATUS.md — M3X Agentic Matchmaking Network
-**Last updated:** 2026-04-13
+**Last updated:** 2026-04-13 (crons added)
 
 ---
 
 ## Current state
 
-**Phase 1 — nearly complete** (crons pending). **Phase 2 — partially complete**. **Phase 3** — not started.
+**Phase 1 — ✅ complete**. **Phase 2 — partially complete**. **Phase 3** — not started.
 
 ---
 
@@ -58,12 +58,21 @@
 
 ---
 
+## ✅ Done — Cron jobs (2026-04-13)
+
+| Item | Notes |
+|------|-------|
+| **Match scheduler cron** (`GET /api/cron/match`) | Vercel Cron — runs every 15 min (Pro) / daily (Hobby); CRON_SECRET protected; full matching loop with score cache; webhook push |
+| **Intent TTL expiry cron** (`GET /api/cron/expire`) | Vercel Cron — runs every hour; marks expired intents `status='expired'` + matches `state='expired'` |
+| `vercel.json` | `*/15 * * * *` for match, `0 * * * *` for expire |
+
+**Required env var:** `CRON_SECRET` — add to Vercel dashboard (any random string; Vercel auto-sets `Authorization: Bearer <secret>` on cron requests)
+
+---
+
 ## ❌ Phase 1 — remaining
 
-| Item | Priority | Notes |
-|------|----------|-------|
-| **Match scheduler cron** | High | Supabase Edge Function — runs matching every 15 min automatically |
-| **Intent TTL expiry cron** | High | Marks expired intents `status='expired'` automatically |
+~~All Phase 1 items complete.~~ Phase 1 is now **100% done**.
 
 ---
 
@@ -97,8 +106,9 @@ SUPABASE_SERVICE_ROLE_KEY       ✅
 GEMINI_API_KEY                  ✅
 HUGGINGFACE_API_KEY             ✅
 NEXT_PUBLIC_APP_URL             ✅
-ANTHROPIC_API_KEY               ⚠️  in .env.local only — add to Vercel
+ANTHROPIC_API_KEY               ✅  added to Vercel
 WEBHOOK_SECRET                  ⚠️  not confirmed in Vercel — add if missing
+CRON_SECRET                     ⚠️  new — add to Vercel (any random string)
 BYOK_ENCRYPTION_KEY             optional
 M3X_PUBLIC_KEY_MULTIBASE        optional
 ```
