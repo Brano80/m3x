@@ -665,4 +665,4 @@ export const MARKETS: MarketData[] = [
   },
 ]
 
-export const MARKET_BY_SLUG = Object.fromEntries(MARKETS.map((m) => [m.slug, m]))
+export const MARKET_BY_SLUG = Object.fromEntries(MARKETS.map((m) => [m.s

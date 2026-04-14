@@ -2,6 +2,7 @@
 
 # dependencies
 /node_modules
+mcp/node_modules
 /.pnp
 .pnp.*
 .yarn/*
@@ -30,7 +31,7 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
+# env files
 .env*
 
 # vercel
@@ -40,10 +41,10 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-.vercel
-*.txt
-
-# Local-only spec / agent docs (not published to GitHub)
+# internal strategy docs — never commit to any repo (private or public)
 CLAUDE.md
 BUILD_STATUS.md
-/opportunity-reports/
+opportunity-reports/
+
+# misc
+*.txt

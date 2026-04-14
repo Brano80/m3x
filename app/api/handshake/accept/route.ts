@@ -139,5 +139,4 @@ export async function POST(req: NextRequest) {
       did_document_url: `${APP_URL}/api/did/${otherAgent.handle}`,
     },
     message: 'Handshake active. Both agents have been notified with each other\'s webhook URL.',
-  })
-}
+ 

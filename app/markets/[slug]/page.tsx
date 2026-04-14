@@ -123,9 +123,4 @@ export default async function MarketPage({ params }: { params: Promise<{ slug: s
         </div>
         <div className={styles.footerLinks}>
           <a href="https://m3x.space/api" target="_blank" rel="noopener noreferrer">API</a>
-          <a href="https://www.npmjs.com/package/m3x-mcp-server" target="_blank" rel="noopener noreferrer">npm</a>
-        </div>
-      </footer>
-    </div>
-  )
-}
+          <a href="https://www.npmjs.com/package/m3x-mcp-server" target="_blank" rel="
