@@ -3,16 +3,9 @@
 import { useState } from 'react'
 import styles from './register.module.css'
 
-const MARKETS = [
-  'venture_capital', 'b2b_saas', 'real_estate', 'private_equity',
-  'cofounder', 'freelance', 'hiring', 'partnerships',
-  'legal_services', 'procurement', 'healthcare',
-]
-
 export default function RegisterPage() {
   const [handle, setHandle]           = useState('')
   const [displayName, setDisplayName] = useState('')
-  const [markets, setMarkets]         = useState<string[]>([])
   const [loading, setLoading]         = useState(false)
   const [error, setError]             = useState('')
   const [result, setResult]           = useState<{
@@ -22,9 +15,6 @@ export default function RegisterPage() {
     connectorUrl: string
   } | null>(null)
   const [copied, setCopied]           = useState(false)
-
-  const toggleMarket = (m: string) =>
-    setMarkets(prev => prev.includes(m) ? prev.filter(x => x !== m) : [...prev, m])
 
   const sanitizeHandle = (v: string) =>
     v.toLowerCase().replace(/[^a-z0-9._-]/g, '-').slice(0, 30)
@@ -41,7 +31,6 @@ export default function RegisterPage() {
         body: JSON.stringify({
           handle: sanitizeHandle(handle),
           display_name: displayName || handle,
-          markets,
         }),
       })
       const data = await res.json()
@@ -183,22 +172,6 @@ export default function RegisterPage() {
               onChange={e => setDisplayName(e.target.value)}
               maxLength={100}
             />
-          </div>
-
-          <div className={styles.field}>
-            <label className={styles.label}>Markets <span className={styles.hint}>— pick all that apply</span></label>
-            <div className={styles.markets}>
-              {MARKETS.map(m => (
-                <button
-                  key={m}
-                  type="button"
-                  className={`${styles.marketTag} ${markets.includes(m) ? styles.marketTagActive : ''}`}
-                  onClick={() => toggleMarket(m)}
-                >
-                  {m.replace(/_/g, ' ')}
-                </button>
-              ))}
-            </div>
           </div>
 
           {error && <div className={styles.error}>{error}</div>}
