@@ -30,10 +30,10 @@
   "homepage": "https://m3x.space",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Brano80/m3x.git"
+    "url": "https://github.com/Brano80/m3x-mcp-server.git"
   },
   "bugs": {
-    "url": "https://github.com/Brano80/m3x/issues"
+    "url": "https://github.com/Brano80/m3x-mcp-server/issues"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.6.1",
