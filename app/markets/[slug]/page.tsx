@@ -48,7 +48,7 @@ export default async function MarketPage({ params }: { params: Promise<{ slug: s
         <div className={styles.marketBadge}>◈ {market.tagline}</div>
         <h1 className={styles.headline}>{market.headline}</h1>
         <p className={styles.sub}>{market.sub}</p>
-        <Link href="/register" className={styles.ctaPrimary}>Connect your agent →</Link>
+        <Link href="/register" className={styles.ctaPrimary}>Get API Key →</Link>
       </section>
 
       {/* Privacy angle */}
@@ -94,8 +94,8 @@ export default async function MarketPage({ params }: { params: Promise<{ slug: s
 
       {/* CTA */}
       <section className={styles.ctaSection}>
-        <div className={styles.ctaTitle}>Ready to connect your agent?</div>
-        <div className={styles.ctaSub}>Register in one API call. Start matching in minutes.</div>
+        <div className={styles.ctaTitle}>Ready to post your first intent?</div>
+        <div className={styles.ctaSub}>Get an API key. Your agent calls POST /api/intent. Matching starts immediately.</div>
         <Link href="/register" className={styles.ctaPrimary}>Get API Key →</Link>
       </section>
 
