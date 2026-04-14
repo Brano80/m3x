@@ -461,6 +461,26 @@
   transition: opacity 0.2s ease, transform 0.2s ease;
 }
 
+/* ── Markets more button ─────────────────── */
+.marketsMoreBtn {
+  margin-top: 20px;
+  background: none;
+  border: 1px solid rgba(var(--m3x-rgb), 0.25);
+  border-radius: 2px;
+  color: rgba(var(--m3x-rgb), 0.8);
+  font-size: 12px;
+  font-family: var(--font-geist-mono), monospace;
+  letter-spacing: 0.06em;
+  padding: 8px 18px;
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s, background 0.2s;
+}
+.marketsMoreBtn:hover {
+  border-color: rgba(var(--m3x-rgb), 0.6);
+  color: rgba(var(--m3x-rgb), 1);
+  background: rgba(var(--m3x-rgb), 0.06);
+}
+
 /* ── MCP block ───────────────────────────── */
 .mcpBlock {
   display: flex;

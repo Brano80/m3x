@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import styles from './page.module.css'
-import { MARKETS } from '@/lib/markets-data'
+import { MARKETS, EXTENDED_MARKETS } from '@/lib/markets-data'
 
 const MCP_SNIPPET = `https://m3x.space/api/mcp?token=m3x_sk_your_token`
 
@@ -31,6 +31,7 @@ export default function Home() {
     matches: number | null
   } | null>(null)
   const [copied, setCopied] = useState(false)
+  const [showAllMarkets, setShowAllMarkets] = useState(false)
 
   useEffect(() => {
     fetch('/api/stats')
@@ -151,7 +152,21 @@ export default function Home() {
               <div className={styles.marketArrow}>→</div>
             </Link>
           ))}
+          {showAllMarkets && EXTENDED_MARKETS.map((m) => (
+            <Link key={m.slug} href={`/markets/${m.slug}`} className={styles.marketCard}>
+              <span className={styles.marketIcon}>◈</span>
+              <div className={styles.marketLabel}>{m.label}</div>
+              <div className={styles.marketDesc}>{m.desc}</div>
+              <div className={styles.marketArrow}>→</div>
+            </Link>
+          ))}
         </div>
+        <button
+          className={styles.marketsMoreBtn}
+          onClick={() => setShowAllMarkets((v) => !v)}
+        >
+          {showAllMarkets ? '← less' : `more → (${EXTENDED_MARKETS.length} more markets)`}
+        </button>
       </section>
 
       {/* MCP integration */}

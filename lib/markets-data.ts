@@ -665,4 +665,329 @@ export const MARKETS: MarketData[] = [
   },
 ]
 
-export const MARKET_BY_SLUG = Object.fromEntries(MARKETS.map((m) => [m.s
+export const EXTENDED_MARKETS: MarketData[] = [
+  {
+    slug: 'freelance',
+    label: 'Freelance',
+    tagline: 'Talent ↔ Projects',
+    desc: 'Talent ↔ Projects',
+    headline: 'Qualified freelance matching. No bidding wars.',
+    sub: 'Skilled freelancers post availability and capabilities. Project owners post requirements. Matched on fit — not on who lowballed hardest.',
+    privacyAngle:
+      'Freelancers who publicly broadcast availability get flooded with low-quality inbound. Project owners who post publicly attract mis-qualified applicants. M3X matches on structured capability overlap before either side is visible to the other.',
+    regulationFrameworks: [],
+    examples: [
+      {
+        label: 'Freelance ML engineer seeking project',
+        packet: {
+          side: 'supply',
+          market: 'freelance',
+          intent_type: 'seeking_project',
+          offers: {
+            description: 'Senior ML engineer, 8yr exp, PyTorch/JAX, LLM fine-tuning, MLOps, available 20h/week',
+            capabilities: ['ml', 'llm', 'pytorch', 'mlops', 'python'],
+            traction: '14 completed projects, 4.9/5 avg rating',
+          },
+          seeking: {
+            description: 'LLM product or ML infra project, 3–6 month engagement, remote',
+            required_capabilities: ['llm_product', 'ai_infra'],
+            budget_range: '150_250_per_hour',
+            geography: ['remote'],
+            timeline: 'immediate',
+          },
+          guardrails: { min_trust_score: 60 },
+          ttl_hours: 48,
+        },
+      },
+      {
+        label: 'Startup seeking fractional CTO',
+        packet: {
+          side: 'demand',
+          market: 'freelance',
+          intent_type: 'seeking_talent',
+          offers: {
+            description: 'Early-stage B2B SaaS, 6-person team, seed-funded, need technical leadership 2 days/week',
+            capabilities: ['startup', 'b2b', 'saas'],
+          },
+          seeking: {
+            description: 'Fractional CTO with Next.js/Node background, startup experience, equity open',
+            required_capabilities: ['cto', 'fullstack', 'startup_leadership'],
+            budget_range: '5k_10k_monthly',
+            geography: ['EU', 'remote'],
+            timeline: 'q2_2026',
+          },
+          guardrails: { min_trust_score: 65 },
+          ttl_hours: 72,
+        },
+      },
+      {
+        label: 'Design agency overflow capacity',
+        packet: {
+          side: 'supply',
+          market: 'freelance',
+          intent_type: 'offering_capacity',
+          offers: {
+            description: 'Boutique product design agency, 4 senior designers, overflow capacity for Q2, Figma + Framer',
+            capabilities: ['ux_design', 'product_design', 'figma', 'framer', 'design_systems'],
+            traction: '60+ B2B SaaS clients, 5yr operating history',
+          },
+          seeking: {
+            description: 'Product design work from SaaS companies, 40–120h engagements, white-label ok',
+            required_capabilities: ['saas', 'product'],
+            budget_range: '80_150_per_hour',
+            geography: ['EU', 'US', 'remote'],
+            timeline: 'immediate',
+          },
+          guardrails: { min_trust_score: 55 },
+          ttl_hours: 96,
+        },
+      },
+    ],
+  },
+  {
+    slug: 'cofounder',
+    label: 'Cofounder',
+    tagline: 'Founders ↔ Cofounders',
+    desc: 'Founders ↔ Cofounders',
+    headline: 'Find your cofounder. No public listing.',
+    sub: 'Founders post what they\'re building and what\'s missing. Potential cofounders post skills and startup criteria. Matched on complementarity — not on who has the best pitch deck.',
+    privacyAngle:
+      'Broadcasting that you\'re cofounder-hunting exposes your idea before it\'s protected and signals weakness to early-stage investors. M3X keeps your intent private — you\'re only visible to potential cofounders who structurally complement your profile.',
+    regulationFrameworks: [],
+    examples: [
+      {
+        label: 'Technical founder seeking GTM cofounder',
+        packet: {
+          side: 'demand',
+          market: 'cofounder',
+          intent_type: 'seeking_cofounder',
+          offers: {
+            description: 'Solo technical founder, ex-Google SWE, AI infrastructure SaaS in stealth, MVP built, 3 LOIs',
+            capabilities: ['backend', 'ml', 'ai_infra', 'protocol_design'],
+            traction: '3 enterprise LOIs, MVP live',
+          },
+          seeking: {
+            description: 'GTM or commercial cofounder, enterprise sales experience, B2B SaaS background',
+            required_capabilities: ['enterprise_sales', 'b2b_saas', 'go_to_market'],
+            budget_range: '20pct_equity',
+            geography: ['EU', 'remote'],
+            timeline: 'immediate',
+          },
+          guardrails: { min_trust_score: 60 },
+          ttl_hours: 72,
+        },
+      },
+      {
+        label: 'Commercial founder seeking technical cofounder',
+        packet: {
+          side: 'demand',
+          market: 'cofounder',
+          intent_type: 'seeking_cofounder',
+          offers: {
+            description: 'Ex-McKinsey, 2 exits, strong enterprise network in healthcare, market-validated idea, pre-seed funding available',
+            capabilities: ['go_to_market', 'enterprise_sales', 'fundraising', 'strategy'],
+          },
+          seeking: {
+            description: 'Technical cofounder with Python/ML background, healthcare tech ideally, full-time',
+            required_capabilities: ['ml', 'backend', 'python', 'fullstack'],
+            budget_range: '30_50pct_equity',
+            geography: ['EU', 'US', 'remote'],
+            timeline: 'q2_2026',
+          },
+          guardrails: { min_trust_score: 65 },
+          ttl_hours: 96,
+        },
+      },
+      {
+        label: 'Senior engineer exploring cofounder opportunities',
+        packet: {
+          side: 'supply',
+          market: 'cofounder',
+          intent_type: 'open_to_cofounding',
+          offers: {
+            description: '12yr SWE, ex-Stripe payments infra, full-stack (TypeScript/Go/Postgres), ready for startup',
+            capabilities: ['backend', 'payments', 'fullstack', 'typescript', 'go'],
+            traction: '2 side projects shipped, 800 GitHub stars total',
+          },
+          seeking: {
+            description: 'Cofounder opportunity in fintech or B2B SaaS, market-validated idea, EU or remote',
+            required_capabilities: ['domain_expertise', 'market_access'],
+            budget_range: '20_40pct_equity',
+            geography: ['EU', 'remote'],
+            timeline: 'q3_2026',
+          },
+          guardrails: { min_trust_score: 60 },
+          ttl_hours: 120,
+        },
+      },
+    ],
+  },
+  {
+    slug: 'hiring',
+    label: 'Hiring',
+    tagline: 'Employers ↔ Candidates',
+    desc: 'Employers ↔ Candidates',
+    headline: 'Structured hiring. No recruiter spam.',
+    sub: 'Employers post structured role requirements. Candidates post structured profiles. Matched on real fit — not on keyword density.',
+    privacyAngle:
+      'Passive candidates can\'t post publicly without alerting their current employer. Employers who post roles early tip off competitors. M3X enables private intent on both sides — candidates are only visible to employers who match their stated criteria.',
+    regulationFrameworks: ['GDPR'],
+    examples: [
+      {
+        label: 'Series B startup — Staff ML Engineer',
+        packet: {
+          side: 'demand',
+          market: 'hiring',
+          intent_type: 'open_role',
+          offers: {
+            description: 'Series B AI company, €120M raised, hybrid Berlin or remote EU, equity + competitive salary',
+            capabilities: ['employer', 'ai_company', 'series_b'],
+          },
+          seeking: {
+            description: 'Staff ML Engineer, LLM fine-tuning and inference optimization, 7yr+ exp',
+            required_capabilities: ['ml', 'llm', 'pytorch', 'inference', 'distributed_training'],
+            budget_range: '130k_180k_eur',
+            geography: ['EU', 'remote'],
+            timeline: 'q2_2026',
+          },
+          guardrails: {
+            min_trust_score: 65,
+            regulation_framework: ['GDPR'],
+          },
+          ttl_hours: 72,
+        },
+      },
+      {
+        label: 'Passive candidate — senior product role',
+        packet: {
+          side: 'supply',
+          market: 'hiring',
+          intent_type: 'open_to_opportunity',
+          offers: {
+            description: 'Senior PM, 9yr product experience, scaled 2 B2B SaaS products from 0 to $10M ARR, EU passport',
+            capabilities: ['product_management', 'b2b_saas', 'enterprise', 'growth'],
+            traction: 'Ex-Notion, ex-Figma, 2 successful exits',
+          },
+          seeking: {
+            description: 'Head of Product or VP Product role, seed or Series A, equity meaningful, remote-first',
+            required_capabilities: ['early_stage', 'equity', 'remote'],
+            budget_range: '140k_200k_eur',
+            geography: ['EU', 'remote'],
+            timeline: 'q3_2026',
+          },
+          guardrails: { min_trust_score: 60 },
+          ttl_hours: 96,
+        },
+      },
+      {
+        label: 'Scale-up hiring engineering team',
+        packet: {
+          side: 'demand',
+          market: 'hiring',
+          intent_type: 'team_build',
+          offers: {
+            description: 'High-growth SaaS, 200 employees, hiring 12 engineers in H1 2026, strong eng culture, remote-first',
+            capabilities: ['employer', 'saas', 'remote_first', 'engineering_culture'],
+          },
+          seeking: {
+            description: 'Senior fullstack engineers (TypeScript/React/Node), 5yr+ exp, product-minded, EU timezone',
+            required_capabilities: ['typescript', 'react', 'nodejs', 'fullstack'],
+            budget_range: '100k_150k_eur',
+            geography: ['EU', 'remote'],
+            timeline: 'immediate',
+          },
+          guardrails: {
+            min_trust_score: 60,
+            regulation_framework: ['GDPR'],
+          },
+          ttl_hours: 48,
+        },
+      },
+    ],
+  },
+  {
+    slug: 'partnerships',
+    label: 'Partnerships',
+    tagline: 'BD ↔ BD',
+    desc: 'BD ↔ BD',
+    headline: 'Strategic partnerships. Matched before the cold email.',
+    sub: 'BD teams post partnership mandates. Potential partners post distribution and reach. Matched on strategic fit — not on LinkedIn connection count.',
+    privacyAngle:
+      'Partnership intent revealed too early invites competitor intelligence. BD teams who broadcast expansion plans lose negotiating leverage. M3X keeps both parties\' strategic intent private until a structural match is confirmed.',
+    regulationFrameworks: [],
+    examples: [
+      {
+        label: 'SaaS company seeking channel partner',
+        packet: {
+          side: 'demand',
+          market: 'partnerships',
+          intent_type: 'channel_partnership',
+          offers: {
+            description: 'HR tech SaaS, $8M ARR, 140% NRR, 30% partner revenue share, co-marketing budget available',
+            capabilities: ['hr_tech', 'saas', 'partner_program', 'co_marketing'],
+            traction: '$8M ARR, 300 customers, 8 active channel partners',
+          },
+          seeking: {
+            description: 'HR consultancy or systems integrator with 50+ SMB clients in DACH or Nordics',
+            required_capabilities: ['hr_consulting', 'smb_distribution', 'dach_market'],
+            budget_range: 'revenue_share',
+            geography: ['DE', 'AT', 'CH', 'SE', 'NO', 'DK'],
+            timeline: 'q2_2026',
+          },
+          guardrails: { min_trust_score: 65 },
+          ttl_hours: 96,
+        },
+      },
+      {
+        label: 'Consultancy offering distribution',
+        packet: {
+          side: 'supply',
+          market: 'partnerships',
+          intent_type: 'distribution_partnership',
+          offers: {
+            description: 'Digital transformation consultancy, 180 mid-market clients in financial services, DACH region',
+            capabilities: ['consulting', 'distribution', 'financial_services', 'dach_market', 'implementation'],
+            traction: '180 active clients, €12M annual billings',
+          },
+          seeking: {
+            description: 'SaaS product partners to resell or co-implement, financial services focus, rev-share model',
+            required_capabilities: ['saas', 'financial_services', 'integration'],
+            budget_range: 'revenue_share',
+            geography: ['DE', 'AT', 'CH'],
+            timeline: 'immediate',
+          },
+          guardrails: { min_trust_score: 70 },
+          ttl_hours: 168,
+        },
+      },
+      {
+        label: 'Fintech seeking banking-as-a-service partner',
+        packet: {
+          side: 'demand',
+          market: 'partnerships',
+          intent_type: 'infrastructure_partnership',
+          offers: {
+            description: 'Licensed EU fintech, 40k end-users, need BaaS infrastructure for IBAN issuance and payments',
+            capabilities: ['fintech', 'licensed', 'payments', 'eu_regulated'],
+          },
+          seeking: {
+            description: 'BaaS provider with EU banking licence, IBAN issuance, SEPA, API-first, startup-friendly pricing',
+            required_capabilities: ['baas', 'iban_issuance', 'sepa', 'eu_licence'],
+            budget_range: '50k_200k_annually',
+            geography: ['EU'],
+            timeline: 'q3_2026',
+          },
+          guardrails: {
+            min_trust_score: 80,
+            regulation_framework: ['GDPR', 'PSD2'],
+          },
+          ttl_hours: 72,
+        },
+      },
+    ],
+  },
+]
+
+export const ALL_MARKETS = [...MARKETS, ...EXTENDED_MARKETS]
+
+export const MARKET_BY_SLUG = Object.fromEntries(ALL_MARKETS.map((m) => [m.slug, m]))
