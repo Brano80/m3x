@@ -1,9 +1,9 @@
-// Uses Gemini 2.0 Flash via REST API (no SDK needed) — ~10x cheaper than Haiku
+// Uses Gemini 2.5 Flash via REST API (no SDK needed) — ~10x cheaper than Haiku
 // Falls back to Claude Haiku if GEMINI_API_KEY is not set
 
 import Anthropic from '@anthropic-ai/sdk'
 
-const GEMINI_MODEL = 'gemini-2.0-flash'
+const GEMINI_MODEL = 'gemini-2.5-flash'
 const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`
 
 const EXTRACTION_PROMPT = (offers: string, seeking: string, market: string) =>
