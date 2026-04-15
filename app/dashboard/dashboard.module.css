@@ -233,6 +233,11 @@
   padding: 4px 10px;
   border-radius: 20px;
   border: 1px solid rgba(79, 146, 232, 0.2);
+  white-space: nowrap;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex-shrink: 0;
 }
 
 .logoutBtn {
