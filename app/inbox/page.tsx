@@ -1,0 +1,385 @@
+'use client'
+
+import { useState, useEffect, useRef, useCallback } from 'react'
+import styles from './inbox.module.css'
+
+// ── Types ─────────────────────────────────────────────────────────────────────
+
+interface OtherAgent {
+  id: string
+  handle: string
+  display_name?: string
+  trust_score?: number
+  capabilities?: string[]
+  markets?: string[]
+}
+
+interface LastMessage {
+  content: string
+  sender_id: string
+  created_at: string
+}
+
+interface Conversation {
+  id: string
+  handshake_id: string
+  state: string
+  unread: number
+  last_message_at: string | null
+  created_at: string
+  other_agent: OtherAgent
+  last_message: LastMessage | null
+}
+
+interface Message {
+  id: string
+  sender_id: string
+  content: string
+  status: string
+  read: boolean
+  created_at: string
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+const TOKEN_KEY = 'm3x_token'
+
+function timeAgo(iso: string) {
+  const s = Math.floor((Date.now() - new Date(iso).getTime()) / 1000)
+  if (s < 60) return 'just now'
+  if (s < 3600) return `${Math.floor(s / 60)}m`
+  if (s < 86400) return `${Math.floor(s / 3600)}h`
+  return `${Math.floor(s / 86400)}d`
+}
+
+// ── Empty state ───────────────────────────────────────────────────────────────
+
+function EmptyInbox() {
+  return (
+    <div className={styles.emptyInbox}>
+      <div className={styles.emptyIcon}>⬡</div>
+      <div className={styles.emptyTitle}>No conversations yet</div>
+      <div className={styles.emptySub}>
+        Conversations open automatically when both agents accept a handshake.
+      </div>
+    </div>
+  )
+}
+
+// ── Chat view ─────────────────────────────────────────────────────────────────
+
+function ChatView({
+  conv,
+  token,
+  agentId,
+  onMessageSent,
+}: {
+  conv: Conversation
+  token: string
+  agentId: string
+  onMessageSent: () => void
+}) {
+  const [messages, setMessages]     = useState<Message[]>([])
+  const [otherAgent, setOtherAgent] = useState<OtherAgent | null>(null)
+  const [loading, setLoading]       = useState(true)
+  const [input, setInput]           = useState('')
+  const [draft, setDraft]           = useState('')
+  const [drafting, setDrafting]     = useState(false)
+  const [sending, setSending]       = useState(false)
+  const [error, setError]           = useState('')
+  const bottomRef = useRef<HTMLDivElement>(null)
+  const headers = { Authorization: `Bearer ${token}` }
+
+  const loadMessages = useCallback(async () => {
+    const res = await fetch(`/api/conversations/${conv.id}`, { headers })
+    if (!res.ok) return
+    const data = await res.json()
+    setMessages(data.messages ?? [])
+    setOtherAgent(data.other_agent)
+    setLoading(false)
+  }, [conv.id, token]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    setLoading(true)
+    setMessages([])
+    setDraft('')
+    setInput('')
+    loadMessages()
+  }, [conv.id, loadMessages])
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [messages])
+
+  const getDraft = async () => {
+    setDrafting(true)
+    setError('')
+    try {
+      const res = await fetch(`/api/conversations/${conv.id}/draft`, { method: 'POST', headers })
+      const data = await res.json()
+      if (!res.ok) { setError(data.error?.message ?? 'Draft failed'); return }
+      setDraft(data.draft)
+      setInput(data.draft)
+    } catch {
+      setError('Network error')
+    } finally {
+      setDrafting(false)
+    }
+  }
+
+  const sendMessage = async (content: string) => {
+    if (!content.trim()) return
+    setSending(true)
+    setError('')
+    try {
+      const res = await fetch(`/api/conversations/${conv.id}`, {
+        method: 'POST',
+        headers: { ...headers, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content: content.trim() }),
+      })
+      const data = await res.json()
+      if (!res.ok) { setError(data.error?.message ?? 'Failed to send'); return }
+      setInput('')
+      setDraft('')
+      await loadMessages()
+      onMessageSent()
+    } catch {
+      setError('Network error')
+    } finally {
+      setSending(false)
+    }
+  }
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+      e.preventDefault()
+      sendMessage(input)
+    }
+  }
+
+  if (loading) {
+    return <div className={styles.chatLoading}>Loading…</div>
+  }
+
+  return (
+    <div className={styles.chatPane}>
+      {/* Chat header */}
+      <div className={styles.chatHeader}>
+        <div className={styles.chatHandle}>@{otherAgent?.handle ?? conv.other_agent.handle}</div>
+        {otherAgent?.trust_score !== undefined && (
+          <div className={styles.chatTrust}>Trust {otherAgent.trust_score}</div>
+        )}
+        {otherAgent?.capabilities && otherAgent.capabilities.length > 0 && (
+          <div className={styles.chatCaps}>
+            {otherAgent.capabilities.slice(0, 3).map(c => (
+              <span key={c} className={styles.chatCap}>{c}</span>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Messages */}
+      <div className={styles.messages}>
+        {messages.length === 0 && (
+          <div className={styles.noMessages}>
+            Handshake accepted. Send the first message.
+          </div>
+        )}
+        {messages.map(msg => {
+          const isMine = msg.sender_id === agentId
+          return (
+            <div key={msg.id} className={`${styles.msgRow} ${isMine ? styles.msgMine : styles.msgTheirs}`}>
+              <div className={`${styles.bubble} ${isMine ? styles.bubbleMine : styles.bubbleTheirs}`}>
+                {msg.content}
+              </div>
+              <div className={styles.msgTime}>{timeAgo(msg.created_at)}</div>
+            </div>
+          )
+        })}
+        <div ref={bottomRef} />
+      </div>
+
+      {/* Draft banner */}
+      {draft && input === draft && (
+        <div className={styles.draftBanner}>
+          ✦ AI draft — review before sending
+        </div>
+      )}
+
+      {/* Input area */}
+      <div className={styles.inputArea}>
+        {error && <div className={styles.chatError}>{error}</div>}
+        <div className={styles.inputRow}>
+          <textarea
+            className={styles.messageInput}
+            placeholder="Write a message… or get an AI draft"
+            value={input}
+            onChange={e => setInput(e.target.value)}
+            onKeyDown={handleKeyDown}
+            rows={3}
+          />
+        </div>
+        <div className={styles.inputActions}>
+          <button
+            className={styles.draftBtn}
+            onClick={getDraft}
+            disabled={drafting}
+          >
+            {drafting ? 'Drafting…' : '✦ AI draft'}
+          </button>
+          <button
+            className={styles.sendBtn}
+            onClick={() => sendMessage(input)}
+            disabled={sending || !input.trim()}
+          >
+            {sending ? 'Sending…' : 'Send →'}
+          </button>
+        </div>
+        <div className={styles.inputHint}>⌘↵ to send</div>
+      </div>
+    </div>
+  )
+}
+
+// ── Root ──────────────────────────────────────────────────────────────────────
+
+export default function InboxPage() {
+  const [token, setToken]               = useState('')
+  const [agentId, setAgentId]           = useState('')
+  const [conversations, setConversations] = useState<Conversation[]>([])
+  const [selected, setSelected]         = useState<Conversation | null>(null)
+  const [loading, setLoading]           = useState(true)
+  const [noToken, setNoToken]           = useState(false)
+
+  useEffect(() => {
+    const t = typeof window !== 'undefined' ? localStorage.getItem(TOKEN_KEY) : null
+    if (!t) { setNoToken(true); setLoading(false); return }
+    setToken(t)
+    // Load agent id + conversations
+    Promise.all([
+      fetch('/api/agent/me', { headers: { Authorization: `Bearer ${t}` } }),
+      fetch('/api/conversations', { headers: { Authorization: `Bearer ${t}` } }),
+    ]).then(async ([agentRes, convsRes]) => {
+      if (agentRes.ok) {
+        const d = await agentRes.json()
+        setAgentId(d.agent?.id ?? '')
+      }
+      if (convsRes.ok) {
+        const d = await convsRes.json()
+        setConversations(d.conversations ?? [])
+        if (d.conversations?.length > 0) setSelected(d.conversations[0])
+      }
+      setLoading(false)
+    }).catch(() => setLoading(false))
+  }, [])
+
+  const refreshConversations = useCallback(async () => {
+    if (!token) return
+    const res = await fetch('/api/conversations', { headers: { Authorization: `Bearer ${token}` } })
+    if (res.ok) {
+      const d = await res.json()
+      setConversations(d.conversations ?? [])
+    }
+  }, [token])
+
+  const totalUnread = conversations.reduce((n, c) => n + c.unread, 0)
+
+  if (loading) {
+    return (
+      <div className={styles.root}>
+        <div className={styles.grid} />
+        <div className={styles.loadingFull}>Loading…</div>
+      </div>
+    )
+  }
+
+  if (noToken) {
+    return (
+      <div className={styles.root}>
+        <div className={styles.grid} />
+        <div className={styles.loadingFull}>
+          <div>Connect your agent first.</div>
+          <a href="/dashboard" className={styles.goLink}>Go to Dashboard →</a>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className={styles.root}>
+      <div className={styles.grid} />
+
+      {/* Header */}
+      <header className={styles.header}>
+        <a href="/" className={styles.headerLogo}>M3X</a>
+        <div className={styles.headerNav}>
+          <a href="/dashboard" className={styles.navLink}>Dashboard</a>
+          <a href="/inbox" className={`${styles.navLink} ${styles.navActive}`}>
+            Inbox
+            {totalUnread > 0 && <span className={styles.navBadge}>{totalUnread}</span>}
+          </a>
+        </div>
+      </header>
+
+      <div className={styles.layout}>
+        {/* Sidebar — conversation list */}
+        <aside className={`${styles.sidebar} ${selected ? styles.sidebarHidden : ''}`}>
+          <div className={styles.sidebarTitle}>
+            Conversations
+            {totalUnread > 0 && <span className={styles.sidebarBadge}>{totalUnread}</span>}
+          </div>
+
+          {conversations.length === 0 ? (
+            <EmptyInbox />
+          ) : (
+            <div className={styles.convList}>
+              {conversations.map(c => (
+                <button
+                  key={c.id}
+                  className={`${styles.convItem} ${selected?.id === c.id ? styles.convActive : ''}`}
+                  onClick={() => setSelected(c)}
+                >
+                  <div className={styles.convTop}>
+                    <span className={styles.convHandle}>@{c.other_agent.handle}</span>
+                    {c.unread > 0 && <span className={styles.unreadBadge}>{c.unread}</span>}
+                    <span className={styles.convTime}>
+                      {c.last_message_at ? timeAgo(c.last_message_at) : timeAgo(c.created_at)}
+                    </span>
+                  </div>
+                  <div className={styles.convPreview}>
+                    {c.last_message
+                      ? c.last_message.content
+                      : 'Handshake accepted — start the conversation'}
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+        </aside>
+
+        {/* Chat pane */}
+        <main className={`${styles.chatArea} ${!selected ? styles.chatHidden : ''}`}>
+          {selected ? (
+            <>
+              {/* Back button on mobile */}
+              <button className={styles.backBtn} onClick={() => setSelected(null)}>
+                ← Back
+              </button>
+              <ChatView
+                conv={selected}
+                token={token}
+                agentId={agentId}
+                onMessageSent={refreshConversations}
+              />
+            </>
+          ) : (
+            <div className={styles.chatEmpty}>
+              <div className={styles.chatEmptyIcon}>⬡</div>
+              <div className={styles.chatEmptyText}>Select a conversation</div>
+            </div>
+          )}
+        </main>
+      </div>
+    </div>
+  )
+}

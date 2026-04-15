@@ -4,6 +4,7 @@ import { verifyAgent } from '@/lib/auth'
 import { scorePair } from '@/lib/score'
 import { sendWebhook } from '@/lib/webhook'
 import { decryptKey } from '@/lib/crypto'
+import { notifyMatchFound } from '@/lib/fcm'
 
 const MAX_RUNS_PER_DAY = 5
 
@@ -171,7 +172,11 @@ export async function POST(req: NextRequest) {
         sendWebhook(candidateAgent.webhook_url, webhookPayload(candidateAgent, agent, candidate, intent))
       }
 
-      if (agent.webhook_url || candidateAgent.webhook_url) {
+      // FCM push notifications — reach agents even when laptop is off
+      notifyMatchFound(agent, match.score, candidateAgent.handle)
+      notifyMatchFound(candidateAgent, match.score, agent.handle)
+
+      if (agent.webhook_url || candidateAgent.webhook_url || agent.fcm_token || candidateAgent.fcm_token) {
         await supabase
           .from('matches')
           .update({ state: 'notified', push_sent_at: new Date().toISOString() })

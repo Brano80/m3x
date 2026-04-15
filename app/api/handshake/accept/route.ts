@@ -8,6 +8,7 @@ import { getServiceClient } from '@/lib/supabase'
 import { verifyAgent } from '@/lib/auth'
 import { sendWebhook } from '@/lib/webhook'
 import { recalculateTrust } from '@/lib/trust'
+import { notifyHandshakeAccepted } from '@/lib/fcm'
 
 export async function POST(req: NextRequest) {
   const supabase = getServiceClient()
@@ -58,7 +59,7 @@ export async function POST(req: NextRequest) {
   const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://m3x.space'
 
   const [{ data: otherAgent }, { data: match }] = await Promise.all([
-    supabase.from('agents').select('id, handle, did, webhook_url, a2a_endpoint, capabilities, markets, trust_score').eq('id', otherAgentId).single(),
+    supabase.from('agents').select('id, handle, did, webhook_url, a2a_endpoint, capabilities, markets, trust_score, fcm_token').eq('id', otherAgentId).single(),
     supabase.from('matches').select('score, tier').eq('id', handshake.match_id).single(),
   ])
 
@@ -124,6 +125,16 @@ export async function POST(req: NextRequest) {
     webhookPromises.push(sendWebhook(otherAgent.webhook_url, revealPayload(otherAgent, agent)))
   }
   await Promise.allSettled(webhookPromises)
+
+  // FCM push — notify initiator their handshake was accepted
+  notifyHandshakeAccepted(otherAgent, agent.handle)
+
+  // Auto-create negotiation session
+  await supabase.from('negotiation_sessions').insert({
+    handshake_id: handshake_id,
+    agent_a_id: handshake.initiated_by,
+    agent_b_id: agent.id,
+  }).onConflict('handshake_id').ignore()
 
   return NextResponse.json({
     handshake: { id: handshake_id, state: 'active' },

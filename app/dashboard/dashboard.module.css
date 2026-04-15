@@ -223,7 +223,32 @@
   color: var(--m3x-blue-bright, #8ab4ff);
 }
 
-.headerRight { display: flex; align-items: center; gap: 12px; }
+.headerRight { display: flex; align-items: center; gap: 10px; }
+
+.inboxLink {
+  font-size: 13px;
+  color: rgba(232, 234, 240, 0.55);
+  text-decoration: none;
+  padding: 4px 10px;
+  border-radius: 7px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  transition: color 0.15s, background 0.15s;
+}
+
+.inboxLink:hover { color: #e8eaf0; background: rgba(255,255,255,0.04); }
+
+.inboxBadge {
+  font-size: 10px;
+  font-weight: 700;
+  background: #00ff88;
+  color: #050507;
+  border-radius: 10px;
+  padding: 1px 5px;
+  min-width: 16px;
+  text-align: center;
+}
 
 .handleBadge {
   font-size: 13px;

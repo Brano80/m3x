@@ -200,6 +200,7 @@ function Dashboard({
   const [runningMatch, setRunningMatch] = useState(false)
   const [runMsg, setRunMsg] = useState('')
   const [pushState, setPushState] = useState<'default' | 'granted' | 'denied' | 'unsupported'>('default')
+  const [unreadCount, setUnreadCount] = useState(0)
 
   useEffect(() => {
     if (!('Notification' in window)) { setPushState('unsupported'); return }
@@ -224,6 +225,11 @@ function Dashboard({
       setAgent(agentData.agent)
       setMatches(matchesData.matches ?? [])
       setIntents(intentsData.intents ?? [])
+
+      // Fetch unread inbox count
+      fetch('/api/conversations', { headers }).then(r => r.ok ? r.json() : null).then(d => {
+        if (d) setUnreadCount((d.conversations ?? []).reduce((n: number, c: any) => n + (c.unread ?? 0), 0))
+      })
     } catch {
       setError('Failed to load data.')
     } finally {
@@ -287,6 +293,9 @@ function Dashboard({
           <span className={styles.headerLogoMark}>M3X</span>
         </a>
         <div className={styles.headerRight}>
+          <a href="/inbox" className={styles.inboxLink}>
+            Inbox{unreadCount > 0 && <span className={styles.inboxBadge}>{unreadCount}</span>}
+          </a>
           <span className={styles.handleBadge}>@{agent?.handle}</span>
           {(pushState === 'default' || pushState === 'granted') && (
             <button
