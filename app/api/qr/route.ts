@@ -36,7 +36,7 @@ export async function GET(req: NextRequest) {
     errorCorrectionLevel: 'M',
   })
 
-  return new NextResponse(png, {
+  return new NextResponse(new Uint8Array(png), {
     headers: {
       'Content-Type': 'image/png',
       'Cache-Control': 'private, no-store', // never cache — contains token
