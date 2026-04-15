@@ -298,6 +298,7 @@
   color: rgba(232, 234, 240, 0.4);
   text-transform: uppercase;
   letter-spacing: 0.05em;
+  white-space: nowrap;
 }
 
 .statDivider {

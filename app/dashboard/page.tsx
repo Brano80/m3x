@@ -325,22 +325,22 @@ function Dashboard({
         <div className={styles.statBar}>
           <div className={styles.stat}>
             <div className={styles.statVal}>{agent?.trust_score ?? 0}</div>
-            <div className={styles.statLabel}>Trust score</div>
+            <div className={styles.statLabel}>Trust</div>
           </div>
           <div className={styles.statDivider} />
           <div className={styles.stat}>
             <div className={styles.statVal}>{pushedMatches.length}</div>
-            <div className={styles.statLabel}>Active matches</div>
+            <div className={styles.statLabel}>Matches</div>
           </div>
           <div className={styles.statDivider} />
           <div className={styles.stat}>
             <div className={styles.statVal}>{intents.length}</div>
-            <div className={styles.statLabel}>Live intents</div>
+            <div className={styles.statLabel}>Intents</div>
           </div>
           <div className={styles.statDivider} />
           <div className={styles.stat}>
             <div className={styles.statVal}>{Math.round((agent?.response_rate ?? 0) * 100)}%</div>
-            <div className={styles.statLabel}>Response rate</div>
+            <div className={styles.statLabel}>Response</div>
           </div>
         </div>
 
