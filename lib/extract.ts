@@ -77,7 +77,16 @@ export async function extractIntentSignals(offers: string, seeking: string, mark
     // Fallback to infra keys
     if (process.env.GEMINI_API_KEY) {
       console.log('[extract] using Gemini 2.0 Flash')
-      return await extractWithGemini(offers, seeking, market)
+      try {
+        return await extractWithGemini(offers, seeking, market)
+      } catch (geminiErr) {
+        console.error('[extract] Gemini failed, falling back to Haiku:', geminiErr instanceof Error ? geminiErr.message : String(geminiErr))
+        if (process.env.ANTHROPIC_API_KEY) {
+          console.log('[extract] falling back to Haiku after Gemini failure')
+          return await extractWithHaiku(offers, seeking, market)
+        }
+        return null
+      }
     }
 
     if (process.env.ANTHROPIC_API_KEY) {
