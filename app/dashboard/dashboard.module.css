@@ -573,10 +573,138 @@
   text-transform: capitalize;
 }
 
+/* ── Lock screen ──────────────────────────────────────────────────────────── */
+
+.lockScreen {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  gap: 16px;
+  padding: 40px 24px;
+  max-width: 360px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.lockIcon {
+  font-size: 48px;
+  color: var(--m3x-blue-bright, #8ab4ff);
+  opacity: 0.4;
+  margin-bottom: 8px;
+}
+
+.lockHandle {
+  font-size: 18px;
+  font-weight: 600;
+  font-family: var(--font-geist-mono), monospace;
+  color: #e8eaf0;
+}
+
+.lockSub {
+  font-size: 14px;
+  color: rgba(232, 234, 240, 0.4);
+  margin-bottom: 8px;
+}
+
+.biometricBtn {
+  width: 100%;
+  padding: 14px;
+  background: linear-gradient(180deg, #5c9ef3 0%, #3d82d9 50%, #1d5a9e 100%);
+  border: none;
+  border-radius: 12px;
+  color: #fff;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s;
+  letter-spacing: 0.01em;
+}
+
+.biometricBtn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.lockError {
+  font-size: 13px;
+  color: #f87171;
+  padding: 10px 14px;
+  background: rgba(248, 113, 113, 0.08);
+  border-radius: 8px;
+  width: 100%;
+  text-align: center;
+}
+
+.lockFallbackLink {
+  background: none;
+  border: none;
+  color: rgba(232, 234, 240, 0.4);
+  font-size: 13px;
+  cursor: pointer;
+  padding: 4px;
+  text-decoration: underline;
+  text-decoration-color: rgba(232, 234, 240, 0.2);
+}
+
+.lockFallbackLink:hover { color: rgba(232, 234, 240, 0.7); }
+
+.lockFallbackForm {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.lockLogoutBtn {
+  margin-top: 8px;
+  background: none;
+  border: none;
+  color: rgba(232, 234, 240, 0.25);
+  font-size: 12px;
+  cursor: pointer;
+  padding: 4px;
+}
+
+.lockLogoutBtn:hover { color: rgba(232, 234, 240, 0.5); }
+
+/* ── Lock / biometric buttons in header ───────────────────────────────────── */
+
+.lockBtn {
+  background: none;
+  border: 1px solid rgba(79, 146, 232, 0.2);
+  border-radius: 6px;
+  color: rgba(232, 234, 240, 0.4);
+  font-size: 14px;
+  cursor: pointer;
+  padding: 4px 8px;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.lockBtn:hover {
+  color: var(--m3x-blue-bright, #8ab4ff);
+  border-color: rgba(79, 146, 232, 0.5);
+}
+
+.biometricSetupBtn {
+  background: rgba(79, 146, 232, 0.08);
+  border: 1px solid rgba(79, 146, 232, 0.2);
+  border-radius: 6px;
+  color: rgba(232, 234, 240, 0.5);
+  font-size: 12px;
+  cursor: pointer;
+  padding: 5px 10px;
+  transition: background 0.15s;
+  white-space: nowrap;
+}
+
+.biometricSetupBtn:hover { background: rgba(79, 146, 232, 0.16); }
+
 /* ── Responsive ───────────────────────────────────────────────────────────── */
 
 @media (max-width: 480px) {
   .statVal { font-size: 18px; }
   .statLabel { font-size: 10px; }
   .connectCard { padding: 32px 20px; }
+  .biometricSetupBtn { display: none; } /* too cramped on small screens */
 }

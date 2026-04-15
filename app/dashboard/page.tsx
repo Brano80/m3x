@@ -68,7 +68,7 @@ function tierLabel(tier: string) {
 
 // ── Connect screen ───────────────────────────────────────────────────────────
 
-function ConnectScreen({ onConnect }: { onConnect: (token: string) => void }) {
+function ConnectScreen({ onConnect }: { onConnect: (token: string, handle: string) => void }) {
   const [tab, setTab] = useState<'token' | 'qr'>('token')
   const [token, setToken] = useState('')
   const [loading, setLoading] = useState(false)
@@ -86,7 +86,8 @@ function ConnectScreen({ onConnect }: { onConnect: (token: string) => void }) {
         setError('Invalid token. Check and try again.')
         return
       }
-      onConnect(token.trim())
+      const data = await res.json()
+      onConnect(token.trim(), data.agent?.handle ?? '')
     } catch {
       setError('Network error. Try again.')
     } finally {
@@ -180,7 +181,17 @@ function ConnectScreen({ onConnect }: { onConnect: (token: string) => void }) {
 
 // ── Dashboard ────────────────────────────────────────────────────────────────
 
-function Dashboard({ token, onLogout }: { token: string; onLogout: () => void }) {
+function Dashboard({
+  token,
+  onLogout,
+  onLock,
+  onRegisterBiometric,
+}: {
+  token: string
+  onLogout: () => void
+  onLock?: () => void
+  onRegisterBiometric?: () => Promise<void>
+}) {
   const [agent, setAgent] = useState<Agent | null>(null)
   const [matches, setMatches] = useState<Match[]>([])
   const [intents, setIntents] = useState<Intent[]>([])
@@ -271,6 +282,16 @@ function Dashboard({ token, onLogout }: { token: string; onLogout: () => void })
         </a>
         <div className={styles.headerRight}>
           <span className={styles.handleBadge}>@{agent?.handle}</span>
+          {onRegisterBiometric && (
+            <button className={styles.biometricSetupBtn} onClick={onRegisterBiometric} title="Enable biometric unlock">
+              ⬡ Enable biometrics
+            </button>
+          )}
+          {onLock && (
+            <button className={styles.lockBtn} onClick={onLock} title="Lock dashboard">
+              ⬡
+            </button>
+          )}
           <button className={styles.logoutBtn} onClick={onLogout} title="Disconnect">✕</button>
         </div>
       </header>
@@ -453,43 +474,279 @@ function Dashboard({ token, onLogout }: { token: string; onLogout: () => void })
   )
 }
 
+// ── Biometric helpers ─────────────────────────────────────────────────────────
+
+const TOKEN_KEY    = 'm3x_token'
+const CRED_KEY     = 'm3x_biometric_cred'
+const SESSION_KEY  = 'm3x_unlocked'
+
+function buf2b64(buf: ArrayBuffer) {
+  return btoa(String.fromCharCode(...new Uint8Array(buf)))
+}
+function b64toBuf(b64: string) {
+  const bin = atob(b64)
+  const arr = new Uint8Array(bin.length)
+  for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i)
+  return arr.buffer
+}
+
+async function biometricAvailable() {
+  if (!window.PublicKeyCredential) return false
+  return PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable()
+}
+
+async function registerBiometric(handle: string): Promise<boolean> {
+  try {
+    const cred = await navigator.credentials.create({
+      publicKey: {
+        challenge: crypto.getRandomValues(new Uint8Array(32)),
+        rp: { name: 'M3X', id: window.location.hostname },
+        user: {
+          id: crypto.getRandomValues(new Uint8Array(16)),
+          name: handle,
+          displayName: `@${handle}`,
+        },
+        pubKeyCredParams: [{ type: 'public-key', alg: -7 }, { type: 'public-key', alg: -257 }],
+        authenticatorSelection: {
+          authenticatorAttachment: 'platform',
+          userVerification: 'required',
+          residentKey: 'preferred',
+        },
+        timeout: 60000,
+      },
+    }) as PublicKeyCredential | null
+    if (!cred) return false
+    localStorage.setItem(CRED_KEY, buf2b64(cred.rawId))
+    return true
+  } catch {
+    return false
+  }
+}
+
+async function verifyBiometric(): Promise<boolean> {
+  try {
+    const credId = localStorage.getItem(CRED_KEY)
+    if (!credId) return false
+    const assertion = await navigator.credentials.get({
+      publicKey: {
+        challenge: crypto.getRandomValues(new Uint8Array(32)),
+        allowCredentials: [{ type: 'public-key', id: b64toBuf(credId) }],
+        userVerification: 'required',
+        timeout: 60000,
+      },
+    })
+    return !!assertion
+  } catch {
+    return false
+  }
+}
+
+// ── Lock screen ───────────────────────────────────────────────────────────────
+
+function LockScreen({
+  handle,
+  onUnlock,
+  onLogout,
+}: {
+  handle: string
+  onUnlock: () => void
+  onLogout: () => void
+}) {
+  const [unlocking, setUnlocking] = useState(false)
+  const [error, setError]         = useState('')
+  const [showFallback, setShowFallback] = useState(false)
+  const [fallbackToken, setFallbackToken] = useState('')
+  const [fallbackLoading, setFallbackLoading] = useState(false)
+
+  const unlock = async () => {
+    setError('')
+    setUnlocking(true)
+    const ok = await verifyBiometric()
+    setUnlocking(false)
+    if (ok) {
+      sessionStorage.setItem(SESSION_KEY, '1')
+      onUnlock()
+    } else {
+      setError('Biometric check failed. Try again or use your token.')
+    }
+  }
+
+  const unlockWithToken = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setFallbackLoading(true)
+    try {
+      const res = await fetch('/api/agent/me', {
+        headers: { Authorization: `Bearer ${fallbackToken.trim()}` },
+      })
+      if (!res.ok) { setError('Invalid token.'); return }
+      localStorage.setItem(TOKEN_KEY, fallbackToken.trim())
+      sessionStorage.setItem(SESSION_KEY, '1')
+      onUnlock()
+    } catch {
+      setError('Network error.')
+    } finally {
+      setFallbackLoading(false)
+    }
+  }
+
+  return (
+    <div className={styles.root}>
+      <div className={styles.grid} />
+      <div className={styles.lockScreen}>
+        <div className={styles.lockIcon}>⬡</div>
+        <div className={styles.lockHandle}>@{handle}</div>
+        <div className={styles.lockSub}>M3X Dashboard is locked</div>
+
+        {!showFallback ? (
+          <>
+            <button className={styles.biometricBtn} onClick={unlock} disabled={unlocking}>
+              {unlocking ? 'Verifying…' : '⬡ Unlock with biometrics'}
+            </button>
+            {error && <div className={styles.lockError}>{error}</div>}
+            <button className={styles.lockFallbackLink} onClick={() => setShowFallback(true)}>
+              Use agent token instead
+            </button>
+          </>
+        ) : (
+          <form onSubmit={unlockWithToken} className={styles.lockFallbackForm}>
+            <input
+              className={styles.tokenInput}
+              type="password"
+              placeholder="m3x_sk_..."
+              value={fallbackToken}
+              onChange={(e) => setFallbackToken(e.target.value)}
+              required
+              autoFocus
+              autoComplete="off"
+              spellCheck={false}
+            />
+            {error && <div className={styles.lockError}>{error}</div>}
+            <button type="submit" className={styles.connectBtn} disabled={fallbackLoading || !fallbackToken}>
+              {fallbackLoading ? 'Unlocking…' : 'Unlock →'}
+            </button>
+            <button type="button" className={styles.lockFallbackLink} onClick={() => setShowFallback(false)}>
+              ← Back to biometrics
+            </button>
+          </form>
+        )}
+
+        <button className={styles.lockLogoutBtn} onClick={onLogout}>
+          Sign out
+        </button>
+      </div>
+    </div>
+  )
+}
+
 // ── Root ─────────────────────────────────────────────────────────────────────
 
-const TOKEN_KEY = 'm3x_token'
+type AppStatus = 'loading' | 'connect' | 'locked' | 'unlocked'
 
 export default function DashboardPage() {
-  const [token, setToken] = useState<string | null>(null)
-  const [ready, setReady] = useState(false)
+  const [status, setStatus]   = useState<AppStatus>('loading')
+  const [token, setToken]     = useState('')
+  const [handle, setHandle]   = useState('')
+  const [hasBiometric, setHasBiometric] = useState(false)
 
   useEffect(() => {
-    // Check URL for ?token= (from QR code scan)
-    const params = new URLSearchParams(window.location.search)
-    const urlToken = params.get('token')
-    if (urlToken) {
-      localStorage.setItem(TOKEN_KEY, urlToken)
-      // Remove token from URL to avoid it lingering in browser history
-      window.history.replaceState({}, '', '/dashboard')
-      setToken(urlToken)
-      setReady(true)
-      return
+    async function init() {
+      // 1. QR / URL token takes priority
+      const params = new URLSearchParams(window.location.search)
+      const urlToken = params.get('token')
+      if (urlToken) {
+        localStorage.setItem(TOKEN_KEY, urlToken)
+        window.history.replaceState({}, '', '/dashboard')
+        setToken(urlToken)
+        sessionStorage.setItem(SESSION_KEY, '1')
+        setStatus('unlocked')
+        // Register biometric in background after QR login
+        biometricAvailable().then(async (ok) => {
+          if (ok && !localStorage.getItem(CRED_KEY)) {
+            setHasBiometric(true)
+          }
+        })
+        return
+      }
+
+      const stored = localStorage.getItem(TOKEN_KEY)
+      if (!stored) { setStatus('connect'); return }
+
+      setToken(stored)
+
+      // Fetch handle for lock screen display
+      try {
+        const res = await fetch('/api/agent/me', { headers: { Authorization: `Bearer ${stored}` } })
+        if (res.ok) {
+          const data = await res.json()
+          setHandle(data.agent?.handle ?? '')
+        }
+      } catch { /* ignore */ }
+
+      const credId     = localStorage.getItem(CRED_KEY)
+      const sessionOk  = sessionStorage.getItem(SESSION_KEY)
+      const bioAvail   = await biometricAvailable()
+
+      setHasBiometric(bioAvail)
+
+      // If session is still active → go straight to dashboard
+      if (sessionOk) { setStatus('unlocked'); return }
+      // If biometric credential registered → show lock screen
+      if (credId && bioAvail) { setStatus('locked'); return }
+      // No biometric set up → go straight to dashboard
+      setStatus('unlocked')
     }
-    const stored = localStorage.getItem(TOKEN_KEY)
-    setToken(stored)
-    setReady(true)
+    init()
   }, [])
 
-  const handleConnect = (t: string) => {
+  // After first successful connect — try to register biometric
+  const handleConnect = async (t: string, agentHandle: string) => {
     localStorage.setItem(TOKEN_KEY, t)
     setToken(t)
+    setHandle(agentHandle)
+    sessionStorage.setItem(SESSION_KEY, '1')
+
+    const ok = await biometricAvailable()
+    if (ok) {
+      const registered = await registerBiometric(agentHandle)
+      setHasBiometric(registered)
+    }
+    setStatus('unlocked')
   }
+
+  const handleUnlock = () => setStatus('unlocked')
 
   const handleLogout = () => {
     localStorage.removeItem(TOKEN_KEY)
-    setToken(null)
+    localStorage.removeItem(CRED_KEY)
+    sessionStorage.removeItem(SESSION_KEY)
+    setToken('')
+    setHandle('')
+    setStatus('connect')
   }
 
-  if (!ready) return null
+  const handleLock = () => {
+    sessionStorage.removeItem(SESSION_KEY)
+    setStatus('locked')
+  }
 
-  if (!token) return <ConnectScreen onConnect={handleConnect} />
-  return <Dashboard token={token} onLogout={handleLogout} />
+  if (status === 'loading') return null
+
+  if (status === 'connect') {
+    return <ConnectScreen onConnect={handleConnect} />
+  }
+
+  if (status === 'locked') {
+    return <LockScreen handle={handle} onUnlock={handleUnlock} onLogout={handleLogout} />
+  }
+
+  return (
+    <Dashboard
+      token={token}
+      onLogout={handleLogout}
+      onLock={hasBiometric && !!localStorage.getItem(CRED_KEY) ? handleLock : undefined}
+      onRegisterBiometric={hasBiometric && !localStorage.getItem(CRED_KEY)
+        ? async () => { await registerBiometric(handle); setHasBiometric(true) }
+        : undefined}
+    />
+  )
 }
