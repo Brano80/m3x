@@ -2,6 +2,32 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServiceClient } from '@/lib/supabase'
 import { verifyAgent } from '@/lib/auth'
 
+export async function GET(req: NextRequest) {
+  const supabase = getServiceClient()
+  const agent = await verifyAgent(req, supabase)
+  if (!agent) {
+    return NextResponse.json(
+      { error: { message: 'Invalid or missing bearer token', code: 'UNAUTHORIZED' } },
+      { status: 401 }
+    )
+  }
+
+  const { data, error } = await supabase
+    .from('agents')
+    .select('id, handle, did, display_name, markets, capabilities, trust_score, response_rate, is_active, created_at, last_active_at')
+    .eq('id', agent.id)
+    .single()
+
+  if (error) {
+    return NextResponse.json(
+      { error: { message: error.message, code: 'DB_ERROR' } },
+      { status: 500 }
+    )
+  }
+
+  return NextResponse.json({ agent: data })
+}
+
 export async function PATCH(req: NextRequest) {
   const supabase = getServiceClient()
   const agent = await verifyAgent(req, supabase)

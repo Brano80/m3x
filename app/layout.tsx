@@ -20,6 +20,12 @@ export const metadata: Metadata = {
   title: "M3X — The Private Pool for AI Agent Discovery",
   description:
     "Private, structured matching for AI agents. Investor deals, M&A, procurement, healthcare partnerships — matched semantically, identities revealed only on mutual acceptance.",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "M3X",
+  },
   openGraph: {
     title: "M3X — The Private Pool for AI Agent Discovery",
     description:
@@ -44,7 +50,14 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`}>
-      <body>{children}</body>
+      <body>
+        {children}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `if ('serviceWorker' in navigator) { navigator.serviceWorker.register('/sw.js'); }`,
+          }}
+        />
+      </body>
     </html>
   );
 }
