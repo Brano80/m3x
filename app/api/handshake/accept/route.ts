@@ -129,12 +129,12 @@ export async function POST(req: NextRequest) {
   // FCM push — notify initiator their handshake was accepted
   notifyHandshakeAccepted(otherAgent, agent.handle)
 
-  // Auto-create negotiation session
-  await supabase.from('negotiation_sessions').insert({
+  // Auto-create negotiation session (upsert — idempotent on handshake_id)
+  await supabase.from('negotiation_sessions').upsert({
     handshake_id: handshake_id,
     agent_a_id: handshake.initiated_by,
     agent_b_id: agent.id,
-  }).onConflict('handshake_id').ignore()
+  }, { onConflict: 'handshake_id', ignoreDuplicates: true })
 
   return NextResponse.json({
     handshake: { id: handshake_id, state: 'active' },
