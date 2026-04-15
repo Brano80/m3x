@@ -199,6 +199,12 @@ function Dashboard({
   const [error, setError] = useState('')
   const [runningMatch, setRunningMatch] = useState(false)
   const [runMsg, setRunMsg] = useState('')
+  const [pushState, setPushState] = useState<'default' | 'granted' | 'denied' | 'unsupported'>('default')
+
+  useEffect(() => {
+    if (!('Notification' in window)) { setPushState('unsupported'); return }
+    setPushState(Notification.permission as 'default' | 'granted' | 'denied')
+  }, [])
 
   const headers = { Authorization: `Bearer ${token}` }
 
@@ -282,6 +288,14 @@ function Dashboard({
         </a>
         <div className={styles.headerRight}>
           <span className={styles.handleBadge}>@{agent?.handle}</span>
+          {pushState === 'default' && (
+            <button className={styles.biometricSetupBtn} onClick={async () => {
+              await registerFcmPush(token)
+              setPushState(Notification.permission as 'default' | 'granted' | 'denied')
+            }} title="Enable push notifications">
+              🔔 Enable alerts
+            </button>
+          )}
           {onRegisterBiometric && (
             <button className={styles.biometricSetupBtn} onClick={onRegisterBiometric} title="Enable biometric unlock">
               ⬡ Enable biometrics
@@ -472,6 +486,48 @@ function Dashboard({
       </main>
     </div>
   )
+}
+
+// ── FCM push registration ─────────────────────────────────────────────────────
+
+async function registerFcmPush(token: string) {
+  if (typeof window === 'undefined') return
+  if (!('Notification' in window)) return
+  if (Notification.permission === 'denied') return
+
+  try {
+    const permission = await Notification.requestPermission()
+    if (permission !== 'granted') return
+
+    // Dynamic import to avoid SSR issues
+    const { initializeApp, getApps } = await import('firebase/app')
+    const { getMessaging, getToken } = await import('firebase/messaging')
+
+    const firebaseConfig = {
+      apiKey:            process.env.NEXT_PUBLIC_FIREBASE_API_KEY            ?? 'AIzaSyArfAjVmmLiMyeBsOFYrF68ftIGFuC3RmY',
+      projectId:         process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID         ?? 'm3x-space',
+      messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID ?? '653745093492',
+      appId:             process.env.NEXT_PUBLIC_FIREBASE_APP_ID             ?? '1:653745093492:web:4542ec8bb2692c41730a21',
+    }
+
+    const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig)
+    const messaging = getMessaging(app)
+
+    const vapidKey = process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY
+      ?? 'BPlXJPXFpTtR6t14UV0IVO3s6rWv6t3AVJdQxFey9H409Dnt8aXPrQJ9vx-BX_n-CtH0sn7QsWrYcXrqa2ClVWA'
+
+    const fcmToken = await getToken(messaging, { vapidKey, serviceWorkerRegistration: await navigator.serviceWorker.getRegistration('/firebase-messaging-sw.js') })
+    if (!fcmToken) return
+
+    await fetch('/api/push/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ fcm_token: fcmToken }),
+    })
+  } catch (err) {
+    // Non-fatal — push is best-effort
+    console.warn('[fcm] registration failed:', err)
+  }
 }
 
 // ── Biometric helpers ─────────────────────────────────────────────────────────
