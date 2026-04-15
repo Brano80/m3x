@@ -228,11 +228,11 @@
 .handleBadge {
   font-size: 13px;
   font-family: var(--font-geist-mono), monospace;
-  color: rgba(232, 234, 240, 0.65);
-  background: rgba(79, 146, 232, 0.1);
+  color: #8ab4ff;
+  background: rgba(79, 146, 232, 0.15);
   padding: 4px 10px;
   border-radius: 20px;
-  border: 1px solid rgba(79, 146, 232, 0.2);
+  border: 1px solid rgba(79, 146, 232, 0.35);
   white-space: nowrap;
   max-width: 200px;
   overflow: hidden;
@@ -288,7 +288,8 @@
 .statVal {
   font-size: 22px;
   font-weight: 700;
-  color: var(--m3x-blue-bright, #8ab4ff);
+  color: #00ff88;
+  text-shadow: 0 0 12px rgba(0, 255, 136, 0.5);
   line-height: 1;
 }
 
@@ -692,10 +693,10 @@
 }
 
 .biometricSetupBtn {
-  background: rgba(79, 146, 232, 0.08);
-  border: 1px solid rgba(79, 146, 232, 0.2);
+  background: rgba(79, 146, 232, 0.1);
+  border: 1px solid rgba(79, 146, 232, 0.3);
   border-radius: 6px;
-  color: rgba(232, 234, 240, 0.5);
+  color: #8ab4ff;
   font-size: 12px;
   cursor: pointer;
   padding: 5px 10px;
@@ -703,7 +704,15 @@
   white-space: nowrap;
 }
 
-.biometricSetupBtn:hover { background: rgba(79, 146, 232, 0.16); }
+.biometricSetupBtn:hover { background: rgba(79, 146, 232, 0.2); }
+
+.pushActive {
+  background: rgba(0, 255, 136, 0.08);
+  border-color: rgba(0, 255, 136, 0.3);
+  color: #00ff88;
+}
+
+.pushActive:hover { background: rgba(0, 255, 136, 0.14); }
 
 /* ── Responsive ───────────────────────────────────────────────────────────── */
 

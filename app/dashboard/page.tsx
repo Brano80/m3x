@@ -288,12 +288,21 @@ function Dashboard({
         </a>
         <div className={styles.headerRight}>
           <span className={styles.handleBadge}>@{agent?.handle}</span>
-          {pushState === 'default' && (
-            <button className={styles.biometricSetupBtn} onClick={async () => {
-              await registerFcmPush(token)
-              setPushState(Notification.permission as 'default' | 'granted' | 'denied')
-            }} title="Enable push notifications">
-              🔔 Enable alerts
+          {(pushState === 'default' || pushState === 'granted') && (
+            <button
+              className={`${styles.biometricSetupBtn} ${pushState === 'granted' ? styles.pushActive : ''}`}
+              onClick={async () => {
+                if (pushState === 'granted') {
+                  await fetch('/api/push/register', { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } })
+                  setPushState('default')
+                } else {
+                  await registerFcmPush(token)
+                  setPushState(Notification.permission as 'default' | 'granted' | 'denied')
+                }
+              }}
+              title={pushState === 'granted' ? 'Disable push alerts' : 'Enable push alerts'}
+            >
+              🔔 {pushState === 'granted' ? 'Alerts on' : 'Enable alerts'}
             </button>
           )}
           {onRegisterBiometric && (
