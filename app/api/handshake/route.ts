@@ -6,6 +6,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServiceClient } from '@/lib/supabase'
 import { verifyAgent } from '@/lib/auth'
 import { sendWebhook } from '@/lib/webhook'
+import { notifyHandshake } from '@/lib/fcm'
+import { recalculateTrust } from '@/lib/trust'
 
 export async function POST(req: NextRequest) {
   const supabase = getServiceClient()
@@ -81,7 +83,7 @@ export async function POST(req: NextRequest) {
 
   const { data: otherAgent } = await supabase
     .from('agents')
-    .select('id, handle, did, webhook_url, capabilities, markets, trust_score')
+    .select('id, handle, did, webhook_url, capabilities, markets, trust_score, fcm_token')
     .eq('id', otherAgentId)
     .single()
 
@@ -117,6 +119,12 @@ export async function POST(req: NextRequest) {
     .from('matches')
     .update({ state: 'handshake_initiated' })
     .eq('id', match_id)
+
+  // Update receiving agent's trust score — their received count just went up
+  recalculateTrust(otherAgentId, supabase, 'handshake_received')
+
+  // FCM push to other agent
+  notifyHandshake(otherAgent, agent.handle)
 
   // Notify the other agent via webhook — no identity revealed yet
   if (otherAgent.webhook_url) {

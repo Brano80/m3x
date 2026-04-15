@@ -56,6 +56,8 @@ export async function POST(req: NextRequest) {
 
   // Declining counts as responding — improves response_rate for the decliner
   await recalculateTrust(agent.id, supabase, 'handshake_declined')
+  // Refresh initiator's score too (activity + trust components may have changed)
+  recalculateTrust(handshake.initiated_by, supabase)
 
   // Notify the initiator — no identity revealed, no score penalty
   const initiatorId = handshake.initiated_by
