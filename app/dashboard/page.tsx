@@ -122,7 +122,13 @@ function PostIntentModal({ token, onClose, onSuccess }: {
       const res = await fetch('/api/intent', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ side, market, offers, seeking, ttl_hours: 720 }),
+        body: JSON.stringify({
+          side,
+          market,
+          offers: side === 'supply' ? offers : seeking,
+          seeking: side === 'demand' ? seeking : offers,
+          ttl_hours: 720,
+        }),
       })
       const data = await res.json()
       if (!res.ok) { setError(data.error?.message ?? 'Failed to post intent.'); return }
@@ -182,40 +188,41 @@ function PostIntentModal({ token, onClose, onSuccess }: {
             </select>
           </div>
 
-          {/* Offers */}
-          <div className={styles.fieldGroup}>
-            <label className={styles.fieldLabel}>What you offer</label>
-            <textarea
-              className={styles.fieldTextarea}
-              placeholder="Describe what you bring to the table…"
-              value={offers}
-              onChange={e => setOffers(e.target.value)}
-              rows={3}
-              required
-              minLength={10}
-            />
-          </div>
-
-          {/* Seeking */}
-          <div className={styles.fieldGroup}>
-            <label className={styles.fieldLabel}>What you're looking for</label>
-            <textarea
-              className={styles.fieldTextarea}
-              placeholder="Describe what you need…"
-              value={seeking}
-              onChange={e => setSeeking(e.target.value)}
-              rows={3}
-              required
-              minLength={10}
-            />
-          </div>
+          {/* Conditional textarea */}
+          {side === 'supply' ? (
+            <div className={styles.fieldGroup}>
+              <label className={styles.fieldLabel}>What you offer</label>
+              <textarea
+                className={styles.fieldTextarea}
+                placeholder="Describe what you bring to the table…"
+                value={offers}
+                onChange={e => setOffers(e.target.value)}
+                rows={4}
+                required
+                minLength={10}
+              />
+            </div>
+          ) : (
+            <div className={styles.fieldGroup}>
+              <label className={styles.fieldLabel}>What you're looking for</label>
+              <textarea
+                className={styles.fieldTextarea}
+                placeholder="Describe what you need…"
+                value={seeking}
+                onChange={e => setSeeking(e.target.value)}
+                rows={4}
+                required
+                minLength={10}
+              />
+            </div>
+          )}
 
           {error && <div className={styles.formError}>{error}</div>}
 
           <button
             type="submit"
             className={styles.submitBtn}
-            disabled={loading || !market || !offers || !seeking}
+            disabled={loading || !market || (side === 'supply' ? !offers : !seeking)}
           >
             {loading ? 'Posting…' : 'Post intent →'}
           </button>
