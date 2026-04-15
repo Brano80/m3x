@@ -42,6 +42,23 @@ interface Intent {
   expires_at: string
 }
 
+interface Conversation {
+  id: string
+  unread: number
+  last_message_at: string | null
+  created_at: string
+  other_agent: { handle: string }
+  last_message: { content: string; sender_id: string } | null
+}
+
+interface FeedItem {
+  id: string
+  text: string
+  timeIso: string
+  read: boolean
+  href: string
+}
+
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 function timeAgo(iso: string) {
@@ -195,12 +212,10 @@ function Dashboard({
   const [agent, setAgent] = useState<Agent | null>(null)
   const [matches, setMatches] = useState<Match[]>([])
   const [intents, setIntents] = useState<Intent[]>([])
+  const [conversations, setConversations] = useState<Conversation[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const [runningMatch, setRunningMatch] = useState(false)
-  const [runMsg, setRunMsg] = useState('')
   const [pushState, setPushState] = useState<'default' | 'granted' | 'denied' | 'unsupported'>('default')
-  const [unreadCount, setUnreadCount] = useState(0)
 
   useEffect(() => {
     if (!('Notification' in window)) { setPushState('unsupported'); return }
@@ -213,23 +228,20 @@ function Dashboard({
     setLoading(true)
     setError('')
     try {
-      const [agentRes, matchesRes, intentsRes] = await Promise.all([
+      const [agentRes, matchesRes, intentsRes, convsRes] = await Promise.all([
         fetch('/api/agent/me', { headers }),
         fetch('/api/matches?limit=20', { headers }),
         fetch('/api/intents?status=active', { headers }),
+        fetch('/api/conversations', { headers }),
       ])
       if (!agentRes.ok) { setError('Session expired. Please reconnect.'); return }
-      const [agentData, matchesData, intentsData] = await Promise.all([
-        agentRes.json(), matchesRes.json(), intentsRes.json(),
+      const [agentData, matchesData, intentsData, convsData] = await Promise.all([
+        agentRes.json(), matchesRes.json(), intentsRes.json(), convsRes.ok ? convsRes.json() : { conversations: [] },
       ])
       setAgent(agentData.agent)
       setMatches(matchesData.matches ?? [])
       setIntents(intentsData.intents ?? [])
-
-      // Fetch unread inbox count
-      fetch('/api/conversations', { headers }).then(r => r.ok ? r.json() : null).then(d => {
-        if (d) setUnreadCount((d.conversations ?? []).reduce((n: number, c: any) => n + (c.unread ?? 0), 0))
-      })
+      setConversations(convsData.conversations ?? [])
     } catch {
       setError('Failed to load data.')
     } finally {
@@ -239,24 +251,39 @@ function Dashboard({
 
   useEffect(() => { load() }, [load])
 
-  const runMatching = async () => {
-    setRunningMatch(true)
-    setRunMsg('')
-    try {
-      const res = await fetch('/api/matches/run', { method: 'POST', headers })
-      const data = await res.json()
-      if (!res.ok) {
-        setRunMsg(data.error?.message ?? 'Run failed.')
+  // Build activity feed from matches + conversations
+  const buildFeed = (): FeedItem[] => {
+    const items: FeedItem[] = []
+
+    for (const m of matches) {
+      const isA = agent?.id === m.agent_a?.id
+      const other = isA ? m.agent_b : m.agent_a
+      const score = Math.round(m.score * 100)
+      const read = m.state !== 'notified'
+      let text = ''
+      if (m.state === 'accepted') {
+        text = `Connected with @${other?.handle}`
+      } else if (m.state === 'handshake_initiated') {
+        text = `Handshake pending with @${other?.handle}`
       } else {
-        setRunMsg(`Done — ${data.matches_found ?? 0} new match${(data.matches_found ?? 0) === 1 ? '' : 'es'} found.`)
-        await load()
+        text = `New match — @${other?.handle} (${score}%)`
       }
-    } catch {
-      setRunMsg('Network error.')
-    } finally {
-      setRunningMatch(false)
-      setTimeout(() => setRunMsg(''), 4000)
+      items.push({ id: m.id, text, timeIso: m.created_at, read, href: '/inbox' })
     }
+
+    for (const c of conversations) {
+      if (c.unread > 0) {
+        items.push({
+          id: `conv-${c.id}`,
+          text: `New message from @${c.other_agent.handle}`,
+          timeIso: c.last_message_at ?? c.created_at,
+          read: false,
+          href: '/inbox',
+        })
+      }
+    }
+
+    return items.sort((a, b) => new Date(b.timeIso).getTime() - new Date(a.timeIso).getTime())
   }
 
   if (loading) {
@@ -280,8 +307,9 @@ function Dashboard({
     )
   }
 
-  const pushedMatches = matches.filter((m) => ['notified', 'handshake_initiated', 'accepted'].includes(m.state))
-  const nearMatches = matches.filter((m) => m.tier === 'near_match' && m.state !== 'accepted')
+  const feed = buildFeed()
+  const unreadCount = conversations.reduce((n, c) => n + c.unread, 0)
+  const matchCount = matches.filter(m => ['notified', 'handshake_initiated', 'accepted'].includes(m.state)).length
 
   return (
     <div className={styles.root}>
@@ -293,9 +321,6 @@ function Dashboard({
           <span className={styles.headerLogoMark}>M3X</span>
         </a>
         <div className={styles.headerRight}>
-          <a href="/inbox" className={styles.inboxLink}>
-            Inbox{unreadCount > 0 && <span className={styles.inboxBadge}>{unreadCount}</span>}
-          </a>
           <span className={styles.handleBadge}>@{agent?.handle}</span>
           {(pushState === 'default' || pushState === 'granted') && (
             <button
@@ -330,7 +355,7 @@ function Dashboard({
 
       <main className={styles.main}>
 
-        {/* Agent stat bar */}
+        {/* KPI bar */}
         <div className={styles.statBar}>
           <div className={styles.stat}>
             <div className={styles.statVal}>{agent?.trust_score ?? 0}</div>
@@ -338,7 +363,7 @@ function Dashboard({
           </div>
           <div className={styles.statDivider} />
           <div className={styles.stat}>
-            <div className={styles.statVal}>{pushedMatches.length}</div>
+            <div className={styles.statVal}>{matchCount}</div>
             <div className={styles.statLabel}>Matches</div>
           </div>
           <div className={styles.statDivider} />
@@ -353,130 +378,35 @@ function Dashboard({
           </div>
         </div>
 
-        {/* Run matching */}
-        <div className={styles.runRow}>
-          <button
-            className={styles.runBtn}
-            onClick={runMatching}
-            disabled={runningMatch}
-          >
-            {runningMatch ? 'Running…' : '⟳ Run matching'}
-          </button>
-          {runMsg && <span className={styles.runMsg}>{runMsg}</span>}
-        </div>
+        {/* Inbox button */}
+        <a href="/inbox" className={styles.inboxBtn}>
+          <span className={styles.inboxBtnLabel}>Inbox</span>
+          {unreadCount > 0 && <span className={styles.inboxBtnBadge}>{unreadCount} unread</span>}
+          <span className={styles.inboxBtnArrow}>→</span>
+        </a>
 
-        {/* Matches */}
+        {/* Activity feed */}
         <section className={styles.section}>
           <div className={styles.sectionHeader}>
-            <div className={styles.sectionTitle}>Matches</div>
-            <div className={styles.sectionCount}>{pushedMatches.length}</div>
+            <div className={styles.sectionTitle}>Activity</div>
           </div>
 
-          {pushedMatches.length === 0 ? (
-            <div className={styles.empty}>
-              No matches yet. Post an intent and run matching.
-            </div>
+          {feed.length === 0 ? (
+            <div className={styles.empty}>No activity yet. Post an intent to get started.</div>
           ) : (
-            <div className={styles.matchList}>
-              {pushedMatches.map((m) => {
-                const isA = agent?.id === m.agent_a?.id
-                const other = isA ? m.agent_b : m.agent_a
-                const myIntent = isA ? m.intent_a : m.intent_b
-                return (
-                  <div key={m.id} className={`${styles.matchCard} ${styles[m.tier]}`}>
-                    <div className={styles.matchTop}>
-                      <span className={`${styles.tierBadge} ${styles[`tier_${m.tier}`]}`}>
-                        {tierLabel(m.tier)}
-                      </span>
-                      <span className={styles.matchScore}>{Math.round(m.score * 100)}%</span>
-                      <span className={styles.matchExpiry}>{timeUntil(m.expires_at)}</span>
-                    </div>
-                    <div className={styles.matchHandle}>@{other?.handle}</div>
-                    <div className={styles.matchMeta}>
-                      <span className={styles.matchMarket}>{myIntent?.market?.replace(/_/g, ' ')}</span>
-                      <span className={styles.matchDot}>·</span>
-                      <span className={styles.matchIntentType}>{myIntent?.intent_type?.replace(/_/g, ' ')}</span>
-                    </div>
-                    {other?.capabilities?.length > 0 && (
-                      <div className={styles.matchCaps}>
-                        {other.capabilities.slice(0, 4).map((c) => (
-                          <span key={c} className={styles.cap}>{c}</span>
-                        ))}
-                      </div>
-                    )}
-                    <div className={styles.matchState}>
-                      {m.state === 'accepted'
-                        ? '✓ Handshake active'
-                        : m.state === 'handshake_initiated'
-                        ? '⟳ Handshake pending'
-                        : `Notified ${timeAgo(m.created_at)}`}
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-          )}
-        </section>
-
-        {/* Near matches */}
-        {nearMatches.length > 0 && (
-          <section className={styles.section}>
-            <div className={styles.sectionHeader}>
-              <div className={styles.sectionTitle}>Near matches</div>
-              <div className={styles.sectionCount}>{nearMatches.length}</div>
-            </div>
-            <div className={styles.matchList}>
-              {nearMatches.map((m) => {
-                const isA = agent?.id === m.agent_a?.id
-                const other = isA ? m.agent_b : m.agent_a
-                const myIntent = isA ? m.intent_a : m.intent_b
-                return (
-                  <div key={m.id} className={`${styles.matchCard} ${styles.near_match}`}>
-                    <div className={styles.matchTop}>
-                      <span className={`${styles.tierBadge} ${styles.tier_near_match}`}>NEAR</span>
-                      <span className={styles.matchScore}>{Math.round(m.score * 100)}%</span>
-                      <span className={styles.matchExpiry}>{timeUntil(m.expires_at)}</span>
-                    </div>
-                    <div className={styles.matchHandle}>@{other?.handle}</div>
-                    <div className={styles.matchMeta}>
-                      <span className={styles.matchMarket}>{myIntent?.market?.replace(/_/g, ' ')}</span>
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-          </section>
-        )}
-
-        {/* Active intents */}
-        <section className={styles.section}>
-          <div className={styles.sectionHeader}>
-            <div className={styles.sectionTitle}>Active intents</div>
-            <div className={styles.sectionCount}>{intents.length}</div>
-          </div>
-
-          {intents.length === 0 ? (
-            <div className={styles.empty}>No active intents. Post one via the API or MCP.</div>
-          ) : (
-            <div className={styles.intentList}>
-              {intents.map((intent) => (
-                <div key={intent.id} className={styles.intentCard}>
-                  <div className={styles.intentTop}>
-                    <span className={`${styles.sideBadge} ${styles[`side_${intent.side}`]}`}>
-                      {intent.side}
-                    </span>
-                    <span className={styles.intentMarket}>{intent.market?.replace(/_/g, ' ')}</span>
-                    <span className={styles.intentExpiry}>{timeUntil(intent.expires_at)}</span>
-                  </div>
-                  <div className={styles.intentType}>{intent.intent_type?.replace(/_/g, ' ')}</div>
-                  <div className={styles.intentPosted}>Posted {timeAgo(intent.created_at)}</div>
-                </div>
+            <div className={styles.feedList}>
+              {feed.map(item => (
+                <a key={item.id} href={item.href} className={styles.feedItem}>
+                  <span className={item.read ? styles.feedDotRead : styles.feedDotUnread} />
+                  <span className={styles.feedText}>{item.text}</span>
+                  <span className={styles.feedTime}>{timeAgo(item.timeIso)}</span>
+                </a>
               ))}
             </div>
           )}
         </section>
 
-        {/* Markets & capabilities */}
+        {/* Agent card */}
         {((agent?.markets?.length ?? 0) > 0 || (agent?.capabilities?.length ?? 0) > 0) && (
           <section className={styles.section}>
             <div className={styles.sectionHeader}>
