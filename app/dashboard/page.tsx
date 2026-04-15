@@ -83,6 +83,153 @@ function tierLabel(tier: string) {
   return 'NEAR'
 }
 
+// ── Markets ──────────────────────────────────────────────────────────────────
+
+const MARKETS = [
+  { value: 'venture_capital',  label: 'Venture Capital' },
+  { value: 'ma_deal_flow',     label: 'M&A Deal Flow' },
+  { value: 'real_estate',      label: 'Real Estate' },
+  { value: 'private_equity',   label: 'Private Equity' },
+  { value: 'b2b_saas',         label: 'B2B SaaS' },
+  { value: 'legal_services',   label: 'Legal Services' },
+  { value: 'procurement',      label: 'Procurement' },
+  { value: 'healthcare',       label: 'Healthcare' },
+  { value: 'freelance',        label: 'Freelance' },
+  { value: 'cofounder',        label: 'Co-founder' },
+  { value: 'hiring',           label: 'Hiring' },
+  { value: 'partnerships',     label: 'Partnerships' },
+]
+
+// ── Post Intent Modal ─────────────────────────────────────────────────────────
+
+function PostIntentModal({ token, onClose, onSuccess }: {
+  token: string
+  onClose: () => void
+  onSuccess: () => void
+}) {
+  const [side, setSide]       = useState<'demand' | 'supply'>('demand')
+  const [market, setMarket]   = useState('')
+  const [offers, setOffers]   = useState('')
+  const [seeking, setSeeking] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [error, setError]     = useState('')
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError('')
+    setLoading(true)
+    try {
+      const res = await fetch('/api/intent', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ side, market, offers, seeking, ttl_hours: 720 }),
+      })
+      const data = await res.json()
+      if (!res.ok) { setError(data.error?.message ?? 'Failed to post intent.'); return }
+      onSuccess()
+      onClose()
+    } catch {
+      setError('Network error. Try again.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div className={styles.modalOverlay} onClick={(e) => { if (e.target === e.currentTarget) onClose() }}>
+      <div className={styles.modalSheet}>
+        <div className={styles.modalHeader}>
+          <div className={styles.modalTitle}>Post Intent</div>
+          <button className={styles.modalClose} onClick={onClose}>✕</button>
+        </div>
+
+        <form onSubmit={submit} className={styles.intentForm}>
+
+          {/* Side toggle */}
+          <div className={styles.fieldGroup}>
+            <label className={styles.fieldLabel}>I am</label>
+            <div className={styles.sideToggle}>
+              <button
+                type="button"
+                className={`${styles.sideBtn} ${side === 'demand' ? styles.sideBtnActive : ''}`}
+                onClick={() => setSide('demand')}
+              >
+                Seeking
+              </button>
+              <button
+                type="button"
+                className={`${styles.sideBtn} ${side === 'supply' ? styles.sideBtnActive : ''}`}
+                onClick={() => setSide('supply')}
+              >
+                Offering
+              </button>
+            </div>
+          </div>
+
+          {/* Market */}
+          <div className={styles.fieldGroup}>
+            <label className={styles.fieldLabel}>Market</label>
+            <select
+              className={styles.fieldSelect}
+              value={market}
+              onChange={e => setMarket(e.target.value)}
+              required
+            >
+              <option value="">Select a market…</option>
+              {MARKETS.map(m => (
+                <option key={m.value} value={m.value}>{m.label}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Offers */}
+          <div className={styles.fieldGroup}>
+            <label className={styles.fieldLabel}>What you offer</label>
+            <textarea
+              className={styles.fieldTextarea}
+              placeholder="Describe what you bring to the table…"
+              value={offers}
+              onChange={e => setOffers(e.target.value)}
+              rows={3}
+              required
+              minLength={10}
+            />
+          </div>
+
+          {/* Seeking */}
+          <div className={styles.fieldGroup}>
+            <label className={styles.fieldLabel}>What you're looking for</label>
+            <textarea
+              className={styles.fieldTextarea}
+              placeholder="Describe what you need…"
+              value={seeking}
+              onChange={e => setSeeking(e.target.value)}
+              rows={3}
+              required
+              minLength={10}
+            />
+          </div>
+
+          {error && <div className={styles.formError}>{error}</div>}
+
+          <button
+            type="submit"
+            className={styles.submitBtn}
+            disabled={loading || !market || !offers || !seeking}
+          >
+            {loading ? 'Posting…' : 'Post intent →'}
+          </button>
+
+          <div className={styles.formHint}>
+            Your intent is private — only matched agents will be notified.
+          </div>
+
+        </form>
+      </div>
+    </div>
+  )
+}
+
 // ── Connect screen ───────────────────────────────────────────────────────────
 
 function ConnectScreen({ onConnect }: { onConnect: (token: string, handle: string) => void }) {
@@ -216,6 +363,7 @@ function Dashboard({
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [pushState, setPushState] = useState<'default' | 'granted' | 'denied' | 'unsupported'>('default')
+  const [showPostIntent, setShowPostIntent] = useState(false)
 
   useEffect(() => {
     if (!('Notification' in window)) { setPushState('unsupported'); return }
@@ -378,12 +526,17 @@ function Dashboard({
           </div>
         </div>
 
-        {/* Inbox button */}
-        <a href="/inbox" className={styles.inboxBtn}>
-          <span className={styles.inboxBtnLabel}>Inbox</span>
-          {unreadCount > 0 && <span className={styles.inboxBtnBadge}>{unreadCount} unread</span>}
-          <span className={styles.inboxBtnArrow}>→</span>
-        </a>
+        {/* Action buttons */}
+        <div className={styles.actionRow}>
+          <button className={styles.postIntentBtn} onClick={() => setShowPostIntent(true)}>
+            + Post intent
+          </button>
+          <a href="/inbox" className={styles.inboxBtn}>
+            Inbox
+            {unreadCount > 0 && <span className={styles.inboxBtnBadge}>{unreadCount}</span>}
+            <span className={styles.inboxBtnArrow}>→</span>
+          </a>
+        </div>
 
         {/* Activity feed */}
         <section className={styles.section}>
@@ -432,6 +585,14 @@ function Dashboard({
         )}
 
       </main>
+
+      {showPostIntent && (
+        <PostIntentModal
+          token={token}
+          onClose={() => setShowPostIntent(false)}
+          onSuccess={() => load()}
+        />
+      )}
     </div>
   )
 }

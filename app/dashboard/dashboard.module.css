@@ -333,18 +333,45 @@
   flex-shrink: 0;
 }
 
+/* ── Action row ───────────────────────────────────────────────────────────── */
+
+.actionRow {
+  display: flex;
+  gap: 10px;
+}
+
+.postIntentBtn {
+  flex: 1;
+  padding: 14px 18px;
+  background: linear-gradient(180deg, #5c9ef3 0%, #3d82d9 50%, #1d5a9e 100%);
+  border: none;
+  border-radius: 12px;
+  color: #fff;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s;
+  white-space: nowrap;
+}
+
+.postIntentBtn:hover { opacity: 0.9; }
+
 /* ── Inbox button ─────────────────────────────────────────────────────────── */
 
 .inboxBtn {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   padding: 14px 18px;
   background: rgba(79, 146, 232, 0.08);
   border: 1px solid rgba(79, 146, 232, 0.2);
   border-radius: 12px;
   text-decoration: none;
   transition: background 0.15s, border-color 0.15s;
+  font-size: 15px;
+  font-weight: 600;
+  color: #8ab4ff;
+  white-space: nowrap;
 }
 
 .inboxBtn:hover {
@@ -352,25 +379,204 @@
   border-color: rgba(79, 146, 232, 0.35);
 }
 
-.inboxBtnLabel {
-  font-size: 15px;
-  font-weight: 600;
-  color: #8ab4ff;
-}
-
 .inboxBtnBadge {
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 700;
   background: #00ff88;
   color: #050507;
   border-radius: 10px;
-  padding: 2px 8px;
+  padding: 1px 6px;
 }
 
 .inboxBtnArrow {
-  margin-left: auto;
-  font-size: 16px;
+  font-size: 15px;
   color: rgba(79, 146, 232, 0.5);
+}
+
+/* ── Post Intent Modal ────────────────────────────────────────────────────── */
+
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: rgba(5, 5, 7, 0.75);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+@media (min-width: 600px) {
+  .modalOverlay { align-items: center; }
+}
+
+.modalSheet {
+  width: 100%;
+  max-width: 560px;
+  background: #0c0d10;
+  border: 1px solid rgba(79, 146, 232, 0.18);
+  border-radius: 20px 20px 0 0;
+  padding: 24px 20px 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  max-height: 92vh;
+  overflow-y: auto;
+}
+
+@media (min-width: 600px) {
+  .modalSheet {
+    border-radius: 20px;
+    padding: 28px 28px 32px;
+  }
+}
+
+.modalHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+
+.modalTitle {
+  font-size: 18px;
+  font-weight: 700;
+  color: #e8eaf0;
+}
+
+.modalClose {
+  background: none;
+  border: none;
+  color: rgba(232, 234, 240, 0.4);
+  font-size: 16px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: color 0.15s;
+}
+
+.modalClose:hover { color: #e8eaf0; }
+
+/* ── Intent form ──────────────────────────────────────────────────────────── */
+
+.intentForm {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.fieldGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.fieldLabel {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: rgba(232, 234, 240, 0.45);
+}
+
+.sideToggle {
+  display: flex;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(79, 146, 232, 0.12);
+  border-radius: 10px;
+  padding: 4px;
+}
+
+.sideBtn {
+  flex: 1;
+  padding: 9px;
+  background: none;
+  border: none;
+  border-radius: 7px;
+  color: rgba(232, 234, 240, 0.4);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.sideBtnActive {
+  background: rgba(79, 146, 232, 0.18);
+  color: #8ab4ff;
+}
+
+.fieldSelect {
+  width: 100%;
+  padding: 12px 14px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(79, 146, 232, 0.2);
+  border-radius: 10px;
+  color: #e8eaf0;
+  font-size: 14px;
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+  outline: none;
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='rgba(138,180,255,0.5)' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+}
+
+.fieldSelect:focus { border-color: rgba(79, 146, 232, 0.5); }
+
+.fieldSelect option {
+  background: #0c0d10;
+  color: #e8eaf0;
+}
+
+.fieldTextarea {
+  width: 100%;
+  padding: 12px 14px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(79, 146, 232, 0.2);
+  border-radius: 10px;
+  color: #e8eaf0;
+  font-size: 14px;
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+  outline: none;
+  resize: none;
+  line-height: 1.5;
+  transition: border-color 0.15s;
+}
+
+.fieldTextarea:focus { border-color: rgba(79, 146, 232, 0.5); }
+.fieldTextarea::placeholder { color: rgba(232, 234, 240, 0.25); }
+
+.formError {
+  font-size: 13px;
+  color: #f87171;
+  padding: 10px 14px;
+  background: rgba(248, 113, 113, 0.08);
+  border-radius: 8px;
+}
+
+.submitBtn {
+  width: 100%;
+  padding: 14px;
+  background: linear-gradient(180deg, #5c9ef3 0%, #3d82d9 50%, #1d5a9e 100%);
+  border: none;
+  border-radius: 10px;
+  color: #fff;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s;
+  margin-top: 4px;
+}
+
+.submitBtn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+.formHint {
+  font-size: 12px;
+  color: rgba(232, 234, 240, 0.3);
+  text-align: center;
+  line-height: 1.4;
 }
 
 /* ── Feed ─────────────────────────────────────────────────────────────────── */
