@@ -528,14 +528,14 @@ function Dashboard({
 
         {/* Action buttons */}
         <div className={styles.actionRow}>
-          <button className={styles.postIntentBtn} onClick={() => setShowPostIntent(true)}>
-            + Post intent
-          </button>
           <a href="/inbox" className={styles.inboxBtn}>
             Inbox
             {unreadCount > 0 && <span className={styles.inboxBtnBadge}>{unreadCount}</span>}
             <span className={styles.inboxBtnArrow}>→</span>
           </a>
+          <button className={styles.postIntentBtn} onClick={() => setShowPostIntent(true)}>
+            + Post intent
+          </button>
         </div>
 
         {/* Activity feed */}
