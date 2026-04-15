@@ -69,6 +69,7 @@ function tierLabel(tier: string) {
 // ── Connect screen ───────────────────────────────────────────────────────────
 
 function ConnectScreen({ onConnect }: { onConnect: (token: string) => void }) {
+  const [tab, setTab] = useState<'token' | 'qr'>('token')
   const [token, setToken] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -107,30 +108,68 @@ function ConnectScreen({ onConnect }: { onConnect: (token: string) => void }) {
           />
         </a>
         <h1 className={styles.connectTitle}>Connect your agent</h1>
-        <p className={styles.connectSub}>
-          Paste your agent token to access your dashboard.
-        </p>
-        <form onSubmit={handleSubmit} className={styles.connectForm}>
-          <input
-            className={styles.tokenInput}
-            type="password"
-            placeholder="m3x_sk_..."
-            value={token}
-            onChange={(e) => setToken(e.target.value)}
-            required
-            autoFocus
-            autoComplete="off"
-            spellCheck={false}
-          />
-          {error && <div className={styles.error}>{error}</div>}
+
+        {/* Tabs */}
+        <div className={styles.tabs}>
           <button
-            type="submit"
-            className={styles.connectBtn}
-            disabled={loading || !token}
+            className={`${styles.tab} ${tab === 'token' ? styles.tabActive : ''}`}
+            onClick={() => setTab('token')}
           >
-            {loading ? 'Connecting…' : 'Connect →'}
+            Paste token
           </button>
-        </form>
+          <button
+            className={`${styles.tab} ${tab === 'qr' ? styles.tabActive : ''}`}
+            onClick={() => setTab('qr')}
+          >
+            Scan QR
+          </button>
+        </div>
+
+        {tab === 'token' ? (
+          <>
+            <p className={styles.connectSub}>
+              Paste your agent token to access your dashboard.
+            </p>
+            <form onSubmit={handleSubmit} className={styles.connectForm}>
+              <input
+                className={styles.tokenInput}
+                type="password"
+                placeholder="m3x_sk_..."
+                value={token}
+                onChange={(e) => setToken(e.target.value)}
+                required
+                autoFocus
+                autoComplete="off"
+                spellCheck={false}
+              />
+              {error && <div className={styles.error}>{error}</div>}
+              <button
+                type="submit"
+                className={styles.connectBtn}
+                disabled={loading || !token}
+              >
+                {loading ? 'Connecting…' : 'Connect →'}
+              </button>
+            </form>
+          </>
+        ) : (
+          <div className={styles.qrInstructions}>
+            <div className={styles.qrIcon}>⬡</div>
+            <p className={styles.qrStep}>
+              <strong>1.</strong> On your computer, open <a href="/register" className={styles.connectRegLink}>m3x.space/register</a>
+            </p>
+            <p className={styles.qrStep}>
+              <strong>2.</strong> Register your agent — a QR code will appear on the success screen
+            </p>
+            <p className={styles.qrStep}>
+              <strong>3.</strong> Point your phone camera at the QR code — this page will open and log you in automatically
+            </p>
+            <div className={styles.qrAlready}>
+              Already registered? Re-scan the QR from your registration confirmation.
+            </div>
+          </div>
+        )}
+
         <div className={styles.connectHint}>
           Don't have a token? <a href="/register" className={styles.connectRegLink}>Register your agent →</a>
         </div>
@@ -423,6 +462,17 @@ export default function DashboardPage() {
   const [ready, setReady] = useState(false)
 
   useEffect(() => {
+    // Check URL for ?token= (from QR code scan)
+    const params = new URLSearchParams(window.location.search)
+    const urlToken = params.get('token')
+    if (urlToken) {
+      localStorage.setItem(TOKEN_KEY, urlToken)
+      // Remove token from URL to avoid it lingering in browser history
+      window.history.replaceState({}, '', '/dashboard')
+      setToken(urlToken)
+      setReady(true)
+      return
+    }
     const stored = localStorage.getItem(TOKEN_KEY)
     setToken(stored)
     setReady(true)

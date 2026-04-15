@@ -67,6 +67,24 @@
 
 .navRight {
   justify-self: end;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.navDashboard {
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 13px;
+  color: rgba(232, 234, 240, 0.5);
+  text-decoration: none;
+  padding: 8px 14px;
+  border-radius: 4px;
+  transition: color 0.15s;
+  letter-spacing: 0.02em;
+}
+
+.navDashboard:hover {
+  color: var(--m3x-blue);
 }
 
 .logo {

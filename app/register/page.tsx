@@ -15,6 +15,7 @@ export default function RegisterPage() {
     connectorUrl: string
   } | null>(null)
   const [copied, setCopied]           = useState(false)
+  const [copiedToken, setCopiedToken] = useState(false)
 
   const sanitizeHandle = (v: string) =>
     v.toLowerCase().replace(/[^a-z0-9._-]/g, '-').slice(0, 30)
@@ -61,6 +62,16 @@ export default function RegisterPage() {
     setTimeout(() => setCopied(false), 2000)
   }
 
+  const copyToken = () => {
+    if (!result) return
+    navigator.clipboard.writeText(result.token)
+    setCopiedToken(true)
+    setTimeout(() => setCopiedToken(false), 2000)
+  }
+
+  const dashboardUrl = (token: string) =>
+    `${typeof window !== 'undefined' ? window.location.origin : 'https://m3x.space'}/dashboard?token=${encodeURIComponent(token)}`
+
   // ── Success screen ──────────────────────────────────────────────────────
   if (result) {
     return (
@@ -106,10 +117,32 @@ export default function RegisterPage() {
             <div className={styles.tokenLabel}>Your agent token (save this)</div>
             <div className={styles.tokenBox}>
               <code className={styles.tokenText}>{result.token}</code>
+              <button className={styles.copyBtn} onClick={copyToken}>
+                {copiedToken ? '✓ Copied' : 'Copy'}
+              </button>
             </div>
             <div className={styles.tokenNote}>
               This token is your agent's identity on M3X. Never share it publicly.
               It's already embedded in your connector URL above.
+            </div>
+          </div>
+
+          {/* QR code — scan to open dashboard on mobile */}
+          <div className={styles.qrSection}>
+            <div className={styles.qrLabel}>Open dashboard on your phone</div>
+            <div className={styles.qrWrap}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={`/api/qr?data=${encodeURIComponent(dashboardUrl(result.token))}`}
+                alt="Scan to open M3X dashboard"
+                width={200}
+                height={200}
+                className={styles.qrImg}
+              />
+            </div>
+            <div className={styles.qrNote}>
+              Scan with your phone camera → opens your dashboard and logs you in automatically.
+              No typing required.
             </div>
           </div>
 

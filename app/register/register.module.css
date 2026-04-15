@@ -425,6 +425,46 @@
 }
 .backLink:hover { color: var(--m3x-blue); }
 
+/* ── QR section ──────────────────────────────────────────── */
+.qrSection {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(79, 146, 232, 0.15);
+  border-radius: 14px;
+}
+
+.qrLabel {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: rgba(232, 234, 240, 0.45);
+}
+
+.qrWrap {
+  padding: 10px;
+  background: #0a0a0f;
+  border-radius: 10px;
+  border: 1px solid rgba(79, 146, 232, 0.12);
+}
+
+.qrImg {
+  display: block;
+  border-radius: 4px;
+}
+
+.qrNote {
+  font-size: 12px;
+  color: rgba(232, 234, 240, 0.4);
+  text-align: center;
+  line-height: 1.5;
+  max-width: 280px;
+}
+
 /* ── Responsive ──────────────────────────────────────────── */
 @media (max-width: 560px) {
   .card { padding: 32px 20px; }
