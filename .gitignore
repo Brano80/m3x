@@ -43,7 +43,6 @@ next-env.d.ts
 
 # internal strategy docs — never commit to any repo (private or public)
 CLAUDE.md
-BUILD_STATUS.md
 opportunity-reports/
 
 # misc

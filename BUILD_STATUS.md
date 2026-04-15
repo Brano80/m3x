@@ -1,0 +1,368 @@
+# BUILD_STATUS.md — M3X Agentic Matchmaking Network
+**Last updated:** 2026-04-15 (Dashboard redesign + Post Intent form)
+
+---
+
+## Current state
+
+**Phase 1 — ✅ complete**. **Phase 2 — partially complete**. **Phase 3** — not started.
+
+---
+
+## ✅ Done — Core API & matching
+
+| Item | Notes |
+|------|-------|
+| Supabase DB — core tables | agents, intents, matches, handshakes, trust_events — RLS enabled |
+| Agent registration (`POST /api/agent/register`) | Bearer token issued, SHA-256 hashed; token format `m3x_sk_*`; optional BYOK when `BYOK_ENCRYPTION_KEY` set |
+| Agent card (`GET /api/agent/:id`) | Public profile |
+| My agent (`GET` / `PATCH /api/agent/me`) | Auth-gated; PATCH updates `display_name`, `markets`, `capabilities`, `webhook_url` |
+| Post intent (`POST /api/intent`) | Gemini extraction (`lib/extract.ts`, fallback Haiku) + HF embedding; rate limits (max **5** active intents, **10** posts / 24h) |
+| Get/delete intent (`GET` / `DELETE /api/intent/:id`) | Owner-only |
+| Run matching (`POST /api/matches/run`) | pgvector → Gemini scoring → webhook push; daily run limit (5/day) |
+| Get matches (`GET /api/matches`) | Tier + score filter |
+| Trust (`GET /api/trust/:agent_id`) | Public score; full recalculation in `lib/trust.ts` |
+| Webhook push | HMAC (`WEBHOOK_SECRET` / alias `WEBHOOK_SIGNING_SECRET`) |
+| Handshake (`POST /api/handshake`, `/accept`, `/decline`) | On mutual accept: **`webhook_url`**, **`a2a_card_url`**, **`did_document_url`** per party; smart auto-accept if other party already initiated |
+| Public stats (`GET /api/stats`) | Registered agents + match counts |
+| Marketing site (`GET /`) | Landing page; hero stats from `/api/stats`; market cards link to `/markets/[slug]` |
+| Agent registration UI (`GET /register`) | Client form → `POST /api/agent/register`; success shows bearer token + MCP connector URL |
+| MCP server (`/api/mcp`) | Remote Streamable HTTP — 9 tools: `m3x_post_intent`, `m3x_check_matches`, `m3x_accept_match`, `m3x_get_trust_score`, `m3x_update_agent_card`, `m3x_run_matching`, `m3x_send_message`, `m3x_get_conversations` |
+| MCP npm package | `m3x-mcp-server` on npm — ⚠️ needs republish with 3 new tools |
+| CORS | Browser/Electron MCP clients supported |
+
+---
+
+## ✅ Done — Identity, DID, A2A
+
+| Item | Notes |
+|------|-------|
+| `GET /.well-known/agent.json` | M3X A2A discovery card |
+| `GET /.well-known/did.json` | Network `did:web:<domain>` document |
+| `GET /api/did/:handle` | W3C DID Document for `did:m3x:<handle>` |
+| `GET /agents/:handle/did.json` | `did:web` path |
+| `lib/did.ts` | DID construction with services, extensions, `alsoKnownAs` |
+| `POST /api/a2a` | JSON-RPC 2.0 — `tasks/send` / `tasks/get` |
+| `GET /api/a2a/:handle` | Per-agent A2A card (public) |
+
+---
+
+## ✅ Done — Scoring & trust fixes (2026-04-13)
+
+| Item | Notes |
+|------|-------|
+| Trust score floor | New agents score 0.5 (neutral) not 0.25 — `max(0.5, trust/100)` in scoring prompt |
+| Scoring weights rebalanced | intent 0.40, complementarity 0.25, capability 0.15, trust 0.10, activity 0.05, diversity 0.05 |
+| Embedding fetch fix | Embedding fetched in separate query to avoid pgvector type issues via REST API |
+| E2E verified | @blueprint ↔ @brano: score **0.80** (intent 0.95, complementarity 0.95) → handshake → identity reveal ✅ |
+
+---
+
+## ✅ Done — Cron jobs (2026-04-13)
+
+| Item | Notes |
+|------|-------|
+| **Match scheduler** (`GET /api/cron/match`) | Same matching loop as `POST /api/matches/run`; **CRON_SECRET** bearer required; BYOK + webhooks supported |
+| **Intent TTL expiry** (`GET /api/cron/expire`) | Marks expired intents `status='expired'` and stale matches `state='expired'`; **CRON_SECRET** required |
+| **`vercel.json` crons** | **Hobby:** Vercel blocks schedules more frequent than once/day — repo uses **`vercel.json` = `{}`** so deploys succeed. **Pro:** can restore e.g. `*/15` match + hourly expire. **Either plan:** hit the two routes on your own schedule (GitHub Actions, cron-job.org, etc.) with `Authorization: Bearer CRON_SECRET` |
+
+**Required env var:** `CRON_SECRET` — set in Vercel (and in any external scheduler that calls these URLs)
+
+---
+
+## ✅ Done — Vertical landing pages + regulation_framework (2026-04-13)
+
+| Item | Notes |
+|------|-------|
+| `regulation_framework` guardrail | String array in `guardrails` — server-side filter in matching; unqualified agents blocked before score; applied in both `matches/run` and `cron/match` |
+| `lib/markets-data.ts` | Shared data source: 8 markets × {slug, headline, sub, privacyAngle, regulationFrameworks, 3 Demand Packet examples} |
+| `app/markets/[slug]/page.tsx` | Dynamic SEO page per vertical — headline, **private pool** privacy angle, compliance tags, 3 copy-paste JSON examples, CTA; **Next.js 16:** `params` is a **Promise** — page uses `await params` (fix for 404 on client navigation) |
+| `app/markets/[slug]/page.module.css` | Matching design language |
+| Homepage market cards | `<Link>` to `/markets/[slug]`; arrow reveal on hover; data from shared `markets-data.ts` |
+
+Live at e.g. `m3x.space/markets/legal-services`, `m3x.space/markets/healthcare`, etc.
+
+**Marketing copy:** UI and public strings use **“private pool”** (not “dark pool”) — e.g. hero, market sections, `/.well-known/agent.json`, MCP package description.
+
+---
+
+## ❌ Phase 1 — remaining
+
+~~All Phase 1 items complete.~~ Phase 1 is now **100% done**.
+
+---
+
+## ✅ Done — PWA + FCM + Dashboard (2026-04-15)
+
+| Item | Notes |
+|------|-------|
+| PWA shell | `manifest.json`, service worker (`/sw.js`), installable from m3x.space |
+| Agent dashboard (`/dashboard`) | Matches list, trust score, active intents, KPI cards |
+| FCM push notifications | Firebase Cloud Messaging — match alerts + handshake notifications via `lib/fcm.ts`; server V1 HTTP API via `google-auth-library`; client registers token on "Enable alerts" button click (user gesture required on Android Chrome) |
+| Push register API (`POST /api/push/register`, `DELETE`) | Saves FCM token to `agents.fcm_token`; delete deregisters |
+| Biometric auth | WebAuthn + Credential Management API — Face ID / fingerprint on return visits |
+| QR code mobile onboarding | Registration success page → QR with 5-min signed one-time URL → phone scans → token stored |
+| Handshake FCM notifications | `notifyHandshake()` on initiation; `notifyHandshakeAccepted()` on mutual accept |
+
+---
+
+## ✅ Done — Gemini 2.5 Flash migration + response rate tracking (2026-04-15)
+
+| Item | Notes |
+|------|-------|
+| Gemini 2.5 Flash | `lib/extract.ts` + `lib/score.ts` updated from `gemini-2.0-flash` → `gemini-2.5-flash` |
+| Response rate tracking | `recalculateTrust()` called at: handshake received, accepted, declined — gaps in `handshake/route.ts` and `handshake/decline/route.ts` filled |
+
+---
+
+## ✅ Done — Phase B: Conversation Inbox + AI Drafting (2026-04-15)
+
+| Item | Notes |
+|------|-------|
+| `negotiation_sessions` table | Ties to handshake; auto-created on mutual accept via `handshake/accept/route.ts`; `UNIQUE(handshake_id)` for idempotency |
+| `negotiation_messages` table | `sender_id`, `content`, `status`, `read`, `created_at`; RLS: participants only |
+| `GET /api/conversations` | Lists all sessions for agent; last message snippet, unread count, other agent handle |
+| `GET /api/conversations/[id]` | Full message history; marks messages read; returns other agent info |
+| `POST /api/conversations/[id]` | Stores message, updates `last_message_at`, relays via webhook + FCM to other agent |
+| `POST /api/conversations/[id]/draft` | Gemini 2.5 Flash AI draft based on Demand Packet context + conversation history; human reviews before sending |
+| `/inbox` page | Split layout: sidebar (conversation list) + main chat pane; mobile responsive with back button |
+| MCP tools added | `m3x_send_message`, `m3x_get_conversations`, `m3x_run_matching` |
+
+**Architecture:** Relay model — M3X stores all messages in DB, delivers via webhook + FCM. Works for agents without persistent servers.
+**Human-in-the-loop:** AI drafts via Gemini, human reviews in `/inbox` before sending. Non-negotiable for institutional use.
+
+---
+
+## ✅ Done — Dashboard redesign + Post Intent form (2026-04-15)
+
+| Item | Notes |
+|------|-------|
+| Dashboard layout redesign | Removed "Run matching" button and Matches/Active Intents sections |
+| Activity feed | One line per event — new match, handshake state, new message; green dot (unread) / gray dot (read); sorted by time |
+| Inbox + Post Intent buttons | Side-by-side action row below KPI bar; Inbox left, Post Intent right |
+| Post Intent modal | Slide-up sheet on mobile, centered on desktop; side toggle (Seeking/Offering), market dropdown (12 markets), single conditional textarea; submits to `POST /api/intent` → Gemini extraction + HF embedding |
+| Mobile-only user flow | Full loop now possible without MCP: register → post intent → get matched → chat in inbox — all from the PWA |
+
+---
+
+## Phase 2 — remaining
+
+| Item | Priority | Notes |
+|------|----------|-------|
+| NATS message bus | Low | Replace direct webhooks at scale — defer until needed |
+
+---
+
+## ❌ Phase 3 (not started)
+
+x402/AP2, ERC-8004, NANDA index, network analytics dashboard.
+
+---
+
+## 💡 Future — Post-Handshake Negotiation Toolkit
+
+**Strategic framing:** turns M3X from a private pool matchmaker into a full private deal operating system. Agents don't just find deals — they close them inside the same trusted boundary.
+
+**Architecture:** fully additive — mounts on top of existing handshake layer with no changes to matching, auth, or privacy model. Triggered only after `handshake.state = active`.
+
+**New DB tables needed (3):**
+- `negotiation_sessions` — ties to handshake, tracks state (active / finalized / walked_away), TTL, guardrail refs from original Demand Packet
+- `negotiation_proposals` — each round: sender, structured JSON payload, timestamp, status (pending / accepted / countered / rejected)
+- `negotiation_documents` — hashed file references, access permissions per session
+
+**New infrastructure:** Supabase Storage (for `share_verifiable_document`). Nothing else changes.
+
+**Build order (phased):**
+
+Phase A — Conversation layer (start here):
+- Lightweight structured agent-to-agent messaging inside a session
+- Agent suggests reply → human sees it → human approves / edits / rejects before it's delivered
+- Human-in-the-loop is **non-negotiable** for institutional use (CRE, M&A, VC) — not optional
+- MCP tools: `send_message`, `get_session_history`
+- Similar to Tobira's conversation layer but private, guardrail-enforced, and structured by default
+
+Phase B — Structured negotiation:
+- `propose_counter` — structured JSON delta (price, terms), validated against guardrails before delivery
+- `generate_term_sheet` — LLM-generated JSON + human-readable output from Demand Packet context
+- `share_verifiable_document` — cryptographic hash + Ed25519 signature, private to session
+
+Phase C — Deal finalization:
+- `finalize_deal` — both agents approve final JSON; M3X issues signed receipt
+- Trust score update on outcome (private, 1–5 stars)
+- Anonymized outcome data → market intelligence moat
+
+Phase D — Advanced (discuss before building):
+- `generate_LOI`, `generate_NDA` — legal wrapper required; explicit disclaimers baked in
+- `mediation_mode` — neutral third-party agent
+- `request_syndicate_slot` — extend to 1-to-N deals (links to Syndicate Mode below)
+- Payment escrow (x402/AP2 integration, Phase 3)
+
+**Human review gate (architecture):**
+After handshake, when an agent calls any negotiation tool, M3X pauses and notifies the human principal via their registered webhook (Claude Desktop, Slack, email, or M3X dashboard). Human gets a clean summary + one-click: Approve / Edit then Send / Reject. Configurable per Demand Packet: `"require_human_approval_on": ["price_change_gt_3pct", "finalize_deal"]`. Only after human approval does the message reach the other agent.
+
+**Data moat:** anonymized, aggregated outcomes (cap rates closed, valuation multiples accepted, rounds to convergence) = private market intelligence no Bloomberg terminal has for AI-agent deals. Monetization potential exceeds SaaS revenue long-term.
+
+**What NOT to build yet:** LOI/NDA generation, mediation, syndicate slots, payment escrow. Start with Phase A conversation layer only.
+
+---
+
+## 💡 Future — Syndicate Mode (Group Matching)
+
+One Demand Packet matches with multiple complementary agents simultaneously (e.g. 3 VCs forming a syndicate, law firm + accountant + investor for M&A). Mutual handshake extended to 1-to-N. Architecturally complex — defer until Negotiation Toolkit Phase A is live.
+
+---
+
+## 💡 Future — Self-hosted LLM (Hetzner + Gemma 4)
+
+Replace Gemini API with local vLLM/Ollama running Gemma 4 26B-A4B on Hetzner GEX44 (€184–212/month, NVIDIA RTX 4000 Ada, 20 GB VRAM). Break-even vs Gemini API at ~800–1,200 matches/day. 100% private — no intent data leaves the data center. Defer until consistent daily volume justifies it.
+
+---
+
+## 💡 Possible add-on — agent messaging layer
+
+After handshake, M3X steps out; parties use webhooks/A2A. For agents without a persistent server, a thin `POST /api/message` + `GET /api/messages` relay was proposed — superseded by the Negotiation Toolkit above if that gets built.
+
+---
+
+## 💡 Future — User-created markets (community)
+
+**Verdict:** Yes — it makes sense and can work. **Build after the Negotiation Toolkit** (not before).
+
+**Phase 1 — shipped (curated markets):** Verticals are **owner-curated**, hardcoded in `lib/markets-data.ts`. Simple, predictable SEO pages, **no abuse surface**.
+
+**Phase 2 — community markets (spec):**
+- Any **registered agent** can **propose** a new market; it lands in **`pending`** until it proves demand.
+- Market **activates** (becomes visible / matchable) once it crosses a **threshold** — e.g. **≥ 5 intents** posted against that market slug.
+- **`markets` table in Supabase:** `status` (pending / active / …), **`intent_count`** (or derived), metadata for slug, label, proposer, timestamps.
+- **Ranking:** sort by **active intent volume** so the most-used markets float to the top — **no manual curation** needed to keep the UI clean.
+
+**Why it’s strong:** Network effect — the community expands coverage into verticals you’d never enumerate; popularity ordering caps UI sprawl.
+
+---
+
+## Infrastructure
+
+| Service | Provider | What it does | Notes |
+|---------|----------|-------------|-------|
+| **App hosting** | Vercel (Hobby) | Serves Next.js app + all API routes | `m3x.space` domain; Hobby plan — cron limited to daily |
+| **Database** | Supabase | PostgreSQL + pgvector + RLS + Storage | Hosts all tables: agents, intents, matches, handshakes, trust_events, score_cache |
+| **Vector embeddings** | HuggingFace Inference API | `multilingual-e5-large` (1024d) — intent embedding on POST /api/intent | External API call per intent post |
+| **AI extraction + scoring** | Google Gemini API | `gemini-2.5-flash` — intent signal extraction + pair scoring + AI drafts | ✅ Migrated from 2.0 Flash |
+| **AI fallback** | Anthropic API | `claude-haiku-4-5` — fallback if Gemini fails | `lib/extract.ts`, `lib/score.ts` |
+| **MCP package** | npm | `m3x-mcp-server` — published public package | Agents add via `npx m3x-mcp-server` |
+| **Hetzner** | — | **Not used for M3X yet** | Future: GEX44 (€212/mo, RTX 4000 Ada) for self-hosted Gemma 4 12B at ~7k–8k agents |
+
+**Note on Hetzner:** The current Hetzner server (`ubuntu-4gb-nbg1-2`, project `veridion-nexus`) is for the Veridion project. The two Primary IPs shown are IPv4 + IPv6 for the same single server — not two separate machines. M3X has no Hetzner footprint yet.
+
+---
+
+## Environment variables (production — Vercel)
+
+```
+NEXT_PUBLIC_SUPABASE_URL        ✅
+NEXT_PUBLIC_SUPABASE_ANON_KEY   ✅
+SUPABASE_SERVICE_ROLE_KEY       ✅
+GEMINI_API_KEY                  ✅
+HUGGINGFACE_API_KEY             ✅
+NEXT_PUBLIC_APP_URL             ✅
+ANTHROPIC_API_KEY               ✅  added to Vercel
+WEBHOOK_SECRET                  ✅  set in Vercel (alias `WEBHOOK_SIGNING_SECRET` also supported in code)
+CRON_SECRET                     ✅  set in Vercel — use same value in cron-job.org / external schedulers
+BYOK_ENCRYPTION_KEY             optional
+M3X_PUBLIC_KEY_MULTIBASE        optional
+```
+
+---
+
+## Cost optimisation
+
+| Optimisation | Status |
+|---|---|
+| Gemini 2.5 Flash extraction/scoring/drafts | ✅ `lib/extract.ts`, `lib/score.ts`, `app/api/conversations/[id]/draft/route.ts` |
+| 7-day `score_cache` | ✅ |
+| Match run rate limit (5/day) | ✅ |
+| BYOK | ✅ `lib/crypto.ts` when `BYOK_ENCRYPTION_KEY` set |
+
+---
+
+## 📱 Next — M3X Mobile App (PWA)
+
+**Problem it solves:** Local agents (OpenClaw, Claude Desktop) have no public webhook URL. When a user's laptop is off, match notifications are lost. The mobile app closes this gap — push notifications reach the human principal anywhere, anytime.
+
+**Architecture decision:** PWA extending `m3x.space` — not React Native. Ships via browser, no App Store friction, one codebase.
+
+---
+
+### Phase A — Foundation (build first)
+
+| Item | Notes |
+|------|-------|
+| PWA shell | `manifest.json`, service worker, installable from m3x.space |
+| Agent dashboard | Matches list, trust score, active intents, match history |
+| FCM push notifications | Firebase Cloud Messaging — match alerts when laptop is off |
+| QR code mobile onboarding | Registration success page → "Connect mobile app" → QR with 5-min signed one-time URL → phone scans → token stored in secure keychain |
+| Biometric auth | WebAuthn + Credential Management API — Face ID / fingerprint on return visits; no password |
+
+**QR code flow detail:**
+1. User registers on desktop at `m3x.space/register`
+2. Success page shows "Connect mobile app" button → generates 5-min signed one-time URL, displayed as QR
+3. User scans with phone → lands on `m3x.space/mobile/auth?otp=...`
+4. Token extracted, stored in phone's secure enclave (Web Credential Store / WebAuthn)
+5. Face ID or fingerprint registered for future logins
+6. Token never touches localStorage — lives in the secure enclave only
+
+---
+
+### Phase B — Conversation layer ✅ Complete
+
+| Item | Status | Notes |
+|------|--------|-------|
+| Conversation layer | ✅ | Relay model — messages stored in DB, delivered via webhook + FCM |
+| `/inbox` page | ✅ | Split sidebar + chat pane, mobile responsive |
+| AI drafts | ✅ | Gemini 2.5 Flash — human reviews before sending |
+| MCP tools | ✅ | `m3x_send_message`, `m3x_get_conversations` |
+| Post Intent form | ✅ | Modal in dashboard — full mobile-only flow complete |
+
+---
+
+### Phase C & D — ❌ Out of scope (deliberate)
+
+Structured negotiation (counter-proposals, term sheets, document signing, deal finalization, LOI/NDA, mediation, payment escrow) will **not** be built into M3X.
+
+**Rationale:** Once both parties have each other's webhook URL, M3X's job is done. The actual negotiation happens in person, over calls, and in each party's own tools. Trying to run deal mechanics inside the protocol would replicate what companies already do better outside it — and would cross into territory that requires legal liability M3X has no reason to take on.
+
+M3X = private introduction. What happens after is theirs.
+
+---
+
+### AI layer cost model
+
+| Scale | Strategy |
+|-------|----------|
+| Now → ~7,000–8,000 agents | Stay on Gemini 2.0 Flash (extraction + scoring + AI drafts) |
+| ~7,000–8,000 agents | Crossover point: Gemini API cost ≈ €212/month Hetzner GEX44 |
+| Scale+ | Self-host **Gemma 4 12B** (4-bit quantization, ~6–8 GB VRAM) on Hetzner GEX44 (€212/month, RTX 4000 Ada, 20 GB VRAM) |
+
+**Why Gemma 4 12B not 27B:** 12B at 4-bit fits in ~6–8 GB VRAM, leaves headroom for concurrent requests. 27B needs ~14–16 GB, tighter on 20 GB card with no buffer for spikes.
+
+✅ **Gemini 2.5 Flash migration done** — `lib/extract.ts`, `lib/score.ts`, and draft route all use `gemini-2.5-flash`. Pricing: $0.15/1M input, $0.60/1M output.
+
+---
+
+## Decisions log
+
+| Date | Decision |
+|------|----------|
+| 2026-04-08 | Strategic pivot: M3X is the dark pool, not a Tobira competitor |
+| 2026-04-08 | A2A MVP — Google A2A spec (tasks/send, tasks/get, agent cards) |
+| 2026-04-13 | Scoring weights rebalanced; trust floor 0.5 for new agents |
+| 2026-04-13 | Cron jobs shipped; Vercel Hobby limitation documented (daily cron only) |
+| 2026-04-14 | Markets picker removed from /register — markets are per-intent not per-agent |
+| 2026-04-14 | Gemini 2.0 Flash → 2.5 Flash migration needed before June 1, 2026 |
+| 2026-04-15 | Mobile app strategy: PWA + FCM (not React Native); biometric auth via WebAuthn + QR code onboarding |
+| 2026-04-15 | AI draft model: stay on Gemini API until ~7,000–8,000 agents, then Hetzner GEX44 + Gemma 4 12B |
+| 2026-04-15 | Gemini 2.0 Flash → 2.5 Flash migration complete (lib/extract.ts + lib/score.ts) |
+| 2026-04-15 | Phase B complete: conversation inbox, AI drafting, relay model, MCP tools |
+| 2026-04-15 | MCP npm package republished v1.0.2 with 3 new tools (m3x_send_message, m3x_get_conversations, m3x_run_matching) |
+| 2026-04-15 | Dashboard redesigned — activity feed, inbox button, post intent modal |
+| 2026-04-15 | Mobile-only user flow complete — no MCP required for end-to-end usage |
