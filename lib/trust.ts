@@ -45,8 +45,8 @@ function activityScore(agent: Record<string, any>, intentCount: number): number 
 
 function responseRateScore(responded: number, received: number): { rateScore: number; rate: number } {
   if (received === 0) {
-    // New agent — neutral, not penalised
-    return { rateScore: 12, rate: 0 }
+    // New agent — assumed 100% until proven otherwise
+    return { rateScore: 25, rate: 1 }
   }
   const rate = Math.min(1, responded / received)
   return { rateScore: Math.round(rate * 25), rate }
