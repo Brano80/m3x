@@ -580,46 +580,34 @@
   .msgRow { max-width: 88%; }
 }
 
-/* ── Escalation banner ────────────────────────────────────────────────────── */
+/* ── Pending reply bubble (escalation) ────────────────────────────────────── */
 
-.escalationBanner {
-  margin: 0;
-  padding: 14px 18px;
-  background: rgba(251, 146, 60, 0.08);
-  border-bottom: 1px solid rgba(251, 146, 60, 0.25);
+.pendingBubbleWrap {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
+  align-items: flex-end;
+  max-width: 100%;
 }
 
-.escalationTitle {
-  font-size: 13px;
-  font-weight: 600;
-  color: #fb923c;
-  letter-spacing: 0.01em;
+.pendingLabel {
+  font-size: 10px;
+  color: rgba(251, 146, 60, 0.6);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  align-self: flex-end;
 }
 
-.escalationAnalysis {
-  font-size: 12px;
-  color: rgba(251, 146, 60, 0.75);
-  line-height: 1.4;
-}
-
-.escalationReply {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.pendingReplyText {
-  font-size: 13px;
-  color: #e8eaf0;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(251, 146, 60, 0.2);
-  border-radius: 8px;
-  padding: 10px 12px;
+.pendingBubble {
+  background: rgba(251, 146, 60, 0.07);
+  border: 1px dashed rgba(251, 146, 60, 0.35);
+  border-radius: 14px 14px 2px 14px;
+  padding: 10px 14px;
+  font-size: 14px;
+  color: rgba(232, 234, 240, 0.8);
   line-height: 1.5;
   white-space: pre-wrap;
+  max-width: 100%;
 }
 
 .pendingEditInput {
@@ -641,17 +629,18 @@
   border-color: rgba(251, 146, 60, 0.6);
 }
 
-.escalationActions {
+.pendingActions {
   display: flex;
-  gap: 8px;
+  gap: 6px;
   flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
 .approveBtn {
-  padding: 7px 16px;
+  padding: 5px 14px;
   background: linear-gradient(180deg, #fb923c 0%, #ea7224 100%);
   border: none;
-  border-radius: 7px;
+  border-radius: 6px;
   color: #fff;
   font-size: 12px;
   font-weight: 600;
@@ -662,10 +651,10 @@
 .approveBtn:disabled { opacity: 0.5; cursor: default; }
 
 .editPendingBtn {
-  padding: 7px 14px;
+  padding: 5px 12px;
   background: rgba(255, 255, 255, 0.06);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 7px;
+  border-radius: 6px;
   color: #e8eaf0;
   font-size: 12px;
   font-weight: 500;
@@ -673,10 +662,10 @@
 }
 
 .retractBtn {
-  padding: 7px 14px;
+  padding: 5px 12px;
   background: rgba(248, 113, 113, 0.08);
   border: 1px solid rgba(248, 113, 113, 0.2);
-  border-radius: 7px;
+  border-radius: 6px;
   color: #f87171;
   font-size: 12px;
   font-weight: 500;

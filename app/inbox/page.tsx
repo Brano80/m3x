@@ -328,71 +328,6 @@ function ChatView({
         )}
       </div>
 
-      {/* Escalation banner */}
-      {isEscalated && (
-        <div className={styles.escalationBanner}>
-          <div className={styles.escalationTitle}>⚠️ Your agent needs a decision</div>
-          {conv.agent_analysis && (
-            <div className={styles.escalationAnalysis}>{conv.agent_analysis}</div>
-          )}
-          {conv.pending_reply && (
-            <div className={styles.escalationReply}>
-              {editingPending ? (
-                <>
-                  <textarea
-                    className={styles.pendingEditInput}
-                    value={pendingEdit}
-                    onChange={e => setPendingEdit(e.target.value)}
-                    rows={3}
-                  />
-                  <div className={styles.escalationActions}>
-                    <button
-                      className={styles.approveBtn}
-                      onClick={() => approvePending(pendingEdit)}
-                      disabled={approving || !pendingEdit.trim()}
-                    >
-                      {approving ? 'Sending…' : 'Send edited →'}
-                    </button>
-                    <button
-                      className={styles.retractBtn}
-                      onClick={() => setEditingPending(false)}
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <div className={styles.pendingReplyText}>{conv.pending_reply}</div>
-                  <div className={styles.escalationActions}>
-                    <button
-                      className={styles.approveBtn}
-                      onClick={() => approvePending()}
-                      disabled={approving}
-                    >
-                      {approving ? 'Sending…' : 'Approve →'}
-                    </button>
-                    <button
-                      className={styles.editPendingBtn}
-                      onClick={() => setEditingPending(true)}
-                    >
-                      Edit
-                    </button>
-                    <button
-                      className={styles.retractBtn}
-                      onClick={retractPending}
-                      disabled={retracting}
-                    >
-                      {retracting ? 'Discarding…' : 'Discard'}
-                    </button>
-                  </div>
-                </>
-              )}
-            </div>
-          )}
-        </div>
-      )}
-
       {/* Messages */}
       <div className={styles.messages}>
         {messages.length === 0 && (
@@ -411,6 +346,49 @@ function ChatView({
             </div>
           )
         })}
+
+        {/* Pending reply — appears as a message bubble awaiting approval */}
+        {isEscalated && conv.pending_reply && (
+          <div className={`${styles.msgRow} ${styles.msgMine}`}>
+            <div className={styles.pendingBubbleWrap}>
+              {conv.agent_analysis && (
+                <div className={styles.pendingLabel}>Agent suggests · needs your approval</div>
+              )}
+              {editingPending ? (
+                <textarea
+                  className={styles.pendingEditInput}
+                  value={pendingEdit}
+                  onChange={e => setPendingEdit(e.target.value)}
+                  rows={3}
+                  autoFocus
+                />
+              ) : (
+                <div className={styles.pendingBubble}>{conv.pending_reply}</div>
+              )}
+              <div className={styles.pendingActions}>
+                {editingPending ? (
+                  <>
+                    <button className={styles.approveBtn} onClick={() => approvePending(pendingEdit)} disabled={approving || !pendingEdit.trim()}>
+                      {approving ? 'Sending…' : 'Send →'}
+                    </button>
+                    <button className={styles.retractBtn} onClick={() => setEditingPending(false)}>Cancel</button>
+                  </>
+                ) : (
+                  <>
+                    <button className={styles.approveBtn} onClick={() => approvePending()} disabled={approving}>
+                      {approving ? 'Sending…' : 'Approve →'}
+                    </button>
+                    <button className={styles.editPendingBtn} onClick={() => setEditingPending(true)}>Edit</button>
+                    <button className={styles.retractBtn} onClick={retractPending} disabled={retracting}>
+                      {retracting ? '…' : 'Discard'}
+                    </button>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
         <div ref={bottomRef} />
       </div>
 
