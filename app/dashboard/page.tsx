@@ -14,6 +14,7 @@ interface Agent {
   trust_score: number
   response_rate: number
   is_active: boolean
+  auto_reply: boolean
   created_at: string
   last_active_at: string | null
 }
@@ -370,6 +371,8 @@ function Dashboard({
   const [error, setError] = useState('')
   const [pushState, setPushState] = useState<'default' | 'granted' | 'denied' | 'unsupported'>('default')
   const [showPostIntent, setShowPostIntent] = useState(false)
+  const [autoReply, setAutoReply] = useState(false)
+  const [autoReplyLoading, setAutoReplyLoading] = useState(false)
 
   useEffect(() => {
     if (!('Notification' in window)) { setPushState('unsupported'); return }
@@ -393,6 +396,7 @@ function Dashboard({
         agentRes.json(), matchesRes.json(), intentsRes.json(), convsRes.ok ? convsRes.json() : { conversations: [] },
       ])
       setAgent(agentData.agent)
+      setAutoReply(agentData.agent?.auto_reply ?? false)
       setMatches(matchesData.matches ?? [])
       setIntents(intentsData.intents ?? [])
       setConversations(convsData.conversations ?? [])
@@ -449,6 +453,23 @@ function Dashboard({
     }
 
     return items.sort((a, b) => new Date(b.timeIso).getTime() - new Date(a.timeIso).getTime())
+  }
+
+  const toggleAutoReply = async () => {
+    const next = !autoReply
+    setAutoReply(next)
+    setAutoReplyLoading(true)
+    try {
+      await fetch('/api/agent/me', {
+        method: 'PATCH',
+        headers: { ...headers, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ auto_reply: next }),
+      })
+    } catch {
+      setAutoReply(!next) // revert on error
+    } finally {
+      setAutoReplyLoading(false)
+    }
   }
 
   if (loading) {
@@ -600,6 +621,29 @@ function Dashboard({
             )}
           </section>
         )}
+
+        {/* Agent settings */}
+        <section className={styles.section}>
+          <div className={styles.sectionHeader}>
+            <div className={styles.sectionTitle}>Agent settings</div>
+          </div>
+          <div className={styles.settingRow}>
+            <div className={styles.settingInfo}>
+              <div className={styles.settingLabel}>Auto-reply mode</div>
+              <div className={styles.settingDesc}>
+                Your agent replies autonomously and only asks you before committing to anything.
+              </div>
+            </div>
+            <button
+              className={`${styles.toggle} ${autoReply ? styles.toggleOn : ''}`}
+              onClick={toggleAutoReply}
+              disabled={autoReplyLoading}
+              aria-label="Toggle auto-reply"
+            >
+              <span className={styles.toggleThumb} />
+            </button>
+          </div>
+        </section>
 
       </main>
 

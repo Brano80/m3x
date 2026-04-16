@@ -14,7 +14,7 @@ export async function GET(req: NextRequest) {
 
   const { data, error } = await supabase
     .from('agents')
-    .select('id, handle, did, display_name, markets, capabilities, trust_score, response_rate, is_active, created_at, last_active_at')
+    .select('id, handle, did, display_name, markets, capabilities, trust_score, response_rate, is_active, auto_reply, created_at, last_active_at')
     .eq('id', agent.id)
     .single()
 
@@ -39,7 +39,7 @@ export async function PATCH(req: NextRequest) {
   }
 
   const body = await req.json()
-  const allowed = ['display_name', 'markets', 'capabilities', 'webhook_url']
+  const allowed = ['display_name', 'markets', 'capabilities', 'webhook_url', 'auto_reply']
   const updates: Record<string, unknown> = {}
   for (const key of allowed) {
     if (body[key] !== undefined) updates[key] = body[key]

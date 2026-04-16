@@ -1019,3 +1019,72 @@
   .connectCard { padding: 32px 20px; }
   .biometricSetupBtn { display: none; } /* too cramped on small screens */
 }
+
+/* ── Agent settings ───────────────────────────────────────────────────────── */
+
+.settingRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 0;
+}
+
+.settingInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  flex: 1;
+}
+
+.settingLabel {
+  font-size: 14px;
+  font-weight: 500;
+  color: #e8eaf0;
+}
+
+.settingDesc {
+  font-size: 12px;
+  color: rgba(232, 234, 240, 0.45);
+  line-height: 1.4;
+}
+
+/* Toggle switch */
+.toggle {
+  position: relative;
+  width: 44px;
+  height: 26px;
+  border-radius: 13px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.2s, border-color 0.2s;
+  padding: 0;
+}
+
+.toggle:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.toggleOn {
+  background: linear-gradient(180deg, #5c9ef3 0%, #3d82d9 100%);
+  border-color: transparent;
+}
+
+.toggleThumb {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform 0.2s;
+  display: block;
+}
+
+.toggleOn .toggleThumb {
+  transform: translateX(18px);
+}
