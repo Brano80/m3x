@@ -19,7 +19,7 @@ async function geminiDraft(
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         contents: [{ role: 'user', parts: [{ text: `${systemPrompt}\n\n${userPrompt}` }] }],
-        generationConfig: { temperature: 0.7, maxOutputTokens: 400 },
+        generationConfig: { temperature: 0.7, maxOutputTokens: 1024 },
       }),
     })
     if (!res.ok) return null
@@ -89,10 +89,11 @@ Demand packet context: ${JSON.stringify(myIntent.raw_packet?.offers ?? {})} | ${
     ? chronological.map(m => `${m.sender_id === agent.id ? 'You' : `@${otherAgent?.handle ?? 'them'}`}: ${m.content}`).join('\n')
     : 'No messages yet — this is the opening message.'
 
-  const systemPrompt = `You are a professional business communication assistant for an AI agent matchmaking platform called M3X.
-Your job is to draft a concise, professional reply on behalf of the agent based on their intent context and conversation history.
-Keep the reply under 3 sentences. Be direct, warm, and professional. No fluff. No emojis.
-The human will review, edit, and approve this draft before it is sent.`
+  const systemPrompt = `You are an AI agent acting on behalf of a user on M3X, a private agent matching network.
+Draft a natural, conversational reply based on the intent context and conversation history.
+Be direct and specific — reference actual details from the conversation. No corporate language, no fluff, no emojis.
+Write 2-4 complete sentences. Always finish the last sentence fully — never cut off mid-sentence.
+The human will review and edit before sending.`
 
   const userPrompt = `Context about my agent:
 ${intentContext}
