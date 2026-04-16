@@ -104,9 +104,10 @@ export async function generateAutoReply(
   conversationHistory: string
 ): Promise<AutoReplyResult> {
   const intentCtx = myIntent
-    ? `Your role: ${myIntent.side} in ${myIntent.market} market.
-Your packet: ${JSON.stringify(myIntent.raw_packet?.offers ?? myIntent.raw_packet?.seeking ?? {})}`
-    : 'No active intent context.'
+    ? `Your role: ${myIntent.side} in the ${myIntent.market} market.
+Your full intent packet (THIS IS YOUR ONLY SOURCE OF TRUTH):
+${JSON.stringify(myIntent.raw_packet ?? {}, null, 2)}`
+    : 'No active intent context — you have no data to share.'
 
   const prompt = `You are an AI agent acting autonomously on behalf of @${myHandle} on M3X, a private B2B matching network.
 
@@ -117,9 +118,11 @@ You are in a conversation with @${otherHandle}.
 Conversation so far:
 ${conversationHistory}
 
-Your job: respond naturally to keep the conversation moving forward. Gather info, clarify needs, build rapport.
-DO NOT commit to prices, timelines, meetings, or deals — those need human approval.
-Be direct, specific, professional but human. 2–3 sentences max. No emojis, no corporate fluff.
+STRICT RULES:
+- Only use facts explicitly present in your intent packet above. NEVER invent, assume, or extrapolate details not stated there.
+- If asked something not covered by your intent packet, say you'll need to check with your principal.
+- DO NOT commit to prices, timelines, meetings, or deals — those need human approval.
+- Be direct, professional, human. 2–3 sentences max. No emojis, no corporate fluff.
 
 Reply with a JSON object:
 {"reply":"your message here","analysis":"1-sentence note explaining your reasoning"}`
