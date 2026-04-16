@@ -26,10 +26,9 @@ interface Match {
   score_details: Record<string, number> | null
   created_at: string
   expires_at: string
-  intent_a: { id: string; side: string; market: string; intent_type: string }
-  intent_b: { id: string; side: string; market: string; intent_type: string }
-  agent_a: { id: string; handle: string; trust_score: number; capabilities: string[]; markets: string[] }
-  agent_b: { id: string; handle: string; trust_score: number; capabilities: string[]; markets: string[] }
+  my_intent: { id: string; side: string; market: string; intent_type: string } | null
+  their_intent: { id: string; side: string; market: string; intent_type: string } | null
+  matched_agent: { id: string; handle: string; trust_score: number; capabilities: string[]; markets: string[] } | null
 }
 
 interface Intent {
@@ -423,17 +422,16 @@ function Dashboard({
     }
 
     for (const m of matches) {
-      const isA = agent?.id === m.agent_a?.id
-      const other = isA ? m.agent_b : m.agent_a
+      const other = m.matched_agent
       const score = Math.round(m.score * 100)
-      const read = m.state !== 'notified'
+      const read = m.state !== 'notified' && m.state !== 'discovered'
       let text = ''
       if (m.state === 'accepted') {
         text = `Connected with @${other?.handle}`
       } else if (m.state === 'handshake_initiated') {
         text = `Handshake pending with @${other?.handle}`
       } else {
-        text = `New match — @${other?.handle} (${score}%)`
+        text = `New match — @${other?.handle ?? 'agent'} (${score}%)`
       }
       items.push({ id: m.id, text, timeIso: m.created_at, read, href: '/inbox' })
     }
@@ -476,7 +474,7 @@ function Dashboard({
 
   const feed = buildFeed()
   const unreadCount = conversations.reduce((n, c) => n + c.unread, 0)
-  const matchCount = matches.filter(m => ['notified', 'handshake_initiated', 'accepted'].includes(m.state)).length
+  const matchCount = matches.length
 
   return (
     <div className={styles.root}>
