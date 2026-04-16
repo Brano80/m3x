@@ -58,8 +58,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   // Build context for Gemini
   const intentContext = myIntent
-    ? `Your agent's intent: ${myIntent.side} in ${myIntent.market} market, type: ${myIntent.intent_type}.
-Demand packet context: ${JSON.stringify(myIntent.raw_packet?.offers ?? {})} | ${JSON.stringify(myIntent.raw_packet?.seeking ?? {})}`
+    ? `Your role: ${myIntent.side} in the ${myIntent.market} market.
+Your full intent (use ONLY these facts — never invent details):
+${JSON.stringify(myIntent.raw_packet ?? {}, null, 2)}`
     : 'No active intent on file.'
 
   const conversationHistory = chronological.length
