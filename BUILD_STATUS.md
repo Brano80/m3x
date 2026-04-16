@@ -1,5 +1,5 @@
 # BUILD_STATUS.md — M3X Agentic Matchmaking Network
-**Last updated:** 2026-04-15 (Dashboard redesign + Post Intent form)
+**Last updated:** 2026-04-16 (Autonomous conversation engine + auto-reply toggle)
 
 ---
 
@@ -130,6 +130,25 @@ Live at e.g. `m3x.space/markets/legal-services`, `m3x.space/markets/healthcare`,
 
 **Architecture:** Relay model — M3X stores all messages in DB, delivers via webhook + FCM. Works for agents without persistent servers.
 **Human-in-the-loop:** AI drafts via Gemini, human reviews in `/inbox` before sending. Non-negotiable for institutional use.
+
+---
+
+## ✅ Done — Autonomous conversation engine (2026-04-16)
+
+| Item | Notes |
+|------|-------|
+| `lib/gemini.ts` | Shared Gemini helpers with correct thinking-model parts parsing. `geminiStructured` (thinking OFF, temperature 0) for scoring/extraction/classification. `geminiConversational` (thinking ON, temperature 0.7) for replies/messages. `extractGeminiText()` skips thought fragments in `parts[]`. All 4 call sites updated — fixes the truncated message bug. |
+| `lib/conversation.ts` | Full autonomous-but-escalates engine: `detectDecision()` classifies incoming messages (price agreement, timeline commitment, meeting scheduling, deal close). `generateAutoReply()` uses Gemini conversational for info-gathering replies. `summarizeConversation()` periodic session digest. `handleIncomingMessage()` routes to auto-reply or owner escalation. |
+| Auto-reply trigger | `POST /api/conversations/[id]` — after storing incoming message, checks if receiver has `auto_reply=true` and fires `handleIncomingMessage` in background (fire-and-forget, doesn't block response). |
+| `POST /api/conversations/[id]/approve` | Owner approves escalated pending reply. Optional `{ content }` to override the suggested text. Resets `session_state → autonomous`. |
+| `POST /api/conversations/[id]/retract` | Owner discards pending reply without sending. Optional `{ manual_reply }` to send something else instead. |
+| Follow-up cron (`GET /api/cron/followup`) | Runs every 6 hours. Finds auto-reply sessions silent for 24h where the other agent sent last. Sends a natural nudge. Max 3 nudges per session. |
+| `vercel.json` crons | Now includes all 3 routes: match (`*/15`), expire (hourly), followup (every 6h). |
+| Inbox escalation UI | Orange banner when `session_state = escalated`. Shows agent's reasoning + suggested reply. **Approve →** / **Edit** / **Discard** actions. Edit opens inline textarea before sending. |
+| DB columns | `agents.auto_reply` (boolean), `negotiation_sessions.session_state`, `pending_reply`, `agent_analysis`, `last_followup_at`, `auto_reply_count`, `summary` — all added in previous migration. |
+| Auto-reply toggle | `GET /api/agent/me` now returns `auto_reply`. `PATCH /api/agent/me` accepts `auto_reply`. Dashboard "Agent settings" section with animated toggle switch — saves instantly on tap. |
+
+**Architecture:** Autonomous-but-escalates-before-committing. Agent handles info-gathering on its own. Stops and notifies owner at any decision point (price, timeline, commitment). Owner sees suggested reply with Approve / Edit / Discard — never blindsided by what the agent committed to.
 
 ---
 
@@ -318,9 +337,14 @@ M3X_PUBLIC_KEY_MULTIBASE        optional
 | Item | Status | Notes |
 |------|--------|-------|
 | Conversation layer | ✅ | Relay model — messages stored in DB, delivered via webhook + FCM |
-| `/inbox` page | ✅ | Split sidebar + chat pane, mobile responsive |
-| AI drafts | ✅ | Gemini 2.5 Flash — human reviews before sending |
-| MCP tools | ✅ | `m3x_send_message`, `m3x_get_conversations` |
+| `/inbox` page | ✅ | Split sidebar + chat pane, mobile responsive; matches section with Connect button |
+| AI drafts | ✅ | Gemini 2.5 Flash with thinking ON — human reviews before sending |
+| Auto-reply engine | ✅ | Autonomous info-gathering; escalates to owner at decision points |
+| Escalation UI | ✅ | Orange banner in inbox — Approve / Edit / Discard pending reply |
+| Follow-up nudges | ✅ | Cron every 6h — nudges stale conversations (max 3 per session) |
+| Auto-reply toggle | ✅ | Per-agent setting in mobile dashboard — tap to enable |
+| Opening message | ✅ | Auto-generated from supply-side agent on handshake accept |
+| MCP tools | ✅ | `m3x_send_message`, `m3x_get_conversations`, `m3x_run_matching` |
 | Post Intent form | ✅ | Modal in dashboard — full mobile-only flow complete |
 
 ---
@@ -366,3 +390,6 @@ M3X = private introduction. What happens after is theirs.
 | 2026-04-15 | MCP npm package republished v1.0.2 with 3 new tools (m3x_send_message, m3x_get_conversations, m3x_run_matching) |
 | 2026-04-15 | Dashboard redesigned — activity feed, inbox button, post intent modal |
 | 2026-04-15 | Mobile-only user flow complete — no MCP required for end-to-end usage |
+| 2026-04-16 | Gemini thinking-model bug fixed — parts[0] was returning thought fragments not actual reply; lib/gemini.ts now finds first non-thought part |
+| 2026-04-16 | Autonomous conversation engine shipped — autonomous-but-escalates-before-committing architecture |
+| 2026-04-16 | Auto-reply toggle added to mobile dashboard — per-agent setting, saves instantly |
