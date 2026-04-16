@@ -5,6 +5,18 @@ import styles from './inbox.module.css'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
+interface Match {
+  id: string
+  score: number
+  tier: 'strong_match' | 'match' | 'near_match'
+  state: string
+  created_at: string
+  expires_at: string
+  my_intent: { id: string; side: string; market: string; intent_type: string } | null
+  their_intent: { id: string; side: string; market: string; intent_type: string } | null
+  matched_agent: { id: string; handle: string; trust_score: number; capabilities: string[]; markets: string[] } | null
+}
+
 interface OtherAgent {
   id: string
   handle: string
@@ -50,6 +62,80 @@ function timeAgo(iso: string) {
   if (s < 3600) return `${Math.floor(s / 60)}m`
   if (s < 86400) return `${Math.floor(s / 3600)}h`
   return `${Math.floor(s / 86400)}d`
+}
+
+// ── Match card ────────────────────────────────────────────────────────────────
+
+const TIER_LABEL: Record<string, string> = {
+  strong_match: 'Strong',
+  match: 'Match',
+  near_match: 'Near',
+}
+
+function MatchCard({
+  match,
+  token,
+  onConnected,
+}: {
+  match: Match
+  token: string
+  onConnected: () => void
+}) {
+  const [connecting, setConnecting] = useState(false)
+  const [done, setDone]             = useState(false)
+  const [err, setErr]               = useState('')
+
+  const isPending = match.state === 'handshake_initiated'
+  const handle    = match.matched_agent?.handle ?? '…'
+  const pct       = Math.round(match.score * 100)
+
+  const connect = async () => {
+    setConnecting(true)
+    setErr('')
+    try {
+      const res = await fetch('/api/handshake', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ match_id: match.id }),
+      })
+      const data = await res.json()
+      if (!res.ok && data.error?.code !== 'HANDSHAKE_EXISTS') {
+        setErr(data.error?.message ?? 'Failed')
+        return
+      }
+      setDone(true)
+      onConnected()
+    } catch {
+      setErr('Network error')
+    } finally {
+      setConnecting(false)
+    }
+  }
+
+  return (
+    <div className={styles.matchCard}>
+      <div className={styles.matchTop}>
+        <span className={styles.matchHandle}>@{handle}</span>
+        <span className={`${styles.matchTier} ${styles[`tier_${match.tier}`]}`}>
+          {TIER_LABEL[match.tier] ?? match.tier}
+        </span>
+        <span className={styles.matchScore}>{pct}%</span>
+      </div>
+      {match.my_intent && (
+        <div className={styles.matchMarket}>
+          {match.my_intent.market.replace(/_/g, ' ')} · {match.my_intent.side}
+        </div>
+      )}
+      {err && <div className={styles.matchErr}>{err}</div>}
+      <button
+        className={`${styles.connectBtn} ${done || isPending ? styles.connectBtnDone : ''}`}
+        onClick={connect}
+        disabled={connecting || done}
+      >
+        {done ? 'Requested ✓' : isPending ? 'Respond →' : connecting ? 'Connecting…' : 'Connect →'}
+      </button>
+    </div>
+  )
 }
 
 // ── Empty state ───────────────────────────────────────────────────────────────
@@ -247,6 +333,7 @@ export default function InboxPage() {
   const [token, setToken]               = useState('')
   const [agentId, setAgentId]           = useState('')
   const [conversations, setConversations] = useState<Conversation[]>([])
+  const [matches, setMatches]           = useState<Match[]>([])
   const [selected, setSelected]         = useState<Conversation | null>(null)
   const [loading, setLoading]           = useState(true)
   const [noToken, setNoToken]           = useState(false)
@@ -255,11 +342,12 @@ export default function InboxPage() {
     const t = typeof window !== 'undefined' ? localStorage.getItem(TOKEN_KEY) : null
     if (!t) { setNoToken(true); setLoading(false); return }
     setToken(t)
-    // Load agent id + conversations
+    const h = { Authorization: `Bearer ${t}` }
     Promise.all([
-      fetch('/api/agent/me', { headers: { Authorization: `Bearer ${t}` } }),
-      fetch('/api/conversations', { headers: { Authorization: `Bearer ${t}` } }),
-    ]).then(async ([agentRes, convsRes]) => {
+      fetch('/api/agent/me', { headers: h }),
+      fetch('/api/conversations', { headers: h }),
+      fetch('/api/matches', { headers: h }),
+    ]).then(async ([agentRes, convsRes, matchRes]) => {
       if (agentRes.ok) {
         const d = await agentRes.json()
         setAgentId(d.agent?.id ?? '')
@@ -269,9 +357,37 @@ export default function InboxPage() {
         setConversations(d.conversations ?? [])
         if (d.conversations?.length > 0) setSelected(d.conversations[0])
       }
+      if (matchRes.ok) {
+        const d = await matchRes.json()
+        // Only show matches not yet accepted/declined
+        const active = (d.matches ?? []).filter(
+          (m: Match) => !['accepted', 'declined', 'expired'].includes(m.state)
+        )
+        setMatches(active)
+      }
       setLoading(false)
     }).catch(() => setLoading(false))
   }, [])
+
+  const refreshAll = useCallback(async () => {
+    if (!token) return
+    const h = { Authorization: `Bearer ${token}` }
+    const [convsRes, matchRes] = await Promise.all([
+      fetch('/api/conversations', { headers: h }),
+      fetch('/api/matches', { headers: h }),
+    ])
+    if (convsRes.ok) {
+      const d = await convsRes.json()
+      setConversations(d.conversations ?? [])
+    }
+    if (matchRes.ok) {
+      const d = await matchRes.json()
+      const active = (d.matches ?? []).filter(
+        (m: Match) => !['accepted', 'declined', 'expired'].includes(m.state)
+      )
+      setMatches(active)
+    }
+  }, [token])
 
   const refreshConversations = useCallback(async () => {
     if (!token) return
@@ -322,8 +438,24 @@ export default function InboxPage() {
       </header>
 
       <div className={styles.layout}>
-        {/* Sidebar — conversation list */}
+        {/* Sidebar — matches + conversation list */}
         <aside className={`${styles.sidebar} ${selected ? styles.sidebarHidden : ''}`}>
+
+          {/* Matches section */}
+          {matches.length > 0 && (
+            <>
+              <div className={styles.sidebarTitle}>
+                Matches
+                <span className={styles.sidebarBadge}>{matches.length}</span>
+              </div>
+              <div className={styles.matchList}>
+                {matches.map(m => (
+                  <MatchCard key={m.id} match={m} token={token} onConnected={refreshAll} />
+                ))}
+              </div>
+            </>
+          )}
+
           <div className={styles.sidebarTitle}>
             Conversations
             {totalUnread > 0 && <span className={styles.sidebarBadge}>{totalUnread}</span>}
