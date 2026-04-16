@@ -347,8 +347,9 @@ function ChatView({
           )
         })}
 
-        {/* Pending reply — appears as a message bubble awaiting approval */}
-        {isEscalated && conv.pending_reply && (
+        {/* Pending reply — only show to the agent who owns the pending reply
+            (last message must be from the other agent, meaning my auto-reply is pending) */}
+        {isEscalated && conv.pending_reply && messages.length > 0 && messages[messages.length - 1].sender_id !== agentId && (
           <div className={`${styles.msgRow} ${styles.msgMine}`}>
             <div className={styles.pendingBubbleWrap}>
               {conv.agent_analysis && (
