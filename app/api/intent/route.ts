@@ -4,6 +4,7 @@ import { verifyAgent } from '@/lib/auth'
 import { extractIntentSignals } from '@/lib/extract'
 import { embedText } from '@/lib/embed'
 import { decryptKey } from '@/lib/crypto'
+import { runMatchingForIntent } from '@/lib/matching'
 
 export async function POST(req: NextRequest) {
   try {
@@ -121,11 +122,17 @@ export async function POST(req: NextRequest) {
       .update({ last_active_at: new Date().toISOString() })
       .eq('id', agent.id)
 
+    // Auto-trigger matching — fire-and-forget, does not block response
+    // Bypasses daily rate limit since this is system-triggered
+    runMatchingForIntent(intent, agent, supabase, byok).catch(
+      e => console.error('[intent] auto-match error:', e)
+    )
+
     return NextResponse.json({
       intent,
       signals_extracted: !!signals,
       embedded: !!vector,
-      message: 'Intent posted.',
+      message: 'Intent posted. Matching running in background.',
     }, { status: 201 })
 
   } catch (err: any) {

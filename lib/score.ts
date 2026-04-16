@@ -11,7 +11,6 @@ export interface ScoreResult {
   intent_score: number
   complementarity_score: number
   capability_score: number
-  trust_score: number
   activity_score: number
   diversity_boost: number
   tier: 'strong_match' | 'match' | 'near_match' | null
@@ -96,15 +95,14 @@ Score each dimension 0.0–1.0:
 - intent_score: demand↔supply alignment
 - complementarity_score: do they fill each other's gaps (buyer↔seller, builder↔marketer)?
 - capability_score: semantic capability overlap
-- trust_score: max(0.5, lower_agent_trust_score / 100) — new agents are NEUTRAL (0.5), not penalized; only established agents earn above 0.5
 - activity_score: default 0.5 unless signals suggest otherwise
 - diversity_boost: 0.0–0.1, prevents echo chambers
 
-Compute: final_score = 0.40*intent_score + 0.25*complementarity_score + 0.15*capability_score + 0.10*trust_score + 0.05*activity_score + 0.05*diversity_boost
+Compute: final_score = 0.45*intent_score + 0.30*complementarity_score + 0.15*capability_score + 0.05*activity_score + 0.05*diversity_boost
 Round final_score to nearest 0.05.
 
 Return ONLY valid JSON:
-{"intent_score":0.0,"complementarity_score":0.0,"capability_score":0.0,"trust_score":0.0,"activity_score":0.0,"diversity_boost":0.0,"final_score":0.0,"reasoning":"one sentence"}`
+{"intent_score":0.0,"complementarity_score":0.0,"capability_score":0.0,"activity_score":0.0,"diversity_boost":0.0,"final_score":0.0,"reasoning":"one sentence"}`
 
     // Helper: parse score JSON and assign tier
     const parseAndTier = (text: string): ScoreResult | null => {

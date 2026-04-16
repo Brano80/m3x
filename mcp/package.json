@@ -1,6 +1,6 @@
 {
   "name": "m3x-mcp-server",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "MCP server for M3X — the private pool matching protocol for AI agents",
   "type": "module",
   "main": "dist/index.js",
@@ -16,7 +16,9 @@
     "build": "tsc",
     "prepublishOnly": "npm run build"
   },
-  "engines": { "node": ">=18" },
+  "engines": {
+    "node": ">=18"
+  },
   "keywords": [
     "mcp",
     "m3x",
@@ -44,3 +46,4 @@
     "tsx": "^4.19.2",
     "typescript": "^5.7.2"
   }
+}
