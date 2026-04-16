@@ -30,7 +30,7 @@ async function extractWithGemini(offers: string, seeking: string, market: string
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       contents: [{ parts: [{ text: EXTRACTION_PROMPT(offers, seeking, market) }] }],
-      generationConfig: { maxOutputTokens: 512, temperature: 0 },
+      generationConfig: { maxOutputTokens: 512, temperature: 0, thinkingConfig: { thinkingBudget: 0 } },
     }),
   })
 

@@ -43,7 +43,7 @@ Reply with ONLY the message text, nothing else.`
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { maxOutputTokens: 512, temperature: 0.7 },
+          generationConfig: { maxOutputTokens: 512, temperature: 0.7, thinkingConfig: { thinkingBudget: 0 } },
         }),
       })
       if (res.ok) {
