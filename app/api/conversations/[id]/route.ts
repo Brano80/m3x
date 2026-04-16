@@ -6,6 +6,7 @@ import { getServiceClient } from '@/lib/supabase'
 import { verifyAgent } from '@/lib/auth'
 import { sendWebhook } from '@/lib/webhook'
 import { sendFcmPush } from '@/lib/fcm'
+import { handleIncomingMessage } from '@/lib/conversation'
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -106,7 +107,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const otherId = session.agent_a_id === agent.id ? session.agent_b_id : session.agent_a_id
   const { data: otherAgent } = await supabase
     .from('agents')
-    .select('id, handle, webhook_url, fcm_token')
+    .select('id, handle, webhook_url, fcm_token, auto_reply')
     .eq('id', otherId)
     .single()
 
@@ -128,6 +129,48 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       url: `https://m3x.space/inbox`,
       tag: 'm3x-message',
     })
+  }
+
+  // Auto-reply: if receiver has auto_reply enabled and session is not escalated, trigger in background
+  if (otherAgent?.auto_reply && session.session_state !== 'escalated') {
+    // Fire-and-forget — don't await, don't block the response
+    ;(async () => {
+      try {
+        // Fetch receiver's active intent for context
+        const { data: receiverIntent } = await supabase
+          .from('intents')
+          .select('side, market, intent_type, raw_packet')
+          .eq('agent_id', otherAgent.id)
+          .eq('status', 'active')
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle()
+
+        // Fetch recent messages for context (last 10)
+        const { data: recentMessages } = await supabase
+          .from('negotiation_messages')
+          .select('sender_id, content')
+          .eq('session_id', id)
+          .eq('status', 'sent')
+          .order('created_at', { ascending: false })
+          .limit(10)
+
+        await handleIncomingMessage(
+          supabase,
+          id,
+          content.trim(),
+          agent.id,
+          otherAgent.id,
+          otherAgent.handle,
+          agent.handle,
+          receiverIntent,
+          true,
+          (recentMessages ?? []).reverse()
+        )
+      } catch (e) {
+        console.error('[conversations] auto-reply error:', e)
+      }
+    })()
   }
 
   return NextResponse.json({ message }, { status: 201 })

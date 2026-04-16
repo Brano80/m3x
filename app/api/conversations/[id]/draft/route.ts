@@ -5,30 +5,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServiceClient } from '@/lib/supabase'
 import { verifyAgent } from '@/lib/auth'
-
-const GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent'
-
-async function geminiDraft(
-  systemPrompt: string,
-  userPrompt: string,
-  apiKey: string
-): Promise<string | null> {
-  try {
-    const res = await fetch(`${GEMINI_URL}?key=${apiKey}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ role: 'user', parts: [{ text: `${systemPrompt}\n\n${userPrompt}` }] }],
-        generationConfig: { temperature: 0.7, maxOutputTokens: 1024, thinkingConfig: { thinkingBudget: 0 } },
-      }),
-    })
-    if (!res.ok) return null
-    const data = await res.json()
-    return data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() ?? null
-  } catch {
-    return null
-  }
-}
+import { geminiConversational } from '@/lib/gemini'
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -110,7 +87,7 @@ Draft a reply from my agent's perspective.`
     return NextResponse.json({ error: { message: 'AI drafting not available', code: 'NO_API_KEY' } }, { status: 503 })
   }
 
-  const draft = await geminiDraft(systemPrompt, userPrompt, apiKey)
+  const draft = await geminiConversational(`${systemPrompt}\n\n${userPrompt}`, apiKey).catch(() => null)
   if (!draft) {
     return NextResponse.json({ error: { message: 'Draft generation failed', code: 'DRAFT_FAILED' } }, { status: 500 })
   }

@@ -1,8 +1,8 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { SupabaseClient } from '@supabase/supabase-js'
+import { geminiStructured } from './gemini'
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! })
-const GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent'
 
 const CACHE_TTL_DAYS = 7
 
@@ -122,17 +122,8 @@ Return ONLY valid JSON:
     // Helper: call Gemini REST API
     const callGemini = async (apiKey: string): Promise<ScoreResult | null> => {
       try {
-        const res = await fetch(`${GEMINI_URL}?key=${apiKey}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: prompt }] }],
-            generationConfig: { maxOutputTokens: 512, temperature: 0, thinkingConfig: { thinkingBudget: 0 } },
-          }),
-        })
-        if (!res.ok) return null
-        const data = await res.json()
-        return parseAndTier(data.candidates?.[0]?.content?.parts?.[0]?.text ?? '')
+        const text = await geminiStructured(prompt, apiKey)
+        return parseAndTier(text)
       } catch { return null }
     }
 

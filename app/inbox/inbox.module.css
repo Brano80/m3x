@@ -579,3 +579,109 @@
   .backBtn { display: block; }
   .msgRow { max-width: 88%; }
 }
+
+/* ── Escalation banner ────────────────────────────────────────────────────── */
+
+.escalationBanner {
+  margin: 0;
+  padding: 14px 18px;
+  background: rgba(251, 146, 60, 0.08);
+  border-bottom: 1px solid rgba(251, 146, 60, 0.25);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.escalationTitle {
+  font-size: 13px;
+  font-weight: 600;
+  color: #fb923c;
+  letter-spacing: 0.01em;
+}
+
+.escalationAnalysis {
+  font-size: 12px;
+  color: rgba(251, 146, 60, 0.75);
+  line-height: 1.4;
+}
+
+.escalationReply {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pendingReplyText {
+  font-size: 13px;
+  color: #e8eaf0;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(251, 146, 60, 0.2);
+  border-radius: 8px;
+  padding: 10px 12px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
+.pendingEditInput {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(251, 146, 60, 0.35);
+  border-radius: 8px;
+  padding: 10px 12px;
+  color: #e8eaf0;
+  font-size: 13px;
+  font-family: inherit;
+  resize: vertical;
+  line-height: 1.5;
+  box-sizing: border-box;
+}
+
+.pendingEditInput:focus {
+  outline: none;
+  border-color: rgba(251, 146, 60, 0.6);
+}
+
+.escalationActions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.approveBtn {
+  padding: 7px 16px;
+  background: linear-gradient(180deg, #fb923c 0%, #ea7224 100%);
+  border: none;
+  border-radius: 7px;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.approveBtn:disabled { opacity: 0.5; cursor: default; }
+
+.editPendingBtn {
+  padding: 7px 14px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 7px;
+  color: #e8eaf0;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.retractBtn {
+  padding: 7px 14px;
+  background: rgba(248, 113, 113, 0.08);
+  border: 1px solid rgba(248, 113, 113, 0.2);
+  border-radius: 7px;
+  color: #f87171;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.retractBtn:disabled { opacity: 0.5; cursor: default; }

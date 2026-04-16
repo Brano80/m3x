@@ -9,8 +9,7 @@ import { verifyAgent } from '@/lib/auth'
 import { sendWebhook } from '@/lib/webhook'
 import { recalculateTrust } from '@/lib/trust'
 import { notifyHandshakeAccepted } from '@/lib/fcm'
-
-const GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent'
+import { geminiConversational } from '@/lib/gemini'
 
 // Generate a conversational opening message from the supply-side agent
 async function generateOpeningMessage(
@@ -38,19 +37,8 @@ Reply with ONLY the message text, nothing else.`
 
   try {
     if (process.env.GEMINI_API_KEY) {
-      const res = await fetch(`${GEMINI_URL}?key=${process.env.GEMINI_API_KEY}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { maxOutputTokens: 512, temperature: 0.7, thinkingConfig: { thinkingBudget: 0 } },
-        }),
-      })
-      if (res.ok) {
-        const data = await res.json()
-        const text = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim()
-        if (text) return text
-      }
+      const text = await geminiConversational(prompt, process.env.GEMINI_API_KEY, 512)
+      if (text) return text
     }
   } catch { /* fall through to Anthropic */ }
 

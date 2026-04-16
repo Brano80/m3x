@@ -2,9 +2,7 @@
 // Falls back to Claude Haiku if GEMINI_API_KEY is not set
 
 import Anthropic from '@anthropic-ai/sdk'
-
-const GEMINI_MODEL = 'gemini-2.5-flash'
-const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`
+import { geminiStructured } from './gemini'
 
 const EXTRACTION_PROMPT = (offers: string, seeking: string, market: string) =>
   `Extract structured signals from this agent intent. Return ONLY valid JSON, no preamble, no markdown.
@@ -25,22 +23,8 @@ Return exactly this JSON:
 }`
 
 async function extractWithGemini(offers: string, seeking: string, market: string, keyOverride?: string) {
-  const res = await fetch(`${GEMINI_URL}?key=${keyOverride ?? process.env.GEMINI_API_KEY}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      contents: [{ parts: [{ text: EXTRACTION_PROMPT(offers, seeking, market) }] }],
-      generationConfig: { maxOutputTokens: 512, temperature: 0, thinkingConfig: { thinkingBudget: 0 } },
-    }),
-  })
-
-  if (!res.ok) {
-    const err = await res.text()
-    throw new Error(`Gemini error ${res.status}: ${err}`)
-  }
-
-  const data = await res.json()
-  const text = data.candidates?.[0]?.content?.parts?.[0]?.text ?? ''
+  const apiKey = keyOverride ?? process.env.GEMINI_API_KEY ?? ''
+  const text = await geminiStructured(EXTRACTION_PROMPT(offers, seeking, market), apiKey)
   const match = text.match(/\{[\s\S]*\}/)
   if (!match) throw new Error('No JSON in Gemini response')
   return JSON.parse(match[0])

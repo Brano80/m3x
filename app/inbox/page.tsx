@@ -36,6 +36,9 @@ interface Conversation {
   id: string
   handshake_id: string
   state: string
+  session_state: string        // 'autonomous' | 'escalated'
+  pending_reply: string | null
+  agent_analysis: string | null
   unread: number
   last_message_at: string | null
   created_at: string
@@ -159,22 +162,30 @@ function ChatView({
   token,
   agentId,
   onMessageSent,
+  onConversationUpdate,
 }: {
   conv: Conversation
   token: string
   agentId: string
   onMessageSent: () => void
+  onConversationUpdate: () => void
 }) {
-  const [messages, setMessages]     = useState<Message[]>([])
-  const [otherAgent, setOtherAgent] = useState<OtherAgent | null>(null)
-  const [loading, setLoading]       = useState(true)
-  const [input, setInput]           = useState('')
-  const [draft, setDraft]           = useState('')
-  const [drafting, setDrafting]     = useState(false)
-  const [sending, setSending]       = useState(false)
-  const [error, setError]           = useState('')
+  const [messages, setMessages]           = useState<Message[]>([])
+  const [otherAgent, setOtherAgent]       = useState<OtherAgent | null>(null)
+  const [loading, setLoading]             = useState(true)
+  const [input, setInput]                 = useState('')
+  const [draft, setDraft]                 = useState('')
+  const [drafting, setDrafting]           = useState(false)
+  const [sending, setSending]             = useState(false)
+  const [approving, setApproving]         = useState(false)
+  const [retracting, setRetracting]       = useState(false)
+  const [pendingEdit, setPendingEdit]     = useState('')
+  const [editingPending, setEditingPending] = useState(false)
+  const [error, setError]                 = useState('')
   const bottomRef = useRef<HTMLDivElement>(null)
   const headers = { Authorization: `Bearer ${token}` }
+
+  const isEscalated = conv.session_state === 'escalated'
 
   const loadMessages = useCallback(async () => {
     const res = await fetch(`/api/conversations/${conv.id}`, { headers })
@@ -190,8 +201,16 @@ function ChatView({
     setMessages([])
     setDraft('')
     setInput('')
+    setPendingEdit('')
+    setEditingPending(false)
     loadMessages()
   }, [conv.id, loadMessages])
+
+  useEffect(() => {
+    if (conv.pending_reply && !pendingEdit) {
+      setPendingEdit(conv.pending_reply)
+    }
+  }, [conv.pending_reply]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -236,6 +255,51 @@ function ChatView({
     }
   }
 
+  const approvePending = async (overrideContent?: string) => {
+    setApproving(true)
+    setError('')
+    try {
+      const body: Record<string, string> = {}
+      if (overrideContent) body.content = overrideContent
+      const res = await fetch(`/api/conversations/${conv.id}/approve`, {
+        method: 'POST',
+        headers: { ...headers, 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      })
+      const data = await res.json()
+      if (!res.ok) { setError(data.error?.message ?? 'Failed to approve'); return }
+      setPendingEdit('')
+      setEditingPending(false)
+      await loadMessages()
+      onConversationUpdate()
+    } catch {
+      setError('Network error')
+    } finally {
+      setApproving(false)
+    }
+  }
+
+  const retractPending = async () => {
+    setRetracting(true)
+    setError('')
+    try {
+      const res = await fetch(`/api/conversations/${conv.id}/retract`, {
+        method: 'POST',
+        headers: { ...headers, 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      })
+      const data = await res.json()
+      if (!res.ok) { setError(data.error?.message ?? 'Failed to retract'); return }
+      setPendingEdit('')
+      setEditingPending(false)
+      onConversationUpdate()
+    } catch {
+      setError('Network error')
+    } finally {
+      setRetracting(false)
+    }
+  }
+
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
       e.preventDefault()
@@ -263,6 +327,71 @@ function ChatView({
           </div>
         )}
       </div>
+
+      {/* Escalation banner */}
+      {isEscalated && (
+        <div className={styles.escalationBanner}>
+          <div className={styles.escalationTitle}>⚠️ Your agent needs a decision</div>
+          {conv.agent_analysis && (
+            <div className={styles.escalationAnalysis}>{conv.agent_analysis}</div>
+          )}
+          {conv.pending_reply && (
+            <div className={styles.escalationReply}>
+              {editingPending ? (
+                <>
+                  <textarea
+                    className={styles.pendingEditInput}
+                    value={pendingEdit}
+                    onChange={e => setPendingEdit(e.target.value)}
+                    rows={3}
+                  />
+                  <div className={styles.escalationActions}>
+                    <button
+                      className={styles.approveBtn}
+                      onClick={() => approvePending(pendingEdit)}
+                      disabled={approving || !pendingEdit.trim()}
+                    >
+                      {approving ? 'Sending…' : 'Send edited →'}
+                    </button>
+                    <button
+                      className={styles.retractBtn}
+                      onClick={() => setEditingPending(false)}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className={styles.pendingReplyText}>{conv.pending_reply}</div>
+                  <div className={styles.escalationActions}>
+                    <button
+                      className={styles.approveBtn}
+                      onClick={() => approvePending()}
+                      disabled={approving}
+                    >
+                      {approving ? 'Sending…' : 'Approve →'}
+                    </button>
+                    <button
+                      className={styles.editPendingBtn}
+                      onClick={() => setEditingPending(true)}
+                    >
+                      Edit
+                    </button>
+                    <button
+                      className={styles.retractBtn}
+                      onClick={retractPending}
+                      disabled={retracting}
+                    >
+                      {retracting ? 'Discarding…' : 'Discard'}
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Messages */}
       <div className={styles.messages}>
@@ -502,6 +631,7 @@ export default function InboxPage() {
                 token={token}
                 agentId={agentId}
                 onMessageSent={refreshConversations}
+                onConversationUpdate={refreshAll}
               />
             </>
           ) : (
