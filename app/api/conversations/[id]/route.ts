@@ -29,12 +29,12 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     return NextResponse.json({ error: { message: 'Conversation not found', code: 'NOT_FOUND' } }, { status: 404 })
   }
 
-  // Fetch messages
+  // Fetch messages — include sent messages + this agent's private briefing
   const { data: messages } = await supabase
     .from('negotiation_messages')
-    .select('id, sender_id, content, status, read, created_at')
+    .select('id, sender_id, recipient_id, content, status, read, created_at')
     .eq('session_id', id)
-    .eq('status', 'sent')
+    .or(`status.eq.sent,and(status.eq.briefing,recipient_id.eq.${agent.id})`)
     .order('created_at', { ascending: true })
 
   // Mark unread messages from other agent as read

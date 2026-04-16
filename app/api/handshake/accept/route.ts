@@ -10,48 +10,56 @@ import { sendWebhook } from '@/lib/webhook'
 import { recalculateTrust } from '@/lib/trust'
 import { notifyHandshakeAccepted } from '@/lib/fcm'
 import { geminiConversational } from '@/lib/gemini'
+import Anthropic from '@anthropic-ai/sdk'
 
-// Generate a conversational opening message from the supply-side agent
-async function generateOpeningMessage(
-  supplyHandle: string,
-  demandHandle: string,
-  supplyPacket: any,
-  demandPacket: any
+const haiku = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! })
+
+// Generate a match briefing for one specific agent owner.
+// Tells them: who they matched with, all details of what the other side has/wants,
+// and how it lines up with their own intent. Written like a personal assistant briefing.
+async function generateMatchBriefing(
+  myHandle: string,
+  theirHandle: string,
+  myPacket: any,
+  theirPacket: any
 ): Promise<string> {
-  const prompt = `You are an AI agent acting on behalf of @${supplyHandle} on M3X, a private agent matching network.
+  const prompt = `You are a personal assistant briefing @${myHandle} about a new connection that just opened.
 
-You have just been matched with @${demandHandle}. Here is what you offer:
-${JSON.stringify(supplyPacket?.offers ?? supplyPacket, null, 2)}
+Here is what @${myHandle} posted (their own intent — what they are looking for or offering):
+${JSON.stringify(myPacket ?? {}, null, 2)}
 
-Here is what the other party is looking for (infer from this, do not quote it directly):
-${JSON.stringify(demandPacket?.seeking ?? demandPacket, null, 2)}
+Here is what @${theirHandle} posted (the person they just connected with):
+${JSON.stringify(theirPacket ?? {}, null, 2)}
 
-Write a short, natural opening message to @${demandHandle} as if you are their agent:
-- Start with "Hi @${demandHandle},"
-- Mention what you have that matches their need — be specific (include details like price, location, size if available)
-- Ask 1 relevant qualifying question to understand their specific needs better
-- Max 3 sentences, conversational tone, no corporate language
-- Do NOT mention M3X, matching scores, or that this is automated
+Write a concise briefing for @${myHandle} in plain, natural language. Cover:
+- Who they connected with and what that person has or is looking for — include ALL specific details (price, size, location, timeline, requirements, conditions — everything that's in their data)
+- A brief note on how it fits with what @${myHandle} is after
 
-Reply with ONLY the message text, nothing else.`
+Rules:
+- Write in second person: "You connected with @${theirHandle}..."
+- Include every concrete detail from @${theirHandle}'s data — do not omit anything specific
+- Do not invent or assume any detail not explicitly present in the data above
+- Do not mention matching scores, algorithms, or that this is automated
+- Do not use corporate language or bullet points — write in flowing sentences
+- Keep it under 120 words
+- End with a simple line like "Send them a message to get started."
+
+Reply with ONLY the briefing text, nothing else.`
 
   try {
     if (process.env.GEMINI_API_KEY) {
       const text = await geminiConversational(prompt, process.env.GEMINI_API_KEY, 512)
-      if (text) return text
+      if (text?.trim()) return text.trim()
     }
-  } catch { /* fall through to Anthropic */ }
+  } catch { /* fall through */ }
 
-  // Fallback: Anthropic Claude Haiku
   try {
-    const { default: Anthropic } = await import('@anthropic-ai/sdk')
-    const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! })
-    const response = await client.messages.create({
+    const res = await haiku.messages.create({
       model: 'claude-haiku-4-5-20251001',
-      max_tokens: 256,
+      max_tokens: 300,
       messages: [{ role: 'user', content: prompt }],
     })
-    const text = response.content[0].type === 'text' ? response.content[0].text.trim() : ''
+    const text = res.content[0].type === 'text' ? res.content[0].text.trim() : ''
     if (text) return text
   } catch { /* give up */ }
 
@@ -183,54 +191,47 @@ export async function POST(req: NextRequest) {
     agent_b_id: agent.id,
   }, { onConflict: 'handshake_id', ignoreDuplicates: true })
 
-  // Auto-generate opening message from the supply-side agent
+  // Inject match briefings — one for each agent owner.
+  // Each briefing is a private system message (sender_id = null) that covers
+  // all details of the match from that owner's perspective.
   try {
     if (matchData?.intent_a_id && matchData?.intent_b_id) {
-      const [{ data: intentA }, { data: intentB }] = await Promise.all([
+      const [{ data: intentA }, { data: intentB }, { data: session }] = await Promise.all([
         supabase.from('intents').select('id, side, raw_packet, agent_id').eq('id', matchData.intent_a_id).single(),
         supabase.from('intents').select('id, side, raw_packet, agent_id').eq('id', matchData.intent_b_id).single(),
+        supabase.from('negotiation_sessions').select('id').eq('handshake_id', handshake_id).single(),
       ])
 
-      const supplyIntent = intentA?.side === 'supply' ? intentA : intentB
-      const demandIntent = intentA?.side === 'demand' ? intentA : intentB
+      if (intentA && intentB && session) {
+        // Determine which intent belongs to which agent
+        const myIntent    = intentA.agent_id === agent.id      ? intentA : intentB
+        const theirIntent = intentA.agent_id === agent.id      ? intentB : intentA
+        const myHandle    = agent.handle
+        const theirHandle = otherAgent.handle
 
-      if (supplyIntent && demandIntent) {
-        const supplyAgentId = supplyIntent.agent_id
-        const supplyHandle = supplyAgentId === agent.id ? agent.handle : otherAgent.handle
-        const demandHandle = supplyAgentId === agent.id ? otherAgent.handle : agent.handle
+        // Generate briefings for both sides in parallel
+        const [briefingForMe, briefingForThem] = await Promise.all([
+          generateMatchBriefing(myHandle,    theirHandle, myIntent.raw_packet,    theirIntent.raw_packet),
+          generateMatchBriefing(theirHandle, myHandle,    theirIntent.raw_packet, myIntent.raw_packet),
+        ])
 
-        const openingMsg = await generateOpeningMessage(
-          supplyHandle,
-          demandHandle,
-          supplyIntent.raw_packet,
-          demandIntent.raw_packet
-        )
+        // Insert as system messages (sender_id = null, status = 'briefing')
+        // The UI renders these as neutral cards, not chat bubbles.
+        const inserts = []
+        if (briefingForMe)   inserts.push({ session_id: session.id, sender_id: null, recipient_id: agent.id,       content: briefingForMe,   status: 'briefing' })
+        if (briefingForThem) inserts.push({ session_id: session.id, sender_id: null, recipient_id: otherAgent.id,  content: briefingForThem, status: 'briefing' })
 
-        if (openingMsg) {
-          // Get the session id
-          const { data: session } = await supabase
+        if (inserts.length > 0) {
+          await supabase.from('negotiation_messages').insert(inserts)
+          await supabase
             .from('negotiation_sessions')
-            .select('id')
-            .eq('handshake_id', handshake_id)
-            .single()
-
-          if (session) {
-            await supabase.from('negotiation_messages').insert({
-              session_id: session.id,
-              sender_id: supplyAgentId,
-              content: openingMsg,
-              status: 'sent',
-            })
-            await supabase
-              .from('negotiation_sessions')
-              .update({ last_message_at: new Date().toISOString() })
-              .eq('id', session.id)
-          }
+            .update({ last_message_at: new Date().toISOString() })
+            .eq('id', session.id)
         }
       }
     }
   } catch (e) {
-    console.error('[handshake/accept] opening message error:', e)
+    console.error('[handshake/accept] briefing error:', e)
     // Non-fatal — handshake is already active
   }
 

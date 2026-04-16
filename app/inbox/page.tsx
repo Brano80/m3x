@@ -48,7 +48,8 @@ interface Conversation {
 
 interface Message {
   id: string
-  sender_id: string
+  sender_id: string | null
+  recipient_id?: string | null
   content: string
   status: string
   read: boolean
@@ -336,6 +337,15 @@ function ChatView({
           </div>
         )}
         {messages.map(msg => {
+          // Briefing card — neutral system message, not from either party
+          if (msg.status === 'briefing') {
+            return (
+              <div key={msg.id} className={styles.briefingCard}>
+                <div className={styles.briefingLabel}>Match summary</div>
+                <div className={styles.briefingText}>{msg.content}</div>
+              </div>
+            )
+          }
           const isMine = msg.sender_id === agentId
           return (
             <div key={msg.id} className={`${styles.msgRow} ${isMine ? styles.msgMine : styles.msgTheirs}`}>

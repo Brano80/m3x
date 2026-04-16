@@ -674,3 +674,30 @@
 }
 
 .retractBtn:disabled { opacity: 0.5; cursor: default; }
+
+/* ── Match briefing card ─────────────────────────────────────────────────── */
+
+.briefingCard {
+  margin: 12px 16px 20px;
+  padding: 14px 16px;
+  background: rgba(79, 146, 232, 0.05);
+  border: 1px solid rgba(79, 146, 232, 0.15);
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.briefingLabel {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(79, 146, 232, 0.6);
+}
+
+.briefingText {
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: rgba(232, 234, 240, 0.75);
+}
