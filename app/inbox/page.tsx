@@ -347,48 +347,7 @@ function ChatView({
           )
         })}
 
-        {/* Pending reply — only show to the agent who owns the pending reply
-            (last message must be from the other agent, meaning my auto-reply is pending) */}
-        {isEscalated && conv.pending_reply && messages.length > 0 && messages[messages.length - 1].sender_id !== agentId && (
-          <div className={`${styles.msgRow} ${styles.msgMine}`}>
-            <div className={styles.pendingBubbleWrap}>
-              {conv.agent_analysis && (
-                <div className={styles.pendingLabel}>Agent suggests · needs your approval</div>
-              )}
-              {editingPending ? (
-                <textarea
-                  className={styles.pendingEditInput}
-                  value={pendingEdit}
-                  onChange={e => setPendingEdit(e.target.value)}
-                  rows={3}
-                  autoFocus
-                />
-              ) : (
-                <div className={styles.pendingBubble}>{conv.pending_reply}</div>
-              )}
-              <div className={styles.pendingActions}>
-                {editingPending ? (
-                  <>
-                    <button className={styles.approveBtn} onClick={() => approvePending(pendingEdit)} disabled={approving || !pendingEdit.trim()}>
-                      {approving ? 'Sending…' : 'Send →'}
-                    </button>
-                    <button className={styles.retractBtn} onClick={() => setEditingPending(false)}>Cancel</button>
-                  </>
-                ) : (
-                  <>
-                    <button className={styles.approveBtn} onClick={() => approvePending()} disabled={approving}>
-                      {approving ? 'Sending…' : 'Approve →'}
-                    </button>
-                    <button className={styles.editPendingBtn} onClick={() => setEditingPending(true)}>Edit</button>
-                    <button className={styles.retractBtn} onClick={retractPending} disabled={retracting}>
-                      {retracting ? '…' : 'Discard'}
-                    </button>
-                  </>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
+        {/* Pending reply bubble — temporarily disabled */}
 
         <div ref={bottomRef} />
       </div>

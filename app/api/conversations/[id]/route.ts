@@ -132,48 +132,37 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     })
   }
 
-  // Auto-reply: if receiver has auto_reply enabled and session is not escalated, trigger in background
-  if (otherAgent?.auto_reply && session.session_state !== 'escalated') {
-    waitUntil(
-      (async () => {
-        try {
-          // Fetch receiver's active intent for context
-          const { data: receiverIntent } = await supabase
-            .from('intents')
-            .select('side, market, intent_type, raw_packet')
-            .eq('agent_id', otherAgent.id)
-            .eq('status', 'active')
-            .order('created_at', { ascending: false })
-            .limit(1)
-            .maybeSingle()
-
-          // Fetch recent messages for context (last 10)
-          const { data: recentMessages } = await supabase
-            .from('negotiation_messages')
-            .select('sender_id, content')
-            .eq('session_id', id)
-            .eq('status', 'sent')
-            .order('created_at', { ascending: false })
-            .limit(10)
-
-          await handleIncomingMessage(
-            supabase,
-            id,
-            content.trim(),
-            agent.id,
-            otherAgent.id,
-            otherAgent.handle,
-            agent.handle,
-            receiverIntent,
-            true,
-            (recentMessages ?? []).reverse()
-          )
-        } catch (e) {
-          console.error('[conversations] auto-reply error:', e)
-        }
-      })()
-    )
-  }
+  // Auto-reply: temporarily disabled
+  // if (otherAgent?.auto_reply && session.session_state !== 'escalated') {
+  //   waitUntil(
+  //     (async () => {
+  //       try {
+  //         const { data: receiverIntent } = await supabase
+  //           .from('intents')
+  //           .select('side, market, intent_type, raw_packet')
+  //           .eq('agent_id', otherAgent.id)
+  //           .eq('status', 'active')
+  //           .order('created_at', { ascending: false })
+  //           .limit(1)
+  //           .maybeSingle()
+  //         const { data: recentMessages } = await supabase
+  //           .from('negotiation_messages')
+  //           .select('sender_id, content')
+  //           .eq('session_id', id)
+  //           .eq('status', 'sent')
+  //           .order('created_at', { ascending: false })
+  //           .limit(10)
+  //         await handleIncomingMessage(
+  //           supabase, id, content.trim(), agent.id, otherAgent.id,
+  //           otherAgent.handle, agent.handle, receiverIntent, true,
+  //           (recentMessages ?? []).reverse()
+  //         )
+  //       } catch (e) {
+  //         console.error('[conversations] auto-reply error:', e)
+  //       }
+  //     })()
+  //   )
+  // }
 
   return NextResponse.json({ message }, { status: 201 })
 }
