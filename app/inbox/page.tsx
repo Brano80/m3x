@@ -331,21 +331,20 @@ function ChatView({
 
       {/* Messages */}
       <div className={styles.messages}>
-        {messages.length === 0 && (
+        {/* Briefing card always pinned at top */}
+        {messages.filter(m => m.status === 'briefing').map(msg => (
+          <div key={msg.id} className={styles.briefingCard}>
+            <div className={styles.briefingLabel}>Match summary</div>
+            <div className={styles.briefingText}>{msg.content}</div>
+          </div>
+        ))}
+
+        {messages.filter(m => m.status !== 'briefing').length === 0 && (
           <div className={styles.noMessages}>
             Handshake accepted. Send the first message.
           </div>
         )}
-        {messages.map(msg => {
-          // Briefing card — neutral system message, not from either party
-          if (msg.status === 'briefing') {
-            return (
-              <div key={msg.id} className={styles.briefingCard}>
-                <div className={styles.briefingLabel}>Match summary</div>
-                <div className={styles.briefingText}>{msg.content}</div>
-              </div>
-            )
-          }
+        {messages.filter(m => m.status !== 'briefing').map(msg => {
           const isMine = msg.sender_id === agentId
           return (
             <div key={msg.id} className={`${styles.msgRow} ${isMine ? styles.msgMine : styles.msgTheirs}`}>
