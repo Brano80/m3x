@@ -406,9 +406,21 @@ function Dashboard({
 
   useEffect(() => { load() }, [load])
 
-  // Build activity feed from matches + conversations
+  // Build activity feed from intents + matches + conversations
   const buildFeed = (): FeedItem[] => {
     const items: FeedItem[] = []
+
+    for (const intent of intents) {
+      const marketLabel = intent.market.replace(/_/g, ' ')
+      const sideLabel = intent.side === 'demand' ? 'seeking' : 'offering'
+      items.push({
+        id: `intent-${intent.id}`,
+        text: `Intent posted — ${marketLabel} (${sideLabel}) · ${timeUntil(intent.expires_at)}`,
+        timeIso: intent.created_at,
+        read: true,
+        href: '/dashboard',
+      })
+    }
 
     for (const m of matches) {
       const isA = agent?.id === m.agent_a?.id
