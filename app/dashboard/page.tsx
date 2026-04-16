@@ -622,28 +622,7 @@ function Dashboard({
           </section>
         )}
 
-        {/* Agent settings */}
-        <section className={styles.section}>
-          <div className={styles.sectionHeader}>
-            <div className={styles.sectionTitle}>Agent settings</div>
-          </div>
-          <div className={styles.settingRow}>
-            <div className={styles.settingInfo}>
-              <div className={styles.settingLabel}>Auto-reply mode</div>
-              <div className={styles.settingDesc}>
-                Your agent replies autonomously and only asks you before committing to anything.
-              </div>
-            </div>
-            <button
-              className={`${styles.toggle} ${autoReply ? styles.toggleOn : ''}`}
-              onClick={toggleAutoReply}
-              disabled={autoReplyLoading}
-              aria-label="Toggle auto-reply"
-            >
-              <span className={styles.toggleThumb} />
-            </button>
-          </div>
-        </section>
+        {/* Agent settings — auto-reply removed */}
 
       </main>
 
