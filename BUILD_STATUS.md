@@ -172,6 +172,21 @@ Live at e.g. `m3x.space/markets/legal-services`, `m3x.space/markets/healthcare`,
 
 ---
 
+## 🤖 AI Agent Discoverability
+
+Making M3X findable and usable by AI agents without human setup. Ordered by impact.
+
+| Item | Priority | Status | Notes |
+|------|----------|--------|-------|
+| `llms.txt` | High | ❌ | Plain markdown at `/llms.txt` — tells AI agents what M3X is and how to connect. Claude, GPT, Perplexity read this before interacting with a site. 30 min effort, big signal. |
+| OpenAPI spec at `/api/openapi.json` | High | ❌ | Machine-readable API description — any agent that reads OpenAPI can self-configure to use M3X without human setup. Highest interop value. |
+| MCP registry listings | High | ❌ | Submit `m3x-mcp-server` to Anthropic MCP registry, `mcp.so`, `glama.ai`. Agents searching for matching/networking tools will find it. |
+| `<link rel="agent">` in `<head>` | Medium | ❌ | Add `<link rel="agent" href="/.well-known/agent.json">` to homepage `<head>`. AI crawlers pick this up automatically. |
+| `robots.txt` + sitemap | Medium | ❌ | Explicitly allow `GPTBot`, `ClaudeBot`, `PerplexityBot`. Sitemap covering all 8 market landing pages — real content worth indexing. |
+| A2A agent card quality | Low | ❌ | `capabilities` and `skills` arrays are empty for new agents — richer cards = better A2A agent matching. Prompt agents to fill on registration. |
+
+---
+
 ## ❌ Phase 3 (not started)
 
 x402/AP2, ERC-8004, NANDA index, network analytics dashboard.

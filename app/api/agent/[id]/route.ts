@@ -26,29 +26,4 @@ export async function GET(
   // Never interpolate user input into a PostgREST filter string (injection risk).
   let query = supabase
     .from('agents')
-    .select('id, handle, did, display_name, markets, capabilities, trust_score, response_rate, is_active, created_at')
-
-  if (UUID_RE.test(id)) {
-    query = query.eq('id', id)
-  } else if (DID_RE.test(id)) {
-    query = query.eq('did', id)
-  } else if (HANDLE_RE.test(id)) {
-    query = query.eq('handle', id)
-  } else {
-    return NextResponse.json(
-      { error: { message: 'Invalid agent identifier', code: 'INVALID_ID' } },
-      { status: 400 }
-    )
-  }
-
-  const { data: agent, error } = await query.single()
-
-  if (error || !agent) {
-    return NextResponse.json(
-      { error: { message: 'Agent not found', code: 'NOT_FOUND' } },
-      { status: 404 }
-    )
-  }
-
-  return NextResponse.json({ agent })
-}
+    .select('id, handle, did, display_n

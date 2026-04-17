@@ -26,18 +26,4 @@ export async function sendWebhook(webhookUrl: string, payload: object): Promise<
     // callers don't surface unhandled rejections.
     const signature = signPayload(body)
     await fetch(webhookUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-M3X-Signature': `sha256=${signature}`,
-        'X-M3X-Event': 'match.found'
-      },
-      body,
-      signal: AbortSignal.timeout(10000)
-    })
-    console.log(`[webhook] delivered to ${webhookUrl}`)
-  } catch (e) {
-    console.error(`[webhook] failed to deliver to ${webhookUrl}:`, e)
-    // Non-blocking — never throw
-  }
-}
+      method: 'POST

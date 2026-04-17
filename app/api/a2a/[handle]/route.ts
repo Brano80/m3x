@@ -67,17 +67,4 @@ export async function GET(
     // Agent Card extensions — M3X-specific fields
     extensions: {
       'm3x:did': agent.did,
-      'm3x:handle': `@${agent.handle}`,
-      'm3x:trust_score': agent.trust_score,
-      'm3x:markets': agent.markets ?? [],
-      'm3x:capabilities': agent.capabilities ?? [],
-      'm3x:registered_at': agent.created_at,
-    },
-  }
-
-  return NextResponse.json(card, {
-    headers: {
-      'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
-    },
-  })
-}
+      'm3x:handle': `@$

@@ -32,31 +32,4 @@ export async function GET(
     query = query.eq('id', agent_id)
   } else if (DID_RE.test(agent_id)) {
     query = query.eq('did', agent_id)
-  } else if (HANDLE_RE.test(agent_id)) {
-    query = query.eq('handle', agent_id)
-  } else {
-    return NextResponse.json(
-      { error: { message: 'Invalid agent identifier', code: 'INVALID_ID' } },
-      { status: 400 }
-    )
-  }
-
-  const { data: agent, error } = await query.single()
-
-  if (error || !agent) {
-    return NextResponse.json(
-      { error: { message: 'Agent not found', code: 'NOT_FOUND' } },
-      { status: 404 }
-    )
-  }
-
-  return NextResponse.json({
-    agent_id: agent.did,
-    handle: agent.handle,
-    trust_score: agent.trust_score,
-    response_rate: agent.response_rate,
-    is_active: agent.is_active,
-    member_since: agent.created_at,
-    last_active_at: agent.last_active_at
-  })
-}
+  } else

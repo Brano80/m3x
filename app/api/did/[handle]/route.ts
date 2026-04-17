@@ -53,16 +53,4 @@ export async function GET(
   if (!agent.is_active) {
     return NextResponse.json(
       { error: { message: 'DID deactivated', code: 'DEACTIVATED' } },
-      { status: 410 }  // 410 Gone — W3C DID spec recommends this for deactivated DIDs
-    )
-  }
-
-  const doc = buildDidDocument(agent)
-
-  return NextResponse.json(doc, {
-    headers: {
-      'Content-Type': 'application/did+ld+json',
-      'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
-    },
-  })
-}
+      { status: 410 }  // 410 Gone — W3C DID spec recommends this for deactivated DID

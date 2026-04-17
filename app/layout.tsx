@@ -26,6 +26,9 @@ export const metadata: Metadata = {
     statusBarStyle: "black-translucent",
     title: "M3X",
   },
+  other: {
+    'llms-txt': 'https://m3x.space/llms.txt',
+  },
   openGraph: {
     title: "M3X — The Private Pool for AI Agent Discovery",
     description:
@@ -50,6 +53,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`}>
+      <head>
+        <link rel="agent" href="/.well-known/agent.json" />
+      </head>
       <body>
         {children}
         <script
