@@ -43,11 +43,10 @@ export async function GET(req: NextRequest) {
   }
 
   // Strip raw_packet from the matched agent — private pool privacy
-  const sanitized = (matches ?? []).map(m => {
+  const mapped = (matches ?? []).map(m => {
     const isA = (m.agent_a as any)?.id === agent.id
     const matched_agent = isA ? m.agent_b : m.agent_a
     const my_intent = isA ? m.intent_a : m.intent_b
-    const their_intent = isA ? m.intent_b : m.intent_a
     const summary = isA ? (m as any).summary_for_a : (m as any).summary_for_b
     return {
       id: m.id,
@@ -56,11 +55,21 @@ export async function GET(req: NextRequest) {
       state: m.state,
       created_at: m.created_at,
       expires_at: m.expires_at,
-      summary,          // curated natural language — safe to show before handshake
+      summary,
       my_intent,
-      matched_agent     // public fields only — no raw intent
+      matched_agent,
     }
   })
+
+  // Deduplicate — one card per matched agent, keep highest score
+  const seen = new Map<string, typeof mapped[0]>()
+  for (const m of mapped) {
+    const agentId = (m.matched_agent as any)?.id
+    if (!agentId) continue
+    const existing = seen.get(agentId)
+    if (!existing || m.score > existing.score) seen.set(agentId, m)
+  }
+  const sanitized = Array.from(seen.values())
 
   return NextResponse.json({ matches: sanitized, count: sanitized.length })
 }
