@@ -247,6 +247,15 @@ function ChatView({
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
+
+  const autoResize = () => {
+    const el = textareaRef.current
+    if (!el) return
+    el.style.height = 'auto'
+    el.style.height = `${el.scrollHeight}px`
+  }
+
   const getDraft = async () => {
     setDrafting(true)
     setError('')
@@ -256,6 +265,7 @@ function ChatView({
       if (!res.ok) { setError(data.error?.message ?? 'Draft failed'); return }
       setDraft(data.draft)
       setInput(data.draft)
+      setTimeout(autoResize, 0)
     } catch {
       setError('Network error')
     } finally {
@@ -403,10 +413,11 @@ function ChatView({
         {error && <div className={styles.chatError}>{error}</div>}
         <div className={styles.inputRow}>
           <textarea
+            ref={textareaRef}
             className={styles.messageInput}
             placeholder="Write a message… or get an AI draft"
             value={input}
-            onChange={e => setInput(e.target.value)}
+            onChange={e => { setInput(e.target.value); autoResize() }}
             onKeyDown={handleKeyDown}
             rows={3}
           />

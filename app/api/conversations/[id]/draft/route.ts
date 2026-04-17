@@ -41,15 +41,30 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   const chronological = (messages ?? []).reverse()
 
-  // Fetch my active intent for context
-  const { data: myIntent } = await supabase
-    .from('intents')
-    .select('side, market, intent_type, raw_packet')
-    .eq('agent_id', agent.id)
-    .eq('status', 'active')
-    .order('created_at', { ascending: false })
-    .limit(1)
-    .maybeSingle()
+  // Fetch the intent tied to THIS match — not just any active intent
+  const { data: handshake } = await supabase
+    .from('handshakes')
+    .select('match_id')
+    .eq('id', session.handshake_id)
+    .single()
+
+  let myIntent: any = null
+  if (handshake?.match_id) {
+    const { data: match } = await supabase
+      .from('matches')
+      .select('intent_a_id, intent_b_id, agent_a_id')
+      .eq('id', handshake.match_id)
+      .single()
+    if (match) {
+      const myIntentId = match.agent_a_id === agent.id ? match.intent_a_id : match.intent_b_id
+      const { data } = await supabase
+        .from('intents')
+        .select('side, market, intent_type, raw_packet')
+        .eq('id', myIntentId)
+        .single()
+      myIntent = data
+    }
+  }
 
   // Fetch other agent info
   const otherId = session.agent_a_id === agent.id ? session.agent_b_id : session.agent_a_id
