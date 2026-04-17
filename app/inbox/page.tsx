@@ -434,7 +434,6 @@ export default function InboxPage() {
       if (convsRes.ok) {
         const d = await convsRes.json()
         setConversations(d.conversations ?? [])
-        if (d.conversations?.length > 0) setSelected(d.conversations[0])
       }
       if (matchRes.ok) {
         const d = await matchRes.json()
