@@ -339,7 +339,7 @@
   font-family: var(--font-geist-sans), system-ui, sans-serif;
   outline: none;
   resize: none;
-  overflow: hidden;
+  overflow-y: auto;
   transition: border-color 0.15s;
   line-height: 1.5;
   min-height: 60px;
