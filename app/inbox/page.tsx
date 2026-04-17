@@ -83,7 +83,7 @@ function MatchCard({
 }: {
   match: Match
   token: string
-  onConnected: () => void
+  onConnected: (handle: string) => void
 }) {
   const [connecting, setConnecting] = useState(false)
   const [done, setDone]             = useState(false)
@@ -108,7 +108,7 @@ function MatchCard({
         return
       }
       setDone(true)
-      onConnected()
+      onConnected(match.matched_agent?.handle ?? '')
     } catch {
       setErr('Network error')
     } finally {
@@ -447,7 +447,7 @@ export default function InboxPage() {
     }).catch(() => setLoading(false))
   }, [])
 
-  const refreshAll = useCallback(async () => {
+  const refreshAll = useCallback(async (autoSelectHandle?: string) => {
     if (!token) return
     const h = { Authorization: `Bearer ${token}` }
     const [convsRes, matchRes] = await Promise.all([
@@ -457,6 +457,12 @@ export default function InboxPage() {
     if (convsRes.ok) {
       const d = await convsRes.json()
       setConversations(d.conversations ?? [])
+      if (autoSelectHandle) {
+        const conv = (d.conversations ?? []).find(
+          (c: Conversation) => c.other_agent.handle === autoSelectHandle
+        )
+        if (conv) setSelected(conv)
+      }
     }
     if (matchRes.ok) {
       const d = await matchRes.json()
@@ -528,7 +534,7 @@ export default function InboxPage() {
               </div>
               <div className={styles.matchList}>
                 {matches.map(m => (
-                  <MatchCard key={m.id} match={m} token={token} onConnected={refreshAll} />
+                  <MatchCard key={m.id} match={m} token={token} onConnected={(handle) => refreshAll(handle)} />
                 ))}
               </div>
             </>

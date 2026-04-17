@@ -60,7 +60,7 @@ export async function POST(req: NextRequest) {
 
   const [{ data: otherAgent }, { data: matchData }] = await Promise.all([
     supabase.from('agents').select('id, handle, did, webhook_url, a2a_endpoint, capabilities, markets, trust_score, fcm_token').eq('id', otherAgentId).single(),
-    supabase.from('matches').select('score, tier, intent_a_id, intent_b_id, agent_a_id').eq('id', handshake.match_id).single(),
+    supabase.from('matches').select('score, tier, intent_a_id, intent_b_id, agent_a_id, summary_for_a, summary_for_b').eq('id', handshake.match_id).single(),
   ])
 
   if (!otherAgent) {
@@ -120,11 +120,37 @@ export async function POST(req: NextRequest) {
   notifyHandshakeAccepted(otherAgent, agent.handle)
 
   // Open the conversation channel
-  await supabase.from('negotiation_sessions').upsert({
+  const { data: session } = await supabase.from('negotiation_sessions').upsert({
     handshake_id: handshake_id,
     agent_a_id: handshake.initiated_by,
     agent_b_id: agent.id,
-  }, { onConflict: 'handshake_id', ignoreDuplicates: true })
+  }, { onConflict: 'handshake_id', ignoreDuplicates: true }).select('id').single()
+
+  // Seed briefing messages — one per agent, visible only to them
+  if (session && matchData) {
+    const isInitiatorA = matchData.agent_a_id === handshake.initiated_by
+    const summaryForInitiator = isInitiatorA ? (matchData as any).summary_for_a : (matchData as any).summary_for_b
+    const summaryForAcceptor  = isInitiatorA ? (matchData as any).summary_for_b : (matchData as any).summary_for_a
+
+    const briefings = []
+    if (summaryForInitiator) briefings.push({
+      session_id: session.id,
+      sender_id: null,
+      recipient_id: handshake.initiated_by,
+      content: summaryForInitiator,
+      status: 'briefing',
+      read: false,
+    })
+    if (summaryForAcceptor) briefings.push({
+      session_id: session.id,
+      sender_id: null,
+      recipient_id: agent.id,
+      content: summaryForAcceptor,
+      status: 'briefing',
+      read: false,
+    })
+    if (briefings.length) await supabase.from('negotiation_messages').insert(briefings)
+  }
 
   return NextResponse.json({
     handshake: { id: handshake_id, state: 'active' },
