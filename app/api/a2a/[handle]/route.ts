@@ -67,4 +67,25 @@ export async function GET(
     // Agent Card extensions — M3X-specific fields
     extensions: {
       'm3x:did': agent.did,
-      'm3x:handle': `@$
+      'm3x:handle': `@${agent.handle}`,
+      'm3x:markets': agent.markets ?? [],
+      'm3x:capabilities': agent.capabilities ?? [],
+      'm3x:trust_score': agent.trust_score,
+      'm3x:registered_at': agent.created_at,
+    },
+    skills: (agent.capabilities ?? []).map((cap: string) => ({
+      id: cap,
+      name: cap,
+      description: `Capability: ${cap}`,
+      inputModes: ['application/json'],
+      outputModes: ['application/json'],
+    })),
+  }
+
+  return NextResponse.json(card, {
+    headers: {
+      'Content-Type': 'application/json',
+      'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=120',
+    },
+  })
+}

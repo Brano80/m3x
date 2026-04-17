@@ -93,4 +93,9 @@ export function buildDidDocument(agent: AgentForDid) {
 
     // also resolvable as did:web
     'alsoKnownAs': [
-      `did:web:${new URL(APP_URL).hostname}
+      `did:web:${new URL(APP_URL).hostname}:agents:${agent.handle}`,
+    ],
+  }
+
+  return doc
+}
