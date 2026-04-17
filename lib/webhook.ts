@@ -26,4 +26,15 @@ export async function sendWebhook(webhookUrl: string, payload: object): Promise<
     // callers don't surface unhandled rejections.
     const signature = signPayload(body)
     await fetch(webhookUrl, {
-      method: 'POST
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-M3X-Signature': `sha256=${signature}`,
+      },
+      body,
+    })
+  } catch (err) {
+    // Fire-and-forget — log but do not throw so callers are not disrupted.
+    console.error('[webhook] delivery failed:', webhookUrl, err)
+  }
+}
