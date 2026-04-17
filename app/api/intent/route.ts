@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { waitUntil } from '@vercel/functions'
 import { getServiceClient } from '@/lib/supabase'
 import { verifyAgent } from '@/lib/auth'
 import { extractIntentSignals } from '@/lib/extract'
@@ -122,10 +123,11 @@ export async function POST(req: NextRequest) {
       .update({ last_active_at: new Date().toISOString() })
       .eq('id', agent.id)
 
-    // Auto-trigger matching — fire-and-forget, does not block response
-    // Bypasses daily rate limit since this is system-triggered
-    runMatchingForIntent(intent, agent, supabase, byok).catch(
-      e => console.error('[intent] auto-match error:', e)
+    // Auto-trigger matching — kept alive by waitUntil so Vercel doesn't kill it
+    waitUntil(
+      runMatchingForIntent(intent, agent, supabase, byok).catch(
+        e => console.error('[intent] auto-match error:', e)
+      )
     )
 
     return NextResponse.json({
