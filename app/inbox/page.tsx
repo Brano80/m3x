@@ -76,7 +76,74 @@ const TIER_LABEL: Record<string, string> = {
   near_match: 'Near',
 }
 
+// Compact sidebar row — handle + tier badge + accept button only
 function MatchCard({
+  match,
+  active,
+  token,
+  onSelect,
+  onConnected,
+}: {
+  match: Match
+  active: boolean
+  token: string
+  onSelect: () => void
+  onConnected: (handle: string) => void
+}) {
+  const [connecting, setConnecting] = useState(false)
+  const [done, setDone]             = useState(false)
+  const [err, setErr]               = useState('')
+
+  const isPending = match.state === 'handshake_initiated'
+  const handle    = match.matched_agent?.handle ?? '…'
+
+  const connect = async (e: React.MouseEvent) => {
+    e.stopPropagation()
+    setConnecting(true)
+    setErr('')
+    try {
+      const res = await fetch('/api/handshake', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ match_id: match.id }),
+      })
+      const data = await res.json()
+      if (!res.ok && data.error?.code !== 'HANDSHAKE_EXISTS') {
+        setErr(data.error?.message ?? 'Failed')
+        return
+      }
+      setDone(true)
+      onConnected(handle)
+    } catch {
+      setErr('Network error')
+    } finally {
+      setConnecting(false)
+    }
+  }
+
+  return (
+    <div
+      className={`${styles.matchCard} ${active ? styles.matchCardActive : ''}`}
+      onClick={onSelect}
+    >
+      <span className={styles.matchHandle}>@{handle}</span>
+      <span className={`${styles.matchTier} ${styles[`tier_${match.tier}`]}`}>
+        {TIER_LABEL[match.tier] ?? match.tier}
+      </span>
+      {err && <span className={styles.matchErr}>{err}</span>}
+      <button
+        className={`${styles.connectBtn} ${done || isPending ? styles.connectBtnDone : ''}`}
+        onClick={connect}
+        disabled={connecting || done}
+      >
+        {done ? '✓' : isPending ? 'Respond →' : connecting ? '…' : 'Accept →'}
+      </button>
+    </div>
+  )
+}
+
+// Match detail — shown in right pane when a match is selected
+function MatchDetailPane({
   match,
   token,
   onConnected,
@@ -91,7 +158,6 @@ function MatchCard({
 
   const isPending = match.state === 'handshake_initiated'
   const handle    = match.matched_agent?.handle ?? '…'
-  const pct       = Math.round(match.score * 100)
 
   const connect = async () => {
     setConnecting(true)
@@ -108,7 +174,7 @@ function MatchCard({
         return
       }
       setDone(true)
-      onConnected(match.matched_agent?.handle ?? '')
+      onConnected(handle)
     } catch {
       setErr('Network error')
     } finally {
@@ -117,29 +183,31 @@ function MatchCard({
   }
 
   return (
-    <div className={styles.matchCard}>
-      <div className={styles.matchTop}>
-        <span className={styles.matchHandle}>@{handle}</span>
+    <div className={styles.matchDetail}>
+      <div className={styles.matchDetailHeader}>
+        <span className={styles.matchDetailHandle}>@{handle}</span>
         <span className={`${styles.matchTier} ${styles[`tier_${match.tier}`]}`}>
           {TIER_LABEL[match.tier] ?? match.tier}
         </span>
       </div>
+
       {match.summary ? (
-        <div className={styles.matchSummary}>{match.summary}</div>
-      ) : match.my_intent ? (
-        <div className={styles.matchMarket}>
-          {match.my_intent.market.replace(/_/g, ' ')} · {match.my_intent.side}
+        <div className={styles.matchDetailSummary}>{match.summary}</div>
+      ) : (
+        <div className={styles.matchDetailSummary} style={{ color: 'rgba(232,234,240,0.3)', fontStyle: 'italic' }}>
+          {match.my_intent?.market.replace(/_/g, ' ')} · {match.my_intent?.side}
         </div>
-      ) : null}
-      {err && <div className={styles.matchErr}>{err}</div>}
-      <div className={styles.matchActions}>
+      )}
+
+      <div className={styles.matchDetailActions}>
         <button
-          className={`${styles.connectBtn} ${done || isPending ? styles.connectBtnDone : ''}`}
+          className={`${styles.matchDetailAccept} ${done || isPending ? styles.matchDetailAcceptDone : ''}`}
           onClick={connect}
           disabled={connecting || done}
         >
-          {done ? 'Requested ✓' : isPending ? 'Respond →' : connecting ? 'Connecting…' : 'Accept →'}
+          {done ? 'Requested ✓' : isPending ? 'Waiting for response…' : connecting ? 'Connecting…' : 'Accept →'}
         </button>
+        {err && <span className={styles.matchDetailErr}>{err}</span>}
       </div>
     </div>
   )
@@ -414,6 +482,7 @@ export default function InboxPage() {
   const [conversations, setConversations] = useState<Conversation[]>([])
   const [matches, setMatches]           = useState<Match[]>([])
   const [selected, setSelected]         = useState<Conversation | null>(null)
+  const [selectedMatch, setSelectedMatch] = useState<Match | null>(null)
   const [loading, setLoading]           = useState(true)
   const [noToken, setNoToken]           = useState(false)
 
@@ -461,7 +530,7 @@ export default function InboxPage() {
         const conv = (d.conversations ?? []).find(
           (c: Conversation) => c.other_agent.handle === autoSelectHandle
         )
-        if (conv) setSelected(conv)
+        if (conv) { setSelected(conv); setSelectedMatch(null) }
       }
     }
     if (matchRes.ok) {
@@ -534,7 +603,14 @@ export default function InboxPage() {
               </div>
               <div className={styles.matchList}>
                 {matches.map(m => (
-                  <MatchCard key={m.id} match={m} token={token} onConnected={(handle) => refreshAll(handle)} />
+                  <MatchCard
+                    key={m.id}
+                    match={m}
+                    active={selectedMatch?.id === m.id}
+                    token={token}
+                    onSelect={() => { setSelectedMatch(m); setSelected(null) }}
+                    onConnected={(handle) => refreshAll(handle)}
+                  />
                 ))}
               </div>
             </>
@@ -553,7 +629,7 @@ export default function InboxPage() {
                 <button
                   key={c.id}
                   className={`${styles.convItem} ${selected?.id === c.id ? styles.convActive : ''}`}
-                  onClick={() => setSelected(c)}
+                  onClick={() => { setSelected(c); setSelectedMatch(null) }}
                 >
                   <div className={styles.convTop}>
                     <span className={styles.convHandle}>@{c.other_agent.handle}</span>
@@ -573,14 +649,11 @@ export default function InboxPage() {
           )}
         </aside>
 
-        {/* Chat pane */}
-        <main className={`${styles.chatArea} ${!selected ? styles.chatHidden : ''}`}>
+        {/* Right pane — match detail or chat */}
+        <main className={`${styles.chatArea} ${!selected && !selectedMatch ? styles.chatHidden : ''}`}>
           {selected ? (
             <>
-              {/* Back button on mobile */}
-              <button className={styles.backBtn} onClick={() => setSelected(null)}>
-                ← Back
-              </button>
+              <button className={styles.backBtn} onClick={() => setSelected(null)}>← Back</button>
               <ChatView
                 conv={selected}
                 token={token}
@@ -589,6 +662,12 @@ export default function InboxPage() {
                 onConversationUpdate={refreshAll}
               />
             </>
+          ) : selectedMatch ? (
+            <MatchDetailPane
+              match={selectedMatch}
+              token={token}
+              onConnected={(handle) => refreshAll(handle)}
+            />
           ) : (
             <div className={styles.chatEmpty}>
               <div className={styles.chatEmptyIcon}>⬡</div>
