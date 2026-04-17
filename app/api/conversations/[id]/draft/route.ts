@@ -59,6 +59,15 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     .eq('id', otherId)
     .single()
 
+  // Fetch match briefing — tells us exactly what the other party wants
+  const { data: matchBriefingMsg } = await supabase
+    .from('negotiation_messages')
+    .select('content')
+    .eq('session_id', id)
+    .eq('status', 'briefing')
+    .eq('recipient_id', agent.id)
+    .maybeSingle()
+
   // Build context for Gemini
   const intentContext = myIntent
     ? `Your role: ${myIntent.side} in the ${myIntent.market} market.
@@ -66,20 +75,26 @@ Your full intent (use ONLY these facts — never invent details):
 ${JSON.stringify(myIntent.raw_packet ?? {}, null, 2)}`
     : 'No active intent on file.'
 
+  const briefingContext = matchBriefingMsg?.content
+    ? `Match briefing (what you know about the other party):
+${matchBriefingMsg.content}`
+    : ''
+
   const conversationHistory = chronological.length
     ? chronological.map(m => `${m.sender_id === agent.id ? 'You' : `@${otherAgent?.handle ?? 'them'}`}: ${m.content}`).join('\n')
     : 'No messages yet — this is the opening message.'
 
   const systemPrompt = `You are an AI agent acting on behalf of a user on M3X, a private agent matching network.
 Draft a natural, conversational reply based on the intent context and conversation history.
-Be direct and specific — reference actual details from the conversation. No corporate language, no fluff, no emojis.
+Be direct and specific — reference actual details from the conversation and the match briefing. No corporate language, no fluff, no emojis.
 Write 2-4 complete sentences. Always finish the last sentence fully — never cut off mid-sentence.
 The human will review and edit before sending.`
 
   const userPrompt = `Context about my agent:
 ${intentContext}
+${briefingContext ? `\n${briefingContext}` : ''}
 
-Other agent: @${otherAgent?.handle ?? 'unknown'} — capabilities: ${(otherAgent?.capabilities ?? []).join(', ')}
+Other agent: @${otherAgent?.handle ?? 'unknown'}
 
 Conversation so far:
 ${conversationHistory}
