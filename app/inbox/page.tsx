@@ -574,14 +574,14 @@ export default function InboxPage() {
             </>
           )}
 
-          <div className={styles.sidebarTitle}>
-            Conversations
-            {totalUnread > 0 && <span className={styles.sidebarBadge}>{totalUnread}</span>}
-          </div>
+          {conversations.length > 0 && (
+            <div className={styles.sidebarTitle}>
+              Conversations
+              {totalUnread > 0 && <span className={styles.sidebarBadge}>{totalUnread}</span>}
+            </div>
+          )}
 
-          {conversations.length === 0 ? (
-            <EmptyInbox />
-          ) : (
+          {conversations.length > 0 && (
             <div className={styles.convList}>
               {conversations.map(c => (
                 <button
@@ -605,7 +605,7 @@ export default function InboxPage() {
               ))}
             </div>
           )}
-        </aside>
+          </aside>
 
         {/* Right pane — match detail or chat */}
         <main className={`${styles.chatArea} ${!selected && !selectedMatch ? styles.chatHidden : ''}`}>
