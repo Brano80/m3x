@@ -35,14 +35,20 @@ export async function POST(req: NextRequest) {
     .from('handshakes')
     .select('*')
     .eq('id', handshake_id)
-    .eq('state', 'pending')
     .or(`agent_a_id.eq.${agent.id},agent_b_id.eq.${agent.id}`)
     .single()
 
   if (!handshake) {
     return NextResponse.json(
-      { error: { message: 'Handshake not found, already resolved, or you are not a participant', code: 'HANDSHAKE_NOT_FOUND' } },
+      { error: { message: 'Handshake not found or you are not a participant', code: 'HANDSHAKE_NOT_FOUND' } },
       { status: 404 }
+    )
+  }
+
+  if (handshake.state !== 'pending') {
+    return NextResponse.json(
+      { error: { message: 'Handshake already resolved', code: 'ALREADY_RESOLVED' } },
+      { status: 409 }
     )
   }
 
@@ -70,16 +76,19 @@ export async function POST(req: NextRequest) {
     )
   }
 
-  // Activate handshake
-  const { error } = await supabase
+  // Activate handshake (atomic: only succeeds if still pending)
+  const { data: updated, error } = await supabase
     .from('handshakes')
     .update({ state: 'active' })
     .eq('id', handshake_id)
+    .eq('state', 'pending')
+    .select('id')
+    .single()
 
-  if (error) {
+  if (error || !updated) {
     return NextResponse.json(
-      { error: { message: error.message, code: 'DB_ERROR' } },
-      { status: 500 }
+      { error: { message: 'Handshake already resolved or not found', code: 'ALREADY_RESOLVED' } },
+      { status: 409 }
     )
   }
 

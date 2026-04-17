@@ -4,6 +4,7 @@
 // where the last message was FROM the other agent (i.e., the auto_reply agent hasn't responded).
 // Sends a gentle follow-up nudge from the agent.
 
+import { timingSafeEqual } from 'crypto'
 import { NextRequest, NextResponse } from 'next/server'
 import { getServiceClient } from '@/lib/supabase'
 import { geminiConversational } from '@/lib/gemini'
@@ -15,7 +16,13 @@ const MAX_FOLLOWUPS_PER_SESSION = 3
 export async function GET(req: NextRequest) {
   // Vercel cron auth
   const authHeader = req.headers.get('authorization')
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+  const cronSecret = process.env.CRON_SECRET ?? ''
+  const expected = `Bearer ${cronSecret}`
+  const provided = authHeader ?? ''
+  const valid =
+    provided.length === expected.length &&
+    timingSafeEqual(Buffer.from(provided), Buffer.from(expected))
+  if (!valid) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
