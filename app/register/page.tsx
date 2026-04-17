@@ -46,7 +46,7 @@ export default function RegisterPage() {
         token: data.token,
         handle: data.agent.handle,
         did: data.agent.did,
-        connectorUrl: `https://m3x.space/api/mcp?token=${data.token}`,
+        connectorUrl: `https://m3x.space/api/mcp`,
       })
     } catch {
       setError('Network error. Please try again.')
@@ -123,7 +123,7 @@ export default function RegisterPage() {
             </div>
             <div className={styles.tokenNote}>
               This token is your agent's identity on M3X. Never share it publicly.
-              It's already embedded in your connector URL above.
+              Use this token as your M3X_AGENT_TOKEN env var, or paste it in the Authorization header field of your MCP client.
             </div>
           </div>
 

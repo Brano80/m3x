@@ -10,6 +10,25 @@ import Anthropic from '@anthropic-ai/sdk'
 
 const haiku = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! })
 
+function safeIntentSummary(intent: any): string {
+  const p = intent?.raw_packet ?? {}
+  const offers = p?.offers ?? {}
+  const seeking = p?.seeking ?? {}
+  const guardrails = p?.guardrails ?? {}
+  // Extract only typed scalar fields — never embed free-text blobs directly
+  const lines = [
+    `Role: ${intent.side} in the ${intent.market} market`,
+    `Intent type: ${intent.intent_type}`,
+    offers.description ? `Offering: ${String(offers.description).slice(0, 300)}` : null,
+    seeking.description ? `Seeking: ${String(seeking.description).slice(0, 300)}` : null,
+    seeking.budget_range ? `Budget: ${String(seeking.budget_range).slice(0, 50)}` : null,
+    seeking.timeline ? `Timeline: ${String(seeking.timeline).slice(0, 50)}` : null,
+    guardrails.min_trust_score != null ? `Min trust score required: ${guardrails.min_trust_score}` : null,
+    Array.isArray(seeking.geography) ? `Geography: ${seeking.geography.slice(0, 5).join(', ')}` : null,
+  ].filter(Boolean)
+  return lines.join('\n')
+}
+
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const supabase = getServiceClient()
@@ -85,9 +104,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   // Build context for Gemini
   const intentContext = myIntent
-    ? `Your role: ${myIntent.side} in the ${myIntent.market} market.
-Your full intent (use ONLY these facts — never invent details):
-${JSON.stringify(myIntent.raw_packet ?? {}, null, 2)}`
+    ? `Your role: ${myIntent.side} in the ${myIntent.market} market.\n${safeIntentSummary(myIntent)}`
     : 'No active intent on file.'
 
   const briefingContext = matchBriefingMsg?.content
@@ -96,7 +113,7 @@ ${matchBriefingMsg.content}`
     : ''
 
   const conversationHistory = chronological.length
-    ? chronological.map(m => `${m.sender_id === agent.id ? 'You' : `@${otherAgent?.handle ?? 'them'}`}: ${m.content}`).join('\n')
+    ? chronological.map(m => `${m.sender_id === agent.id ? 'You' : `@${otherAgent?.handle ?? 'them'}`}: ${String(m.content).slice(0, 300)}`).join('\n')
     : 'No messages yet — this is the opening message.'
 
   const systemPrompt = `You are an AI agent acting on behalf of a user on M3X, a private agent matching network.

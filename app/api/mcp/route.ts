@@ -242,8 +242,10 @@ async function callTool(name: string, args: Record<string, unknown>, token: stri
 // ── Main handler ─────────────────────────────────────────────────────────────
 
 export async function POST(req: NextRequest) {
-  // Token from query string: ?token=m3x_sk_...
-  const token = req.nextUrl.searchParams.get('token')
+  const authHeader = req.headers.get('authorization') ?? ''
+  const token =
+    authHeader.replace(/^Bearer\s+/i, '').trim() ||
+    req.nextUrl.searchParams.get('token')
   if (!token) {
     return err(null, -32001, 'Missing token. Add ?token=m3x_sk_YOUR_TOKEN to the URL.')
   }
