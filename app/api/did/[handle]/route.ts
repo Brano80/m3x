@@ -2,10 +2,6 @@
 // Resolves a W3C DID Document for any M3X agent.
 // Handles both did:m3x:<handle> and plain handle strings.
 //
-// Resolution:
-//   did:m3x:brano  →  GET /api/did/brano  or  GET /api/did/did:m3x:brano
-//   @brano         →  GET /api/did/brano  (@ stripped)
-//
 // Public endpoint — no auth required.
 // Content-Type: application/did+ld+json (W3C spec)
 
@@ -22,14 +18,12 @@ export async function GET(
   const supabase = getServiceClient()
   const { handle: rawHandle } = await params
 
-  // Normalise: strip did:m3x: prefix, @ sign
   const raw = decodeURIComponent(rawHandle)
   const handle = raw
     .replace(/^did:m3x:/, '')
     .replace(/^@/, '')
     .toLowerCase()
 
-  // Validate before querying — never interpolate user input into PostgREST filters.
   if (!HANDLE_RE.test(handle)) {
     return NextResponse.json(
       { error: { message: 'Invalid handle', code: 'INVALID_HANDLE' } },
@@ -53,4 +47,16 @@ export async function GET(
   if (!agent.is_active) {
     return NextResponse.json(
       { error: { message: 'DID deactivated', code: 'DEACTIVATED' } },
-      { status: 410 }  // 410 Gone — W3C DID spec recommends this for deactivated DID
+      { status: 410 }
+    )
+  }
+
+  const doc = buildDidDocument(agent)
+
+  return NextResponse.json(doc, {
+    headers: {
+      'Content-Type': 'application/did+ld+json',
+      'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
+    },
+  })
+}
