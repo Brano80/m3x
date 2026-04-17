@@ -76,50 +76,17 @@ const TIER_LABEL: Record<string, string> = {
   near_match: 'Near',
 }
 
-// Compact sidebar row — handle + tier badge + accept button only
+// Compact sidebar row — handle + tier badge only
 function MatchCard({
   match,
   active,
-  token,
   onSelect,
-  onConnected,
 }: {
   match: Match
   active: boolean
-  token: string
   onSelect: () => void
-  onConnected: (handle: string) => void
 }) {
-  const [connecting, setConnecting] = useState(false)
-  const [done, setDone]             = useState(false)
-  const [err, setErr]               = useState('')
-
-  const isPending = match.state === 'handshake_initiated'
-  const handle    = match.matched_agent?.handle ?? '…'
-
-  const connect = async (e: React.MouseEvent) => {
-    e.stopPropagation()
-    setConnecting(true)
-    setErr('')
-    try {
-      const res = await fetch('/api/handshake', {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ match_id: match.id }),
-      })
-      const data = await res.json()
-      if (!res.ok && data.error?.code !== 'HANDSHAKE_EXISTS') {
-        setErr(data.error?.message ?? 'Failed')
-        return
-      }
-      setDone(true)
-      onConnected(handle)
-    } catch {
-      setErr('Network error')
-    } finally {
-      setConnecting(false)
-    }
-  }
+  const handle = match.matched_agent?.handle ?? '…'
 
   return (
     <div
@@ -130,14 +97,6 @@ function MatchCard({
       <span className={`${styles.matchTier} ${styles[`tier_${match.tier}`]}`}>
         {TIER_LABEL[match.tier] ?? match.tier}
       </span>
-      {err && <span className={styles.matchErr}>{err}</span>}
-      <button
-        className={`${styles.connectBtn} ${done || isPending ? styles.connectBtnDone : ''}`}
-        onClick={connect}
-        disabled={connecting || done}
-      >
-        {done ? '✓' : isPending ? 'Respond →' : connecting ? '…' : 'Accept →'}
-      </button>
     </div>
   )
 }
@@ -506,11 +465,11 @@ export default function InboxPage() {
       }
       if (matchRes.ok) {
         const d = await matchRes.json()
-        // Only show matches not yet accepted/declined
         const active = (d.matches ?? []).filter(
           (m: Match) => !['accepted', 'declined', 'expired'].includes(m.state)
         )
         setMatches(active)
+        if (active.length > 0) setSelectedMatch(active[0])
       }
       setLoading(false)
     }).catch(() => setLoading(false))
@@ -539,6 +498,7 @@ export default function InboxPage() {
         (m: Match) => !['accepted', 'declined', 'expired'].includes(m.state)
       )
       setMatches(active)
+      if (active.length > 0 && !autoSelectHandle) setSelectedMatch(m => m ?? active[0])
     }
   }, [token])
 
@@ -607,9 +567,7 @@ export default function InboxPage() {
                     key={m.id}
                     match={m}
                     active={selectedMatch?.id === m.id}
-                    token={token}
                     onSelect={() => { setSelectedMatch(m); setSelected(null) }}
-                    onConnected={(handle) => refreshAll(handle)}
                   />
                 ))}
               </div>
