@@ -14,22 +14,26 @@ export async function generateMatchBriefing(
   myPacket: any,
   theirPacket: any
 ): Promise<string> {
+  const mySide    = myPacket?.side ?? 'unknown'
+  const theirSide = theirPacket?.side ?? 'unknown'
+
   const prompt = `You are a personal assistant briefing @${myHandle} about a potential match on a private deal network.
 
-Here is what @${myHandle} posted — their own intent:
+@${myHandle} is on the ${mySide} side — here is their intent:
 ${JSON.stringify(myPacket ?? {}, null, 2)}
 
-Here is what @${theirHandle} posted — the person they matched with:
+@${theirHandle} is on the ${theirSide} side — here is their intent:
 ${JSON.stringify(theirPacket ?? {}, null, 2)}
 
-Write a concise briefing for @${myHandle} in plain, natural language. Cover:
-- Who they matched with and what that person has or is looking for — include ALL specific details (price, size, location, timeline, requirements, conditions — everything present in their data)
-- One sentence on how it fits with what @${myHandle} is after
+Write a concise briefing for @${myHandle} in plain, natural language:
+- Describe who @${theirHandle} is and what they offer or need — include ALL specific details present in their data
+- One sentence on why this is a good fit given @${myHandle}'s role as the ${mySide} party
 
 Rules:
 - Write in second person: "You matched with @${theirHandle}..."
+- The closing sentence must reflect @${myHandle}'s actual role (${mySide}) — do not flip the roles
 - Include every concrete detail from @${theirHandle}'s data — do not skip anything specific
-- Do not invent or assume any detail not explicitly in the data above
+- Do not invent or assume any detail not in the data above
 - Do not mention scores, algorithms, or network names
 - No bullet points — flowing sentences only
 - Under 100 words
