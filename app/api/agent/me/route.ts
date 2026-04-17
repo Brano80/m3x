@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServiceClient } from '@/lib/supabase'
 import { verifyAgent } from '@/lib/auth'
+import { isSafeWebhookUrl } from '@/lib/ssrf'
 
 export async function GET(req: NextRequest) {
   const supabase = getServiceClient()
@@ -50,6 +51,16 @@ export async function PATCH(req: NextRequest) {
       { error: { message: 'No valid fields to update', code: 'BAD_REQUEST' } },
       { status: 400 }
     )
+  }
+
+  if (updates.webhook_url) {
+    const safe = await isSafeWebhookUrl(updates.webhook_url as string)
+    if (!safe) {
+      return NextResponse.json(
+        { error: { message: 'webhook_url must be a public https:// URL', code: 'INVALID_WEBHOOK_URL' } },
+        { status: 400 }
+      )
+    }
   }
 
   updates.last_active_at = new Date().toISOString()

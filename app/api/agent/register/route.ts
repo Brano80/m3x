@@ -2,10 +2,36 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServiceClient } from '@/lib/supabase'
 import { generateToken, hashToken } from '@/lib/auth'
 import { encryptKey, isByokConfigured } from '@/lib/crypto'
+import { isSafeWebhookUrl } from '@/lib/ssrf'
 
 const VALID_PROVIDERS = ['gemini', 'anthropic']
 
+const ipRegistry = new Map<string, { count: number; resetAt: number }>()
+const RATE_LIMIT = 5 // max registrations
+const WINDOW_MS = 60 * 60 * 1000 // per 1 hour
+
 export async function POST(req: NextRequest) {
+  const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? '0.0.0.0'
+
+  let entry = ipRegistry.get(ip)
+  if (entry && entry.resetAt <= Date.now()) {
+    ipRegistry.delete(ip)
+    entry = undefined
+  }
+
+  if (entry && entry.count >= RATE_LIMIT) {
+    return NextResponse.json(
+      { error: { message: 'Too many registrations from this IP. Try again later.', code: 'RATE_LIMITED' } },
+      { status: 429 }
+    )
+  }
+
+  if (!entry) {
+    ipRegistry.set(ip, { count: 1, resetAt: Date.now() + WINDOW_MS })
+  } else {
+    entry.count++
+  }
+
   try {
     const body = await req.json()
     const { handle, display_name, markets = [], capabilities = [], webhook_url, a2a_endpoint, public_key_multibase, api_key, api_key_provider } = body
@@ -22,6 +48,16 @@ export async function POST(req: NextRequest) {
         { error: { message: 'handle must be lowercase alphanumeric, dots, hyphens, underscores only', code: 'INVALID_HANDLE' } },
         { status: 400 }
       )
+    }
+
+    if (webhook_url) {
+      const safe = await isSafeWebhookUrl(webhook_url)
+      if (!safe) {
+        return NextResponse.json(
+          { error: { message: 'webhook_url must be a public https:// URL', code: 'INVALID_WEBHOOK_URL' } },
+          { status: 400 }
+        )
+      }
     }
 
     const supabase = getServiceClient()
