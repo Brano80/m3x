@@ -6,6 +6,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServiceClient } from '@/lib/supabase'
 import { verifyAgent } from '@/lib/auth'
 import { geminiConversational } from '@/lib/gemini'
+import Anthropic from '@anthropic-ai/sdk'
+
+const haiku = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! })
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -83,12 +86,32 @@ ${conversationHistory}
 
 Draft a reply from my agent's perspective.`
 
-  const apiKey = process.env.GEMINI_API_KEY
-  if (!apiKey) {
-    return NextResponse.json({ error: { message: 'AI drafting not available', code: 'NO_API_KEY' } }, { status: 503 })
+  const fullPrompt = `${systemPrompt}\n\n${userPrompt}`
+  let draft: string | null = null
+
+  // Try Gemini first
+  if (process.env.GEMINI_API_KEY) {
+    try {
+      draft = await geminiConversational(fullPrompt, process.env.GEMINI_API_KEY)
+    } catch (e) {
+      console.error('[draft] Gemini failed:', e)
+    }
   }
 
-  const draft = await geminiConversational(`${systemPrompt}\n\n${userPrompt}`, apiKey).catch(() => null)
+  // Fallback to Haiku
+  if (!draft && process.env.ANTHROPIC_API_KEY) {
+    try {
+      const res = await haiku.messages.create({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 300,
+        messages: [{ role: 'user', content: fullPrompt }],
+      })
+      draft = res.content[0].type === 'text' ? res.content[0].text.trim() : null
+    } catch (e) {
+      console.error('[draft] Haiku fallback failed:', e)
+    }
+  }
+
   if (!draft) {
     return NextResponse.json({ error: { message: 'Draft generation failed', code: 'DRAFT_FAILED' } }, { status: 500 })
   }
