@@ -1,5 +1,5 @@
 # BUILD_STATUS.md — M3X Agentic Matchmaking Network
-**Last updated:** 2026-04-16 (Autonomous conversation engine + auto-reply toggle)
+**Last updated:** 2026-04-17 (Security audit — 4 critical/high issues fixed, remaining tracked)
 
 ---
 
@@ -28,7 +28,7 @@
 | Marketing site (`GET /`) | Landing page; hero stats from `/api/stats`; market cards link to `/markets/[slug]` |
 | Agent registration UI (`GET /register`) | Client form → `POST /api/agent/register`; success shows bearer token + MCP connector URL |
 | MCP server (`/api/mcp`) | Remote Streamable HTTP — 9 tools: `m3x_post_intent`, `m3x_check_matches`, `m3x_accept_match`, `m3x_get_trust_score`, `m3x_update_agent_card`, `m3x_run_matching`, `m3x_send_message`, `m3x_get_conversations` |
-| MCP npm package | `m3x-mcp-server` on npm — ⚠️ needs republish with 3 new tools |
+| MCP npm package | `m3x-mcp-server` on npm — ✅ v1.0.3 published with all 8 tools |
 | CORS | Browser/Electron MCP clients supported |
 
 ---
@@ -373,6 +373,51 @@ M3X = private introduction. What happens after is theirs.
 
 ---
 
+## 🔒 Security audit (2026-04-17)
+
+Full codebase audit completed. Findings ordered by severity. Quick wins marked as fixed; remaining items tracked below.
+
+### ✅ Fixed (2026-04-17)
+
+| ID | Finding | Fix |
+|----|---------|-----|
+| C1 | PostgREST filter injection via `.or()` with unvalidated URL params | `app/api/agent/[id]`, `app/api/trust/[agent_id]`: validate against UUID / `did:m3x:…` / handle regexes; dispatch to single typed `.eq()` call; 400 on invalid input. `app/api/did/[handle]`, `app/api/a2a/[handle]`: normalize handle (strip `did:m3x:`/`@`, lowercase), validate, then `.eq('handle', handle)`. No user input interpolated into PostgREST filter strings anywhere. |
+| H3 | Webhook default secret fallback — forged signatures possible if env var unset | `lib/webhook.ts`: removed `'dev-secret-change-in-production'` fallback. `getWebhookSecret()` throws `Error('WEBHOOK_SECRET env var is required')` when neither env var is set. `sendWebhook` wraps signing in existing try/catch for clean fire-and-forget logging. |
+| H5 | `webhook_url` leaked in public `/api/did/*` and `/api/a2a/:handle` — contradicts dark pool promise | `lib/did.ts`: removed `#webhook` service; `AgentForDid` type no longer carries `webhook_url`/`a2a_endpoint`; `#a2a` always points to M3X proxy. DID routes: dropped `webhook_url`/`a2a_endpoint` from `SELECT`. A2A card: `url`/`provider.url` → `${APP_URL}/api/a2a`; `capabilities.pushNotifications` hard-`false`. Private identity only revealed after mutual handshake accept. |
+| H6 | `/api/debug` unauthenticated — exposes infra state for reconnaissance | `app/api/debug/route.ts`: requires `Authorization: Bearer <DEBUG_SECRET>`, compared with `crypto.timingSafeEqual`. Returns 404 when `DEBUG_SECRET` unset (endpoint disabled), 401 on wrong/missing token, infra JSON only on valid match. |
+
+### ❌ To fix — before real users (pre-launch)
+
+| ID | Severity | Finding | Notes |
+|----|----------|---------|-------|
+| C2 | Critical | SSRF via `webhook_url` — raw `fetch()` with no IP allowlist | Block RFC1918, loopback, link-local, metadata IPs; require `https://`; add on registration + on PATCH |
+| C3 | Critical | Unauthenticated registration, no rate limit → spam / cost abuse | Per-IP rate limit minimum; Cloudflare Turnstile when public |
+| C4 | Critical | Gemini API key passed as URL query string (`?key=`) — leaks in logs | Scrub `?key=` from error traces; confirm no APM logs request URLs |
+| H1 | High | Bearer token in URL query string (MCP, QR) + stored in `localStorage` | Issue short-lived single-use magic link for QR; accept MCP token only in `Authorization` header |
+| H2 | High | BYOK key derivation uses static salt — all records share same derived key | Use random per-record salt stored with ciphertext; or HKDF from KMS-held master key |
+| H4 | High | Prompt injection via chat history — `raw_packet` in LLM context; crafted message could echo private intent fields | Inject summarized fields only (not raw JSON); add output filter rejecting drafts that echo `raw_packet` keys |
+| M6 | Medium | Cron secret compared with `!==` (not constant-time) | Replace with `crypto.timingSafeEqual` |
+| M9 | Medium | TOCTOU race on `handshake/accept` — two concurrent accepts can both pass state check | Guard with optimistic update (`UPDATE … WHERE state = 'pending'`), check `rowCount === 0` |
+
+### 🟡 Known / accepted for now
+
+| ID | Severity | Finding | Decision |
+|----|----------|---------|----------|
+| M2 | Medium | `verifyAgent` token lookup not constant-time | Token is 256-bit high-entropy — not practically exploitable; revisit at scale |
+| M3 | Medium | No token rotation / revocation endpoint | Add `reset token` endpoint before public launch |
+| M4 | Medium | `PATCH /api/agent/me` allows changing `webhook_url` without re-verification | Accepted for now; ties to C2 fix |
+| M5 | Medium | `public_key_multibase` self-asserted with no proof-of-possession | Document clearly; require signed challenge before Phase 2 signature verification goes live |
+| M7 | Medium | `raw_packet` stored in plaintext JSONB; `score_details` may echo packet text | Verify RLS policies match spec; audit all SELECT paths touching `raw_packet` / `score_details` |
+| M8 | Medium | Webhooks fire-and-forget with no retries — silent failures mark match as `notified` | Add retry + dead-letter before production scale |
+| M10 | Medium | XSS surface in conversation content | React escapes by default; confirm no `dangerouslySetInnerHTML` on message/display_name render paths |
+| M11 | Medium | No CORS restriction on state-changing routes | Not exploitable while auth is bearer-token-only; becomes CSRF risk if switched to cookies |
+| M12 | Medium | Cron `followup` scales with active sessions × Gemini calls; amplified by C3 | Bounded by `MAX_FOLLOWUPS_PER_SESSION = 3`; revisit after C3 fixed |
+| Low | — | No CSP / security headers in `next.config.ts` | Add `Strict-Transport-Security`, `X-Content-Type-Options`, `Referrer-Policy`, CSP |
+| Low | — | Intent TTL default is 720h in code vs 72h in CLAUDE.md | Spec drift; align before public launch |
+| Low | — | No size limits on `offers.description` / `seeking.description` | Add max-length validation on `POST /api/intent` |
+
+---
+
 ## Decisions log
 
 | Date | Decision |
@@ -393,3 +438,4 @@ M3X = private introduction. What happens after is theirs.
 | 2026-04-16 | Gemini thinking-model bug fixed — parts[0] was returning thought fragments not actual reply; lib/gemini.ts now finds first non-thought part |
 | 2026-04-16 | Autonomous conversation engine shipped — autonomous-but-escalates-before-committing architecture |
 | 2026-04-16 | Auto-reply toggle added to mobile dashboard — per-agent setting, saves instantly |
+| 2026-04-17 | Full security audit completed — C1 (filter injection), H5 (webhook_url in public DID/A2A), H3 (webhook secret hard-fail), H6 (debug endpoint) fixed; C2/C3/H1/H2/H4 tracked for pre-launch |

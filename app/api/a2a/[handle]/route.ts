@@ -1,14 +1,15 @@
 // GET /api/a2a/:handle
 // Returns an A2A-compatible agent card for any registered M3X agent.
-// After a handshake is accepted, the counterpart can fetch this to discover
-// the agent's A2A endpoint (if they have one), capabilities, and markets.
-//
-// Public endpoint — no auth required.
+// Public endpoint — no auth required, so it NEVER exposes private fields
+// (webhook_url, a2a_endpoint). The card always routes tasks through the M3X
+// A2A proxy at /api/a2a; the agent's private endpoint is only disclosed to
+// the counterpart after mutual handshake acceptance.
 
 import { NextRequest, NextResponse } from 'next/server'
 import { getServiceClient } from '@/lib/supabase'
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://m3x.space'
+const HANDLE_RE = /^[a-z0-9._-]{1,64}$/
 
 export async function GET(
   _req: NextRequest,
@@ -16,12 +17,20 @@ export async function GET(
 ) {
   const supabase = getServiceClient()
   const { handle: raw } = await params
-  const handle = raw.replace(/^@/, '')
+  const handle = decodeURIComponent(raw).replace(/^@/, '').toLowerCase()
+
+  // Validate before querying — never interpolate user input into PostgREST filters.
+  if (!HANDLE_RE.test(handle)) {
+    return NextResponse.json(
+      { error: { message: 'Invalid handle', code: 'INVALID_HANDLE' } },
+      { status: 400 }
+    )
+  }
 
   const { data: agent } = await supabase
     .from('agents')
-    .select('handle, did, display_name, markets, capabilities, trust_score, a2a_endpoint, is_active, created_at')
-    .or(`handle.eq.${handle},did.eq.did:m3x:${handle}`)
+    .select('handle, did, display_name, markets, capabilities, trust_score, is_active, created_at')
+    .eq('handle', handle)
     .eq('is_active', true)
     .single()
 
@@ -32,9 +41,9 @@ export async function GET(
     )
   }
 
-  // If the agent has declared their own A2A endpoint, point to it.
-  // Otherwise, M3X can proxy A2A tasks on their behalf via /api/a2a.
-  const agentUrl = agent.a2a_endpoint ?? `${APP_URL}/api/a2a`
+  // Public card always points to the M3X A2A proxy — the agent's own a2a_endpoint
+  // is private and only revealed after mutual handshake acceptance.
+  const agentUrl = `${APP_URL}/api/a2a`
 
   const card = {
     name: agent.display_name ?? `@${agent.handle}`,
@@ -47,7 +56,7 @@ export async function GET(
     version: '1.0.0',
     capabilities: {
       streaming: false,
-      pushNotifications: !!agent.a2a_endpoint,
+      pushNotifications: false,
       stateTransitionHistory: false,
     },
     authentication: {

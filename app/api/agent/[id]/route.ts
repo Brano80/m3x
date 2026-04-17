@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServiceClient } from '@/lib/supabase'
 import { verifyAgent } from '@/lib/auth'
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
+const HANDLE_RE = /^[a-z0-9._-]{1,64}$/
+const DID_RE = /^did:m3x:[a-z0-9._-]{1,64}$/
+
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -15,12 +19,29 @@ export async function GET(
     )
   }
 
-  const { id } = await params
-  const { data: agent, error } = await supabase
+  const { id: rawId } = await params
+  const id = rawId.toLowerCase()
+
+  // Validate param matches a known identifier format and select the column.
+  // Never interpolate user input into a PostgREST filter string (injection risk).
+  let query = supabase
     .from('agents')
     .select('id, handle, did, display_name, markets, capabilities, trust_score, response_rate, is_active, created_at')
-    .or(`id.eq.${id},handle.eq.${id},did.eq.${id}`)
-    .single()
+
+  if (UUID_RE.test(id)) {
+    query = query.eq('id', id)
+  } else if (DID_RE.test(id)) {
+    query = query.eq('did', id)
+  } else if (HANDLE_RE.test(id)) {
+    query = query.eq('handle', id)
+  } else {
+    return NextResponse.json(
+      { error: { message: 'Invalid agent identifier', code: 'INVALID_ID' } },
+      { status: 400 }
+    )
+  }
+
+  const { data: agent, error } = await query.single()
 
   if (error || !agent) {
     return NextResponse.json(

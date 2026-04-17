@@ -6,6 +6,31 @@ import { extractIntentSignals } from '@/lib/extract'
 import { embedText } from '@/lib/embed'
 import { decryptKey } from '@/lib/crypto'
 import { runMatchingForIntent } from '@/lib/matching'
+import { geminiStructured } from '@/lib/gemini'
+
+const VALID_MARKETS = [
+  'venture_capital', 'b2b_saas', 'freelance', 'cofounder',
+  'hiring', 'partnerships', 'legal_services', 'procurement'
+]
+
+async function classifyMarket(offersText: string, seekingText: string): Promise<string> {
+  try {
+    const prompt = `Given this intent, classify it into exactly one of these markets:
+venture_capital, b2b_saas, freelance, cofounder, hiring, partnerships, legal_services, procurement
+
+Intent:
+Offering: ${offersText}
+Seeking: ${seekingText}
+
+Reply with ONLY the market ID, nothing else.`
+    const result = await geminiStructured(prompt, process.env.GEMINI_API_KEY!, 32)
+    const classified = result.trim().toLowerCase()
+    return VALID_MARKETS.includes(classified) ? classified : 'b2b_saas'
+  } catch (e) {
+    console.error('[intent] market classification failed:', e)
+    return 'b2b_saas'
+  }
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -20,17 +45,11 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json()
-    const { side, market, offers, seeking, guardrails = {}, ttl_hours = 720 } = body  // default 30 days
+    const { side, market: marketRaw, offers, seeking, guardrails = {}, ttl_hours = 720 } = body  // default 30 days
 
     if (!side || !['demand', 'supply'].includes(side)) {
       return NextResponse.json(
         { error: { message: 'side must be "demand" or "supply"', code: 'INVALID_SIDE' } },
-        { status: 400 }
-      )
-    }
-    if (!market) {
-      return NextResponse.json(
-        { error: { message: 'market is required', code: 'MISSING_MARKET' } },
         { status: 400 }
       )
     }
@@ -85,6 +104,13 @@ export async function POST(req: NextRequest) {
 
     const offersText = typeof offers === 'string' ? offers : (offers.description ?? JSON.stringify(offers))
     const seekingText = typeof seeking === 'string' ? seeking : (seeking.description ?? JSON.stringify(seeking))
+
+    // Auto-classify market if not provided
+    const market = (marketRaw && VALID_MARKETS.includes(marketRaw))
+      ? marketRaw
+      : await classifyMarket(offersText, seekingText)
+
+    console.log(`[intent] market=${market} (${marketRaw ? 'provided' : 'auto-classified'})`)
 
     const raw_packet = { agent_id: agent.did, side, market, offers, seeking, guardrails }
     const expires_at = new Date(Date.now() + ttl_hours * 60 * 60 * 1000).toISOString()

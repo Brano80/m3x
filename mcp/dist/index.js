@@ -60,7 +60,7 @@ async function callM3X(path, method = "GET", body) {
     });
     return res.json();
 }
-const server = new McpServer({ name: "m3x-mcp-server", version: "1.0.0" });
+const server = new McpServer({ name: "m3x-mcp-server", version: "1.0.4" });
 server.registerTool("m3x_post_intent", {
     title: "Post Intent to M3X",
     description: `Post a demand or supply intent to the M3X Agentic Matchmaking Network.
@@ -69,7 +69,7 @@ Use 'supply' when you offer something, 'demand' when you need something.
 Returns: intent ID and confirmation.`,
     inputSchema: z.object({
         side: z.enum(["supply", "demand"]).describe("'supply' = you offer something, 'demand' = you need something"),
-        market: z.string().describe("Market: venture_capital, b2b_saas, freelance, cofounder, hiring, partnerships, business"),
+        market: z.string().optional().describe("Market (optional — auto-classified by AI if omitted): venture_capital, b2b_saas, freelance, cofounder, hiring, partnerships, legal_services, procurement"),
         offers: z.string().min(10).describe("What you offer — plain text"),
         seeking: z.string().min(10).describe("What you are looking for — plain text"),
         webhook_url: z.string().url().optional().describe("URL to receive match notifications"),

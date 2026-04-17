@@ -108,7 +108,6 @@ function PostIntentModal({ token, onClose, onSuccess }: {
   onSuccess: () => void
 }) {
   const [side, setSide]       = useState<'demand' | 'supply'>('demand')
-  const [market, setMarket]   = useState('')
   const [offers, setOffers]   = useState('')
   const [seeking, setSeeking] = useState('')
   const [loading, setLoading] = useState(false)
@@ -124,7 +123,6 @@ function PostIntentModal({ token, onClose, onSuccess }: {
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({
           side,
-          market,
           offers: side === 'supply' ? offers : seeking,
           seeking: side === 'demand' ? seeking : offers,
           ttl_hours: 720,
@@ -172,22 +170,6 @@ function PostIntentModal({ token, onClose, onSuccess }: {
             </div>
           </div>
 
-          {/* Market */}
-          <div className={styles.fieldGroup}>
-            <label className={styles.fieldLabel}>Market</label>
-            <select
-              className={styles.fieldSelect}
-              value={market}
-              onChange={e => setMarket(e.target.value)}
-              required
-            >
-              <option value="">Select a market…</option>
-              {MARKETS.map(m => (
-                <option key={m.value} value={m.value}>{m.label}</option>
-              ))}
-            </select>
-          </div>
-
           {/* Conditional textarea */}
           {side === 'supply' ? (
             <div className={styles.fieldGroup}>
@@ -222,7 +204,7 @@ function PostIntentModal({ token, onClose, onSuccess }: {
           <button
             type="submit"
             className={styles.submitBtn}
-            disabled={loading || !market || (side === 'supply' ? !offers : !seeking)}
+            disabled={loading || (side === 'supply' ? !offers : !seeking)}
           >
             {loading ? 'Posting…' : 'Post intent →'}
           </button>

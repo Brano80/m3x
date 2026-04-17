@@ -26,7 +26,7 @@ export async function GET(
 
   const { data: agent } = await supabase
     .from('agents')
-    .select('handle, did, display_name, markets, capabilities, webhook_url, a2a_endpoint, public_key_multibase, trust_score, is_active, created_at')
+    .select('handle, did, display_name, markets, capabilities, public_key_multibase, trust_score, is_active, created_at')
     .eq('handle', handle)
     .single()
 

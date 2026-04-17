@@ -13,6 +13,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServiceClient } from '@/lib/supabase'
 import { buildDidDocument } from '@/lib/did'
 
+const HANDLE_RE = /^[a-z0-9._-]{1,64}$/
+
 export async function GET(
   _req: NextRequest,
   { params }: { params: Promise<{ handle: string }> }
@@ -27,10 +29,18 @@ export async function GET(
     .replace(/^@/, '')
     .toLowerCase()
 
+  // Validate before querying — never interpolate user input into PostgREST filters.
+  if (!HANDLE_RE.test(handle)) {
+    return NextResponse.json(
+      { error: { message: 'Invalid handle', code: 'INVALID_HANDLE' } },
+      { status: 400 }
+    )
+  }
+
   const { data: agent } = await supabase
     .from('agents')
-    .select('handle, did, display_name, markets, capabilities, webhook_url, a2a_endpoint, public_key_multibase, trust_score, is_active, created_at')
-    .or(`handle.eq.${handle},did.eq.did:m3x:${handle}`)
+    .select('handle, did, display_name, markets, capabilities, public_key_multibase, trust_score, is_active, created_at')
+    .eq('handle', handle)
     .single()
 
   if (!agent) {

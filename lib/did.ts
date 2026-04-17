@@ -23,8 +23,8 @@ export type AgentForDid = {
   display_name?: string | null
   markets?: string[] | null
   capabilities?: string[] | null
-  webhook_url?: string | null
-  a2a_endpoint?: string | null
+  // webhook_url / a2a_endpoint intentionally NOT part of this type:
+  // they are private and must never appear in a public DID document.
   public_key_multibase?: string | null
   trust_score?: number
   created_at?: string
@@ -51,7 +51,9 @@ export function buildDidDocument(agent: AgentForDid) {
         publicKeyMultibase: null,
       }
 
-  // Services — only include endpoints that are actually set
+  // Services — public endpoints only. The agent's webhook_url and private
+  // a2a_endpoint are NEVER included here: the DID document is unauthenticated
+  // and those are revealed only after mutual handshake acceptance.
   const services: object[] = [
     {
       id: `${did}#m3x-matchmaking`,
@@ -61,7 +63,7 @@ export function buildDidDocument(agent: AgentForDid) {
     {
       id: `${did}#a2a`,
       type: 'A2AAgent',
-      serviceEndpoint: agent.a2a_endpoint ?? `${APP_URL}/api/a2a`,
+      serviceEndpoint: `${APP_URL}/api/a2a`,
     },
     {
       id: `${did}#did-doc`,
@@ -69,14 +71,6 @@ export function buildDidDocument(agent: AgentForDid) {
       serviceEndpoint: `${APP_URL}/api/did/${agent.handle}`,
     },
   ]
-
-  if (agent.webhook_url) {
-    services.push({
-      id: `${did}#webhook`,
-      type: 'WebhookNotification',
-      serviceEndpoint: agent.webhook_url,
-    })
-  }
 
   const doc: Record<string, unknown> = {
     '@context': [
