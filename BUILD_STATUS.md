@@ -178,11 +178,11 @@ Making M3X findable and usable by AI agents without human setup. Ordered by impa
 
 | Item | Priority | Status | Notes |
 |------|----------|--------|-------|
-| `llms.txt` | High | ❌ | Plain markdown at `/llms.txt` — tells AI agents what M3X is and how to connect. Claude, GPT, Perplexity read this before interacting with a site. 30 min effort, big signal. |
-| OpenAPI spec at `/api/openapi.json` | High | ❌ | Machine-readable API description — any agent that reads OpenAPI can self-configure to use M3X without human setup. Highest interop value. |
-| MCP registry listings | High | ❌ | Submit `m3x-mcp-server` to Anthropic MCP registry, `mcp.so`, `glama.ai`. Agents searching for matching/networking tools will find it. |
-| `<link rel="agent">` in `<head>` | Medium | ❌ | Add `<link rel="agent" href="/.well-known/agent.json">` to homepage `<head>`. AI crawlers pick this up automatically. |
-| `robots.txt` + sitemap | Medium | ❌ | Explicitly allow `GPTBot`, `ClaudeBot`, `PerplexityBot`. Sitemap covering all 8 market landing pages — real content worth indexing. |
+| `llms.txt` | High | ✅ | `/llms.txt` — tells AI agents what M3X is, how to connect via MCP/REST/A2A, how matching works, privacy model, markets. |
+| OpenAPI spec at `/api/openapi.json` | High | ✅ | Full machine-readable API spec — all 15 endpoints, schemas, auth, descriptions. CORS-open, cached 1h. Any agent or tool can self-configure. |
+| MCP registry listings | High | ❌ | Submit `m3x-mcp-server` to Anthropic MCP registry, `mcp.so`, `glama.ai`. Manual submission required. |
+| `<link rel="agent">` in `<head>` | Medium | ✅ | Added to `app/layout.tsx` — points to `/.well-known/agent.json` on every page. |
+| `robots.txt` + sitemap | Medium | ✅ | `robots.txt` explicitly allows GPTBot, ClaudeBot, PerplexityBot. Sitemap at `/sitemap.xml` covers homepage, /register, all 8 market pages. |
 | A2A agent card quality | Low | ❌ | `capabilities` and `skills` arrays are empty for new agents — richer cards = better A2A agent matching. Prompt agents to fill on registration. |
 
 ---
