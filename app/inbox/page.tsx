@@ -12,8 +12,8 @@ interface Match {
   state: string
   created_at: string
   expires_at: string
+  summary: string | null
   my_intent: { id: string; side: string; market: string; intent_type: string } | null
-  their_intent: { id: string; side: string; market: string; intent_type: string } | null
   matched_agent: { id: string; handle: string; trust_score: number; capabilities: string[]; markets: string[] } | null
 }
 
@@ -123,21 +123,24 @@ function MatchCard({
         <span className={`${styles.matchTier} ${styles[`tier_${match.tier}`]}`}>
           {TIER_LABEL[match.tier] ?? match.tier}
         </span>
-        <span className={styles.matchScore}>{pct}%</span>
       </div>
-      {match.my_intent && (
+      {match.summary ? (
+        <div className={styles.matchSummary}>{match.summary}</div>
+      ) : match.my_intent ? (
         <div className={styles.matchMarket}>
           {match.my_intent.market.replace(/_/g, ' ')} · {match.my_intent.side}
         </div>
-      )}
+      ) : null}
       {err && <div className={styles.matchErr}>{err}</div>}
-      <button
-        className={`${styles.connectBtn} ${done || isPending ? styles.connectBtnDone : ''}`}
-        onClick={connect}
-        disabled={connecting || done}
-      >
-        {done ? 'Requested ✓' : isPending ? 'Respond →' : connecting ? 'Connecting…' : 'Connect →'}
-      </button>
+      <div className={styles.matchActions}>
+        <button
+          className={`${styles.connectBtn} ${done || isPending ? styles.connectBtnDone : ''}`}
+          onClick={connect}
+          disabled={connecting || done}
+        >
+          {done ? 'Requested ✓' : isPending ? 'Respond →' : connecting ? 'Connecting…' : 'Accept →'}
+        </button>
+      </div>
     </div>
   )
 }

@@ -20,6 +20,7 @@ export async function GET(req: NextRequest) {
     .from('matches')
     .select(`
       id, score, tier, state, score_details, created_at, expires_at,
+      summary_for_a, summary_for_b,
       intent_a:intents!intent_a_id(id, side, market, intent_type),
       intent_b:intents!intent_b_id(id, side, market, intent_type),
       agent_a:agents!agent_a_id(id, handle, did, trust_score, capabilities, markets),
@@ -47,17 +48,17 @@ export async function GET(req: NextRequest) {
     const matched_agent = isA ? m.agent_b : m.agent_a
     const my_intent = isA ? m.intent_a : m.intent_b
     const their_intent = isA ? m.intent_b : m.intent_a
+    const summary = isA ? (m as any).summary_for_a : (m as any).summary_for_b
     return {
       id: m.id,
       score: m.score,
       tier: m.tier,
       state: m.state,
-      score_details: m.score_details,
       created_at: m.created_at,
       expires_at: m.expires_at,
+      summary,          // curated natural language — safe to show before handshake
       my_intent,
-      their_intent,
-      matched_agent  // only public fields — no raw intent text
+      matched_agent     // public fields only — no raw intent
     }
   })
 

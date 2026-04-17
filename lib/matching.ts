@@ -5,6 +5,7 @@ import { SupabaseClient } from '@supabase/supabase-js'
 import { scorePair } from '@/lib/score'
 import { sendWebhook } from '@/lib/webhook'
 import { notifyMatchFound } from '@/lib/fcm'
+import { generateMatchBriefing } from '@/lib/briefing'
 
 export interface MatchRunResult {
   matches_found: number
@@ -100,6 +101,23 @@ export async function runMatchingForIntent(
 
     if (!match) continue
     newMatches.push(match)
+
+    // Generate match summaries for ≥75% matches (strong_match + match tiers)
+    // Stored immediately so agents see full context before deciding to connect.
+    if (scoreResult.tier !== 'near_match') {
+      try {
+        const [summaryForA, summaryForB] = await Promise.all([
+          generateMatchBriefing(agent.handle, candidateAgent.handle, intent.raw_packet, candidate.raw_packet),
+          generateMatchBriefing(candidateAgent.handle, agent.handle, candidate.raw_packet, intent.raw_packet),
+        ])
+        if (summaryForA || summaryForB) {
+          await supabase
+            .from('matches')
+            .update({ summary_for_a: summaryForA || null, summary_for_b: summaryForB || null })
+            .eq('id', match.id)
+        }
+      } catch { /* non-fatal — match is already stored */ }
+    }
 
     const webhookPayload = (recipientAgent: any, matchedAgent: any, myIntent: any, theirIntent: any) => ({
       event: 'match.found',
