@@ -353,7 +353,6 @@ function Dashboard({
   const [error, setError] = useState('')
   const [pushState, setPushState] = useState<'default' | 'granted' | 'denied' | 'unsupported'>('default')
   const [showPostIntent, setShowPostIntent] = useState(false)
-  const [showIntents, setShowIntents] = useState(false)
   const [autoReply, setAutoReply] = useState(false)
   const [autoReplyLoading, setAutoReplyLoading] = useState(false)
 
@@ -436,20 +435,6 @@ function Dashboard({
     }
 
     return items.sort((a, b) => new Date(b.timeIso).getTime() - new Date(a.timeIso).getTime())
-  }
-
-  const deleteIntent = async (intentId: string) => {
-    try {
-      const res = await fetch(`/api/intent/${intentId}`, {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` },
-      })
-      if (res.ok) {
-        setIntents((prev) => prev.filter((i) => i.id !== intentId))
-      }
-    } catch {
-      /* ignore */
-    }
   }
 
   const toggleAutoReply = async () => {
@@ -566,58 +551,17 @@ function Dashboard({
           <a href="/inbox" className={styles.inboxBtn}>
             Inbox
             {unreadCount > 0 && <span className={styles.inboxBtnBadge}>{unreadCount}</span>}
-            <span className={styles.inboxBtnArrow}>→</span>
           </a>
-          <button type="button" className={styles.intentsBtn} onClick={() => setShowIntents(true)}>
+          <a href="/intents" className={styles.intentsBtn}>
             Intents
-            {intents.length > 0 && <span className={styles.inboxBtnBadge}>{intents.length}</span>}
-          </button>
+          </a>
           <button className={styles.postIntentBtn} onClick={() => setShowPostIntent(true)}>
             + Post intent
           </button>
         </div>
 
-        {showIntents && (
-          <section className={styles.section}>
-            <div className={`${styles.sectionHeader} ${styles.intentsSectionHeader}`}>
-              <div className={styles.sectionTitle}>Intents</div>
-              <button
-                type="button"
-                className={styles.modalClose}
-                onClick={() => setShowIntents(false)}
-                aria-label="Close intents panel"
-              >
-                ✕
-              </button>
-            </div>
-            {intents.length === 0 ? (
-              <div className={styles.empty}>No active intents. Post one to get matched.</div>
-            ) : (
-              <div>
-                {intents.map((intent) => (
-                  <div key={intent.id} className={styles.intentRow}>
-                    <span className={styles.intentSide}>
-                      {intent.side === 'demand' ? 'SEEKING' : 'OFFERING'}
-                    </span>
-                    <span>{intent.market.replace(/_/g, ' ')}</span>
-                    <span>{timeUntil(intent.expires_at)}</span>
-                    <button
-                      type="button"
-                      className={styles.intentDelete}
-                      onClick={() => deleteIntent(intent.id)}
-                      aria-label="Delete intent"
-                    >
-                      ✕
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </section>
-        )}
-
         {/* Activity feed */}
-        <section className={styles.section}>
+        <section className={`${styles.section} ${styles.sectionSpaced}`}>
           <div className={styles.sectionHeader}>
             <div className={styles.sectionTitle}>Activity</div>
           </div>
@@ -920,78 +864,4 @@ export default function DashboardPage() {
 
       // Fetch handle for lock screen display
       try {
-        const res = await fetch('/api/agent/me', { headers: { Authorization: `Bearer ${stored}` } })
-        if (res.ok) {
-          const data = await res.json()
-          setHandle(data.agent?.handle ?? '')
-        }
-      } catch { /* ignore */ }
-
-      const credId     = localStorage.getItem(CRED_KEY)
-      const sessionOk  = sessionStorage.getItem(SESSION_KEY)
-      const bioAvail   = await biometricAvailable()
-
-      setHasBiometric(bioAvail)
-
-      // If session is still active → go straight to dashboard
-      if (sessionOk) { setStatus('unlocked'); return }
-      // If biometric credential registered → show lock screen
-      if (credId && bioAvail) { setStatus('locked'); return }
-      // No biometric set up → go straight to dashboard
-      setStatus('unlocked')
-    }
-    init()
-  }, [])
-
-  // After first successful connect — try to register biometric
-  const handleConnect = async (t: string, agentHandle: string) => {
-    localStorage.setItem(TOKEN_KEY, t)
-    setToken(t)
-    setHandle(agentHandle)
-    sessionStorage.setItem(SESSION_KEY, '1')
-
-    const ok = await biometricAvailable()
-    if (ok) {
-      const registered = await registerBiometric(agentHandle)
-      setHasBiometric(registered)
-    }
-    setStatus('unlocked')
-  }
-
-  const handleUnlock = () => setStatus('unlocked')
-
-  const handleLogout = () => {
-    localStorage.removeItem(TOKEN_KEY)
-    localStorage.removeItem(CRED_KEY)
-    sessionStorage.removeItem(SESSION_KEY)
-    setToken('')
-    setHandle('')
-    setStatus('connect')
-  }
-
-  const handleLock = () => {
-    sessionStorage.removeItem(SESSION_KEY)
-    setStatus('locked')
-  }
-
-  if (status === 'loading') return null
-
-  if (status === 'connect') {
-    return <ConnectScreen onConnect={handleConnect} />
-  }
-
-  if (status === 'locked') {
-    return <LockScreen handle={handle} onUnlock={handleUnlock} onLogout={handleLogout} />
-  }
-
-  return (
-    <Dashboard
-      token={token}
-      onLogout={handleLogout}
-      onLock={hasBiometric && !!localStorage.getItem(CRED_KEY) ? handleLock : undefined}
-      onRegisterBiometric={hasBiometric && !localStorage.getItem(CRED_KEY)
-        ? async () => { await registerBiometric(handle); setHasBiometric(true) }
-        : undefined}
-    />
-  )
-}
+        const res = await fetch('/api/agent/me', { headers: { Authorization: `Bearer ${stored}` }

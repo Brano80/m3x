@@ -1,0 +1,267 @@
+/* M3X Intents page — matches inbox design language */
+
+.root {
+  min-height: 100vh;
+  background: #050507;
+  color: #e8eaf0;
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.grid {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(79, 146, 232, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(79, 146, 232, 0.04) 1px, transparent 1px);
+  background-size: 48px 48px;
+  z-index: 0;
+}
+
+/* ── Loading ──────────────────────────────────────────────────────────────── */
+
+.loadingFull {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  gap: 16px;
+  color: rgba(232, 234, 240, 0.4);
+  font-size: 15px;
+}
+
+.goLink {
+  color: #8ab4ff;
+  text-decoration: none;
+  font-size: 14px;
+}
+
+.goLink:hover { text-decoration: underline; }
+
+/* ── Header ───────────────────────────────────────────────────────────────── */
+
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  background: rgba(5, 5, 7, 0.85);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(79, 146, 232, 0.12);
+  flex-shrink: 0;
+}
+
+.headerLogo {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: #8ab4ff;
+  text-decoration: none;
+}
+
+.headerNav { display: flex; align-items: center; gap: 4px; }
+
+.navLink {
+  font-size: 13px;
+  color: rgba(232, 234, 240, 0.45);
+  text-decoration: none;
+  padding: 5px 12px;
+  border-radius: 7px;
+  transition: color 0.15s, background 0.15s;
+}
+
+.navLink:hover { color: #e8eaf0; background: rgba(255,255,255,0.04); }
+
+.navActive {
+  color: #8ab4ff;
+  background: rgba(79, 146, 232, 0.1);
+}
+
+/* ── Main ─────────────────────────────────────────────────────────────────── */
+
+.main {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  padding: 32px 20px;
+}
+
+.panel {
+  width: 100%;
+  max-width: 640px;
+}
+
+/* ── Panel header ─────────────────────────────────────────────────────────── */
+
+.panelHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.panelTitle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #e8eaf0;
+}
+
+.panelBadge {
+  font-size: 11px;
+  font-weight: 700;
+  background: rgba(79, 146, 232, 0.18);
+  color: #8ab4ff;
+  border-radius: 10px;
+  padding: 2px 8px;
+}
+
+.postLink {
+  font-size: 13px;
+  color: #8ab4ff;
+  text-decoration: none;
+  padding: 6px 14px;
+  border: 1px solid rgba(79, 146, 232, 0.25);
+  border-radius: 8px;
+  transition: background 0.15s;
+}
+
+.postLink:hover { background: rgba(79, 146, 232, 0.1); }
+
+/* ── Intent list ──────────────────────────────────────────────────────────── */
+
+.intentList {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  border: 1px solid rgba(79, 146, 232, 0.12);
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.intentRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid rgba(79, 146, 232, 0.08);
+  transition: background 0.12s;
+}
+
+.intentRow:last-child { border-bottom: none; }
+
+.intentRow:hover { background: rgba(79, 146, 232, 0.04); }
+
+.intentLeft {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.intentSide {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 5px;
+  flex-shrink: 0;
+}
+
+.sideDemand {
+  background: rgba(79, 146, 232, 0.15);
+  color: #8ab4ff;
+}
+
+.sideSupply {
+  background: rgba(0, 200, 100, 0.12);
+  color: #00cc66;
+}
+
+.intentInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.intentMarket {
+  font-size: 14px;
+  font-weight: 500;
+  color: #e8eaf0;
+  text-transform: capitalize;
+}
+
+.intentMeta {
+  font-size: 12px;
+  color: rgba(232, 234, 240, 0.4);
+}
+
+.deleteBtn {
+  font-size: 12px;
+  color: rgba(255, 80, 80, 0.7);
+  background: none;
+  border: 1px solid rgba(255, 80, 80, 0.2);
+  border-radius: 7px;
+  padding: 5px 12px;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+  flex-shrink: 0;
+  font-family: inherit;
+}
+
+.deleteBtn:hover:not(:disabled) {
+  color: #ff5050;
+  border-color: rgba(255, 80, 80, 0.5);
+  background: rgba(255, 80, 80, 0.06);
+}
+
+.deleteBtn:disabled { opacity: 0.5; cursor: default; }
+
+/* ── Empty state ──────────────────────────────────────────────────────────── */
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 64px 20px;
+  text-align: center;
+}
+
+.emptyIcon {
+  font-size: 32px;
+  color: rgba(79, 146, 232, 0.3);
+}
+
+.emptyTitle {
+  font-size: 16px;
+  font-weight: 600;
+  color: rgba(232, 234, 240, 0.6);
+}
+
+.emptySub {
+  font-size: 13px;
+  color: rgba(232, 234, 240, 0.35);
+  max-width: 300px;
+}
+
+.emptyLink {
+  margin-top: 8px;
+  font-size: 13px;
+  color: #8ab4ff;
+  text-decoration: none;
+}
+
+.emptyLink:hover { text-decoration: underline; }

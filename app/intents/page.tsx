@@ -1,0 +1,163 @@
+'use client'
+
+import { useState, useEffect } from 'react'
+import styles from './intents.module.css'
+
+// ── Types ─────────────────────────────────────────────────────────────────────
+
+interface Intent {
+  id: string
+  side: string
+  market: string
+  intent_type: string
+  status: string
+  created_at: string
+  expires_at: string
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+const TOKEN_KEY = 'm3x_token'
+
+function timeAgo(iso: string) {
+  const s = Math.floor((Date.now() - new Date(iso).getTime()) / 1000)
+  if (s < 60) return 'just now'
+  if (s < 3600) return `${Math.floor(s / 60)}m ago`
+  if (s < 86400) return `${Math.floor(s / 3600)}h ago`
+  return `${Math.floor(s / 86400)}d ago`
+}
+
+function timeUntil(iso: string) {
+  const s = Math.floor((new Date(iso).getTime() - Date.now()) / 1000)
+  if (s <= 0) return 'expired'
+  if (s < 3600) return `${Math.floor(s / 60)}m left`
+  if (s < 86400) return `${Math.floor(s / 3600)}h left`
+  return `${Math.floor(s / 86400)}d left`
+}
+
+// ── Root ──────────────────────────────────────────────────────────────────────
+
+export default function IntentsPage() {
+  const [token, setToken]     = useState('')
+  const [intents, setIntents] = useState<Intent[]>([])
+  const [loading, setLoading] = useState(true)
+  const [noToken, setNoToken] = useState(false)
+  const [deleting, setDeleting] = useState<string | null>(null)
+
+  useEffect(() => {
+    const t = typeof window !== 'undefined' ? localStorage.getItem(TOKEN_KEY) : null
+    if (!t) { setNoToken(true); setLoading(false); return }
+    setToken(t)
+    fetch('/api/intents?status=active', { headers: { Authorization: `Bearer ${t}` } })
+      .then(r => r.ok ? r.json() : { intents: [] })
+      .then(d => { setIntents(d.intents ?? []); setLoading(false) })
+      .catch(() => setLoading(false))
+  }, [])
+
+  const deleteIntent = async (id: string) => {
+    setDeleting(id)
+    try {
+      const res = await fetch(`/api/intent/${id}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      if (res.ok) setIntents(prev => prev.filter(i => i.id !== id))
+    } catch {
+      /* ignore */
+    } finally {
+      setDeleting(null)
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className={styles.root}>
+        <div className={styles.grid} />
+        <div className={styles.loadingFull}>Loading…</div>
+      </div>
+    )
+  }
+
+  if (noToken) {
+    return (
+      <div className={styles.root}>
+        <div className={styles.grid} />
+        <div className={styles.loadingFull}>
+          <div>Connect your agent first.</div>
+          <a href="/dashboard" className={styles.goLink}>Go to Dashboard →</a>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className={styles.root}>
+      <div className={styles.grid} />
+
+      {/* Header */}
+      <header className={styles.header}>
+        <a href="/" className={styles.headerLogo}>M3X</a>
+        <div className={styles.headerNav}>
+          <a href="/dashboard" className={styles.navLink}>Dashboard</a>
+          <a href="/inbox" className={styles.navLink}>Inbox</a>
+          <a href="/intents" className={`${styles.navLink} ${styles.navActive}`}>Intents</a>
+        </div>
+      </header>
+
+      {/* Content */}
+      <main className={styles.main}>
+        <div className={styles.panel}>
+          <div className={styles.panelHeader}>
+            <div className={styles.panelTitle}>
+              Active intents
+              {intents.length > 0 && (
+                <span className={styles.panelBadge}>{intents.length}</span>
+              )}
+            </div>
+            <a href="/dashboard" className={styles.postLink}>+ Post intent →</a>
+          </div>
+
+          {intents.length === 0 ? (
+            <div className={styles.empty}>
+              <div className={styles.emptyIcon}>⬡</div>
+              <div className={styles.emptyTitle}>No active intents</div>
+              <div className={styles.emptySub}>
+                Post an intent from the dashboard to get matched.
+              </div>
+              <a href="/dashboard" className={styles.emptyLink}>Go to Dashboard →</a>
+            </div>
+          ) : (
+            <div className={styles.intentList}>
+              {intents.map(intent => (
+                <div key={intent.id} className={styles.intentRow}>
+                  <div className={styles.intentLeft}>
+                    <span className={`${styles.intentSide} ${intent.side === 'demand' ? styles.sideDemand : styles.sideSupply}`}>
+                      {intent.side === 'demand' ? 'SEEKING' : 'OFFERING'}
+                    </span>
+                    <div className={styles.intentInfo}>
+                      <div className={styles.intentMarket}>
+                        {intent.market.replace(/_/g, ' ')}
+                      </div>
+                      <div className={styles.intentMeta}>
+                        Posted {timeAgo(intent.created_at)} · {timeUntil(intent.expires_at)}
+                      </div>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    className={styles.deleteBtn}
+                    onClick={() => deleteIntent(intent.id)}
+                    disabled={deleting === intent.id}
+                    aria-label="Delete intent"
+                  >
+                    {deleting === intent.id ? '…' : 'Withdraw'}
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </main>
+    </div>
+  )
+}
