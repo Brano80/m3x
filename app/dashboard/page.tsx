@@ -864,4 +864,85 @@ export default function DashboardPage() {
 
       // Fetch handle for lock screen display
       try {
-        const res = await fetch('/api/agent/me', { headers: { Authorization: `Bearer ${stored}` }
+        const res = await fetch('/api/agent/me', { headers: { Authorization: `Bearer ${stored}` } })
+        if (res.ok) {
+          const data = await res.json()
+          setHandle(data.agent?.handle ?? '')
+        }
+      } catch {
+        // ignore — token may be expired, Dashboard handles gracefully
+      }
+
+      // Check biometric availability
+      const credId = localStorage.getItem(CRED_KEY)
+      const canBio = credId ? await biometricAvailable() : false
+      setHasBiometric(canBio)
+
+      const sessionUnlocked = sessionStorage.getItem(SESSION_KEY)
+      if (canBio && !sessionUnlocked) {
+        setStatus('locked')
+      } else {
+        setStatus('unlocked')
+      }
+    }
+    init()
+  }, [])
+
+  return (
+    <>
+      {status === 'loading' && (
+        <div style={{ background: '#050507', minHeight: '100vh' }} />
+      )}
+      {status === 'connect' && (
+        <ConnectScreen
+          onConnect={(t, h) => {
+            localStorage.setItem(TOKEN_KEY, t)
+            sessionStorage.setItem(SESSION_KEY, '1')
+            setToken(t)
+            setHandle(h)
+            setStatus('unlocked')
+            biometricAvailable().then(ok => { if (ok) setHasBiometric(true) })
+          }}
+        />
+      )}
+      {status === 'locked' && (
+        <LockScreen
+          handle={handle}
+          onUnlock={() => {
+            sessionStorage.setItem(SESSION_KEY, '1')
+            setStatus('unlocked')
+          }}
+          onLogout={() => {
+            localStorage.removeItem(TOKEN_KEY)
+            localStorage.removeItem(CRED_KEY)
+            sessionStorage.removeItem(SESSION_KEY)
+            setToken('')
+            setHandle('')
+            setStatus('connect')
+          }}
+        />
+      )}
+      {status === 'unlocked' && (
+        <Dashboard
+          token={token}
+          onLogout={() => {
+            localStorage.removeItem(TOKEN_KEY)
+            localStorage.removeItem(CRED_KEY)
+            sessionStorage.removeItem(SESSION_KEY)
+            setToken('')
+            setHandle('')
+            setStatus('connect')
+          }}
+          onLock={hasBiometric ? () => {
+            sessionStorage.removeItem(SESSION_KEY)
+            setStatus('locked')
+          } : undefined}
+          onRegisterBiometric={!hasBiometric ? async () => {
+            const ok = await registerBiometric(handle)
+            if (ok) setHasBiometric(true)
+          } : undefined}
+        />
+      )}
+    </>
+  )
+}
