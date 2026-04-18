@@ -29,7 +29,7 @@ export default async function MarketPage({ params }: { params: Promise<{ slug: s
       {/* Nav */}
       <nav className={styles.nav}>
         <Link href="/" className={styles.logoLink} aria-label="M3X home">
-          <img src="/m3x-wordmark.jpg?v=8" alt="M3X" width={1024} height={558} className={styles.logoImg} />
+          <img src="/m3x-logo.jpg?v=9" alt="M3X Logo" width={1024} height={465} className={styles.logoImg} />
         </Link>
         <Link href="/register" className={styles.navCta}>Get API Key →</Link>
       </nav>

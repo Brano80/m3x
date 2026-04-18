@@ -254,10 +254,10 @@ function ConnectScreen({ onConnect }: { onConnect: (token: string, handle: strin
       <div className={styles.connectCard}>
         <a href="/" className={styles.logoLink} aria-label="M3X home">
           <img
-            src="/m3x-wordmark.jpg?v=8"
-            alt="M3X"
+            src="/m3x-logo.jpg?v=9"
+            alt="M3X Logo"
             width={1024}
-            height={558}
+            height={465}
             className={styles.logoImg}
           />
         </a>
