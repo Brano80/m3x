@@ -14,15 +14,18 @@ export async function GET(req: NextRequest) {
   }
 
   const { searchParams } = new URL(req.url)
-  const status = searchParams.get('status') ?? 'active'
+  const status = searchParams.get('status')
 
-  const { data, error } = await supabase
+  let query = supabase
     .from('intents')
-    .select('id, side, market, intent_type, status, created_at, expires_at')
+    .select('id, side, market, intent_type, status, raw_packet, created_at, expires_at')
     .eq('agent_id', agent.id)
-    .eq('status', status)
     .order('created_at', { ascending: false })
-    .limit(20)
+    .limit(50)
+
+  if (status) query = query.eq('status', status)
+
+  const { data, error } = await query
 
   if (error) {
     return NextResponse.json(

@@ -5,12 +5,19 @@ import styles from './intents.module.css'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
+interface RawPacket {
+  offers?: string
+  seeking?: string
+  [key: string]: unknown
+}
+
 interface Intent {
   id: string
   side: string
   market: string
   intent_type: string
   status: string
+  raw_packet: RawPacket | null
   created_at: string
   expires_at: string
 }
@@ -35,14 +42,22 @@ function timeUntil(iso: string) {
   return `${Math.floor(s / 86400)}d left`
 }
 
+function intentText(intent: Intent): string {
+  const p = intent.raw_packet
+  if (!p) return ''
+  if (intent.side === 'supply') return typeof p.offers === 'string' ? p.offers : ''
+  return typeof p.seeking === 'string' ? p.seeking : ''
+}
+
 // ── Root ──────────────────────────────────────────────────────────────────────
 
 export default function IntentsPage() {
-  const [token, setToken]     = useState('')
-  const [intents, setIntents] = useState<Intent[]>([])
-  const [loading, setLoading] = useState(true)
-  const [noToken, setNoToken] = useState(false)
+  const [token, setToken]       = useState('')
+  const [intents, setIntents]   = useState<Intent[]>([])
+  const [loading, setLoading]   = useState(true)
+  const [noToken, setNoToken]   = useState(false)
   const [deleting, setDeleting] = useState<string | null>(null)
+  const [expanded, setExpanded] = useState<string | null>(null)
 
   useEffect(() => {
     const t = typeof window !== 'undefined' ? localStorage.getItem(TOKEN_KEY) : null
@@ -68,6 +83,8 @@ export default function IntentsPage() {
       setDeleting(null)
     }
   }
+
+  const toggle = (id: string) => setExpanded(prev => prev === id ? null : id)
 
   if (loading) {
     return (
@@ -122,32 +139,64 @@ export default function IntentsPage() {
             </div>
           ) : (
             <div className={styles.intentList}>
-              {intents.map(intent => (
-                <div key={intent.id} className={styles.intentRow}>
-                  <div className={styles.intentLeft}>
-                    <span className={`${styles.intentSide} ${intent.side === 'demand' ? styles.sideDemand : styles.sideSupply}`}>
-                      {intent.side === 'demand' ? 'SEEKING' : 'OFFERING'}
-                    </span>
-                    <div className={styles.intentInfo}>
-                      <div className={styles.intentMarket}>
-                        {intent.market.replace(/_/g, ' ')}
+              {intents.map(intent => {
+                const isOpen = expanded === intent.id
+                const text   = intentText(intent)
+                const isActive = intent.status === 'active'
+
+                return (
+                  <div key={intent.id} className={`${styles.intentCard} ${isOpen ? styles.intentCardOpen : ''}`}>
+                    {/* Clickable header row */}
+                    <div
+                      className={styles.intentRow}
+                      onClick={() => toggle(intent.id)}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={e => e.key === 'Enter' && toggle(intent.id)}
+                    >
+                      <div className={styles.intentLeft}>
+                        <span className={`${styles.intentSide} ${intent.side === 'demand' ? styles.sideDemand : styles.sideSupply}`}>
+                          {intent.side === 'demand' ? 'SEEKING' : 'OFFERING'}
+                        </span>
+                        <div className={styles.intentInfo}>
+                          <div className={styles.intentMarket}>
+                            {intent.market.replace(/_/g, ' ')}
+                          </div>
+                          <div className={styles.intentMeta}>
+                            {intent.status !== 'active'
+                              ? <span className={styles.statusBadge}>{intent.status}</span>
+                              : null
+                            }
+                            Posted {timeAgo(intent.created_at)} · {timeUntil(intent.expires_at)}
+                          </div>
+                        </div>
                       </div>
-                      <div className={styles.intentMeta}>
-                        Posted {timeAgo(intent.created_at)} · {timeUntil(intent.expires_at)}
-                      </div>
+                      <span className={`${styles.chevron} ${isOpen ? styles.chevronOpen : ''}`}>›</span>
                     </div>
+
+                    {/* Expanded body */}
+                    {isOpen && (
+                      <div className={styles.intentBody}>
+                        {text ? (
+                          <p className={styles.intentText}>{text}</p>
+                        ) : (
+                          <p className={styles.intentTextEmpty}>No description available.</p>
+                        )}
+                        {isActive && (
+                          <button
+                            type="button"
+                            className={styles.deleteBtn}
+                            onClick={e => { e.stopPropagation(); deleteIntent(intent.id) }}
+                            disabled={deleting === intent.id}
+                          >
+                            {deleting === intent.id ? '…' : 'Withdraw intent'}
+                          </button>
+                        )}
+                      </div>
+                    )}
                   </div>
-                  <button
-                    type="button"
-                    className={styles.deleteBtn}
-                    onClick={() => deleteIntent(intent.id)}
-                    disabled={deleting === intent.id}
-                    aria-label="Delete intent"
-                  >
-                    {deleting === intent.id ? '…' : 'Withdraw'}
-                  </button>
-                </div>
-              ))}
+                )
+              })}
             </div>
           )}
         </div>
