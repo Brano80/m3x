@@ -342,12 +342,12 @@
 
 .postIntentBtn {
   flex: 1;
-  padding: 14px 18px;
+  padding: 10px 16px;
   background: linear-gradient(180deg, #5c9ef3 0%, #3d82d9 50%, #1d5a9e 100%);
   border: none;
   border-radius: 12px;
   color: #fff;
-  font-size: 15px;
+  font-size: 13px;
   font-weight: 600;
   cursor: pointer;
   transition: opacity 0.15s;
@@ -391,6 +391,67 @@
 .inboxBtnArrow {
   font-size: 15px;
   color: rgba(79, 146, 232, 0.5);
+}
+
+.intentsBtn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 18px;
+  background: rgba(79, 146, 232, 0.08);
+  border: 1px solid rgba(79, 146, 232, 0.2);
+  border-radius: 12px;
+  text-decoration: none;
+  transition: background 0.15s, border-color 0.15s;
+  font-size: 15px;
+  font-weight: 600;
+  color: #8ab4ff;
+  white-space: nowrap;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.intentsBtn:hover {
+  background: rgba(79, 146, 232, 0.14);
+  border-color: rgba(79, 146, 232, 0.35);
+}
+
+.intentsSectionHeader {
+  width: 100%;
+  justify-content: space-between;
+}
+
+.intentRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.intentSide {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(79, 146, 232, 0.15);
+  color: #8ab4ff;
+  flex-shrink: 0;
+}
+
+.intentDelete {
+  margin-left: auto;
+  background: none;
+  border: none;
+  color: rgba(255, 80, 80, 0.7);
+  cursor: pointer;
+  font-size: 16px;
+  padding: 4px 8px;
+  line-height: 1;
+}
+
+.intentDelete:hover {
+  color: #ff5050;
 }
 
 /* ── Post Intent Modal ────────────────────────────────────────────────────── */
