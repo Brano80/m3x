@@ -3,6 +3,15 @@ import { getServiceClient } from '@/lib/supabase'
 import { verifyAgent } from '@/lib/auth'
 import { isSafeWebhookUrl } from '@/lib/ssrf'
 
+const MAX_DISPLAY_NAME_LEN = 100
+const MAX_TAGS = 20
+const MAX_TAG_LEN = 64
+
+function isValidStringArray(v: unknown): v is string[] {
+  return Array.isArray(v) && v.length <= MAX_TAGS &&
+    v.every((s) => typeof s === 'string' && s.length > 0 && s.length <= MAX_TAG_LEN)
+}
+
 export async function GET(req: NextRequest) {
   const supabase = getServiceClient()
   const agent = await verifyAgent(req, supabase)
@@ -49,6 +58,35 @@ export async function PATCH(req: NextRequest) {
   if (!Object.keys(updates).length) {
     return NextResponse.json(
       { error: { message: 'No valid fields to update', code: 'BAD_REQUEST' } },
+      { status: 400 }
+    )
+  }
+
+  if (updates.display_name !== undefined && updates.display_name !== null &&
+      (typeof updates.display_name !== 'string' || updates.display_name.length > MAX_DISPLAY_NAME_LEN)) {
+    return NextResponse.json(
+      { error: { message: `display_name must be a string of ${MAX_DISPLAY_NAME_LEN} chars or fewer`, code: 'INVALID_DISPLAY_NAME' } },
+      { status: 400 }
+    )
+  }
+
+  if (updates.markets !== undefined && updates.markets !== null && !isValidStringArray(updates.markets)) {
+    return NextResponse.json(
+      { error: { message: `markets must be an array of up to ${MAX_TAGS} strings of ${MAX_TAG_LEN} chars each`, code: 'INVALID_MARKETS' } },
+      { status: 400 }
+    )
+  }
+
+  if (updates.capabilities !== undefined && updates.capabilities !== null && !isValidStringArray(updates.capabilities)) {
+    return NextResponse.json(
+      { error: { message: `capabilities must be an array of up to ${MAX_TAGS} strings of ${MAX_TAG_LEN} chars each`, code: 'INVALID_CAPABILITIES' } },
+      { status: 400 }
+    )
+  }
+
+  if (updates.auto_reply !== undefined && typeof updates.auto_reply !== 'boolean') {
+    return NextResponse.json(
+      { error: { message: 'auto_reply must be a boolean', code: 'INVALID_AUTO_REPLY' } },
       { status: 400 }
     )
   }

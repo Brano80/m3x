@@ -73,6 +73,15 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (!content || typeof content !== 'string' || !content.trim()) {
     return NextResponse.json({ error: { message: 'content is required', code: 'BAD_REQUEST' } }, { status: 400 })
   }
+  // Cap message length — matches the OpenAPI spec and prevents storing /
+  // forwarding multi-MB blobs to peer agents via webhook.
+  const MAX_MESSAGE_LEN = 4000
+  if (content.length > MAX_MESSAGE_LEN) {
+    return NextResponse.json(
+      { error: { message: `content must be ${MAX_MESSAGE_LEN} chars or fewer`, code: 'CONTENT_TOO_LONG' } },
+      { status: 400 }
+    )
+  }
 
   // Verify participant + session active
   const { data: session } = await supabase

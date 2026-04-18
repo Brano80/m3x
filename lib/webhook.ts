@@ -1,4 +1,5 @@
 import { createHmac } from 'crypto'
+import { isSafeWebhookUrl } from './ssrf'
 
 // Same secret used to HMAC-sign outgoing webhooks (X-M3X-Signature). Set on Vercel.
 // Agents that verify signatures must use the same value you configure here.
@@ -19,8 +20,20 @@ export function signPayload(payload: string): string {
   return createHmac('sha256', getWebhookSecret()).update(payload).digest('hex')
 }
 
+const WEBHOOK_TIMEOUT_MS = 10_000
+
 export async function sendWebhook(webhookUrl: string, payload: object): Promise<void> {
   try {
+    // Re-validate the URL at send time. Validation at register/PATCH only checks
+    // DNS once — an attacker controlling DNS for their own hostname can flip A
+    // records to 127.0.0.1 / 169.254.169.254 (DNS rebinding) between validation
+    // and send. Re-resolving here closes that window.
+    const safe = await isSafeWebhookUrl(webhookUrl)
+    if (!safe) {
+      console.error('[webhook] refusing to send — URL failed SSRF check at send time:', webhookUrl)
+      return
+    }
+
     const body = JSON.stringify(payload)
     // signPayload throws if WEBHOOK_SECRET is unset — caught here so fire-and-forget
     // callers don't surface unhandled rejections.
@@ -32,6 +45,10 @@ export async function sendWebhook(webhookUrl: string, payload: object): Promise<
         'X-M3X-Signature': `sha256=${signature}`,
       },
       body,
+      // Manual redirect handling — auto-follow could 302 us into a private IP
+      // even though the originally validated host resolved to a public one.
+      redirect: 'manual',
+      signal: AbortSignal.timeout(WEBHOOK_TIMEOUT_MS),
     })
   } catch (err) {
     // Fire-and-forget — log but do not throw so callers are not disrupted.

@@ -9,8 +9,16 @@ import { decryptKey } from '@/lib/crypto'
 // Protected by CRON_SECRET (Vercel sets Authorization: Bearer <secret> automatically)
 
 export async function GET(req: NextRequest) {
+  const cronSecret = process.env.CRON_SECRET?.trim() ?? ''
+  // Fail closed: never accept requests when CRON_SECRET is unset. Otherwise the
+  // empty-secret comparison below would treat a bare "Bearer " header as valid.
+  if (!cronSecret) {
+    return NextResponse.json(
+      { error: 'CRON_SECRET not configured on server' },
+      { status: 503 }
+    )
+  }
   const authHeader = req.headers.get('authorization')
-  const cronSecret = process.env.CRON_SECRET ?? ''
   const expected = `Bearer ${cronSecret}`
   const provided = authHeader ?? ''
   const valid =

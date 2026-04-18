@@ -13,6 +13,13 @@ const VALID_MARKETS = [
   'hiring', 'partnerships', 'legal_services', 'procurement'
 ]
 
+// Hard caps on user-supplied intent text. Without these, an attacker can post
+// large bodies that fan out into paid HuggingFace embedding + Gemini extract +
+// Gemini classify calls, amplifying cost and storage per request.
+const MAX_INTENT_TEXT_LEN = 4000
+const MAX_TTL_HOURS = 2160 // 90 days, matches OpenAPI spec
+const MIN_TTL_HOURS = 1
+
 async function classifyMarket(offersText: string, seekingText: string): Promise<string> {
   try {
     const prompt = `Given this intent, classify it into exactly one of these markets:
@@ -60,6 +67,28 @@ export async function POST(req: NextRequest) {
       )
     }
 
+    // ttl_hours bounds — prevents intents from living for years and gaming
+    // the per-agent active-intent counter
+    if (typeof ttl_hours !== 'number' || !Number.isFinite(ttl_hours) ||
+        ttl_hours < MIN_TTL_HOURS || ttl_hours > MAX_TTL_HOURS) {
+      return NextResponse.json(
+        { error: { message: `ttl_hours must be between ${MIN_TTL_HOURS} and ${MAX_TTL_HOURS}`, code: 'INVALID_TTL' } },
+        { status: 400 }
+      )
+    }
+
+    // Length bounds on offers/seeking — they flow into paid HuggingFace
+    // embedding + Gemini extract + Gemini classify calls.
+    const offersTextRaw = typeof offers === 'string' ? offers : (offers?.description ?? JSON.stringify(offers))
+    const seekingTextRaw = typeof seeking === 'string' ? seeking : (seeking?.description ?? JSON.stringify(seeking))
+    if (typeof offersTextRaw !== 'string' || typeof seekingTextRaw !== 'string' ||
+        offersTextRaw.length > MAX_INTENT_TEXT_LEN || seekingTextRaw.length > MAX_INTENT_TEXT_LEN) {
+      return NextResponse.json(
+        { error: { message: `offers and seeking text must be strings under ${MAX_INTENT_TEXT_LEN} chars each`, code: 'INTENT_TOO_LONG' } },
+        { status: 400 }
+      )
+    }
+
     // ---------- Rate limiting ----------
     const ACTIVE_INTENT_LIMIT = 5   // max concurrent active intents per agent
     const DAILY_POST_LIMIT    = 10  // max intent posts per 24h per agent
@@ -102,8 +131,8 @@ export async function POST(req: NextRequest) {
     }
     // -----------------------------------
 
-    const offersText = typeof offers === 'string' ? offers : (offers.description ?? JSON.stringify(offers))
-    const seekingText = typeof seeking === 'string' ? seeking : (seeking.description ?? JSON.stringify(seeking))
+    const offersText = offersTextRaw
+    const seekingText = seekingTextRaw
 
     // Auto-classify market if not provided
     const market = (marketRaw && VALID_MARKETS.includes(marketRaw))

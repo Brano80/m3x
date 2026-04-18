@@ -1,3 +1,13 @@
+// Run once in Supabase SQL editor:
+//   create table registration_attempts (
+//     id uuid primary key default gen_random_uuid(),
+//     ip text not null,
+//     created_at timestamptz not null default now()
+//   );
+//   create index on registration_attempts (ip, created_at);
+//   alter table registration_attempts enable row level security;
+//   -- Rows older than 24h can be pruned by the expire cron.
+
 import { NextRequest, NextResponse } from 'next/server'
 import { getServiceClient } from '@/lib/supabase'
 import { generateToken, hashToken } from '@/lib/auth'
@@ -6,31 +16,46 @@ import { isSafeWebhookUrl } from '@/lib/ssrf'
 
 const VALID_PROVIDERS = ['gemini', 'anthropic']
 
-const ipRegistry = new Map<string, { count: number; resetAt: number }>()
-const RATE_LIMIT = 5 // max registrations
-const WINDOW_MS = 60 * 60 * 1000 // per 1 hour
+// Hard caps on user-supplied profile fields.
+const MAX_HANDLE_LEN = 64
+const MAX_DISPLAY_NAME_LEN = 100
+const MAX_TAGS = 20
+const MAX_TAG_LEN = 64
+
+function isValidStringArray(v: unknown): v is string[] {
+  return Array.isArray(v) && v.length <= MAX_TAGS &&
+    v.every((s) => typeof s === 'string' && s.length > 0 && s.length <= MAX_TAG_LEN)
+}
+
+const RATE_LIMIT = 5 // max registrations per IP per hour
+const WINDOW_MS = 60 * 60 * 1000
 
 export async function POST(req: NextRequest) {
-  const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? '0.0.0.0'
+  const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown'
+  const supabase = getServiceClient()
 
-  let entry = ipRegistry.get(ip)
-  if (entry && entry.resetAt <= Date.now()) {
-    ipRegistry.delete(ip)
-    entry = undefined
-  }
+  // Durable per-IP rate limit. In-memory Maps reset on every Vercel cold
+  // start, so a script can bypass them by hammering enough concurrent
+  // invocations to spawn fresh lambdas. Supabase gives us one shared state.
+  const windowStart = new Date(Date.now() - WINDOW_MS).toISOString()
+  const { count: recentCount } = await supabase
+    .from('registration_attempts')
+    .select('*', { count: 'exact', head: true })
+    .eq('ip', ip)
+    .gte('created_at', windowStart)
 
-  if (entry && entry.count >= RATE_LIMIT) {
+  if ((recentCount ?? 0) >= RATE_LIMIT) {
     return NextResponse.json(
       { error: { message: 'Too many registrations from this IP. Try again later.', code: 'RATE_LIMITED' } },
       { status: 429 }
     )
   }
 
-  if (!entry) {
-    ipRegistry.set(ip, { count: 1, resetAt: Date.now() + WINDOW_MS })
-  } else {
-    entry.count++
-  }
+  // Log this attempt before doing the expensive work — it's fine if
+  // registration later fails for other reasons; the limit is on attempts.
+  await supabase
+    .from('registration_attempts')
+    .insert({ ip, created_at: new Date().toISOString() })
 
   try {
     const body = await req.json()
@@ -43,9 +68,30 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    if (!/^[a-z0-9._-]+$/.test(handle)) {
+    if (typeof handle !== 'string' || handle.length > MAX_HANDLE_LEN || !/^[a-z0-9._-]{1,64}$/.test(handle)) {
       return NextResponse.json(
-        { error: { message: 'handle must be lowercase alphanumeric, dots, hyphens, underscores only', code: 'INVALID_HANDLE' } },
+        { error: { message: `handle must be 1-${MAX_HANDLE_LEN} lowercase alphanumeric chars (dots, hyphens, underscores allowed)`, code: 'INVALID_HANDLE' } },
+        { status: 400 }
+      )
+    }
+
+    if (display_name !== undefined && (typeof display_name !== 'string' || display_name.length > MAX_DISPLAY_NAME_LEN)) {
+      return NextResponse.json(
+        { error: { message: `display_name must be a string of ${MAX_DISPLAY_NAME_LEN} chars or fewer`, code: 'INVALID_DISPLAY_NAME' } },
+        { status: 400 }
+      )
+    }
+
+    if (markets !== undefined && !isValidStringArray(markets)) {
+      return NextResponse.json(
+        { error: { message: `markets must be an array of up to ${MAX_TAGS} strings of ${MAX_TAG_LEN} chars each`, code: 'INVALID_MARKETS' } },
+        { status: 400 }
+      )
+    }
+
+    if (capabilities !== undefined && !isValidStringArray(capabilities)) {
+      return NextResponse.json(
+        { error: { message: `capabilities must be an array of up to ${MAX_TAGS} strings of ${MAX_TAG_LEN} chars each`, code: 'INVALID_CAPABILITIES' } },
         { status: 400 }
       )
     }
@@ -59,8 +105,6 @@ export async function POST(req: NextRequest) {
         )
       }
     }
-
-    const supabase = getServiceClient()
 
     const { data: existing } = await supabase
       .from('agents')

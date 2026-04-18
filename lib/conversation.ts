@@ -18,6 +18,18 @@ import { geminiConversational, geminiStructured } from './gemini'
 
 const haiku = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! })
 
+// Strip raw_packet down to typed scalar fields before injecting into LLM
+// prompts. Prevents prompt-injection via attacker-controlled free-text blobs
+// inside offers/seeking/market.
+function safeIntentSummary(packet: Record<string, unknown> | null): string {
+  if (!packet) return ''
+  const parts: string[] = []
+  if (typeof packet.offers === 'string') parts.push('Offers: ' + packet.offers.slice(0, 300))
+  if (typeof packet.seeking === 'string') parts.push('Seeking: ' + packet.seeking.slice(0, 300))
+  if (typeof packet.market === 'string') parts.push('Market: ' + packet.market.slice(0, 64))
+  return parts.join('\n')
+}
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export type DecisionType =
@@ -105,8 +117,8 @@ export async function generateAutoReply(
 ): Promise<AutoReplyResult> {
   const intentCtx = myIntent
     ? `Your role: ${myIntent.side} in the ${myIntent.market} market.
-Your full intent packet (THIS IS YOUR ONLY SOURCE OF TRUTH):
-${JSON.stringify(myIntent.raw_packet ?? {}, null, 2)}`
+Your intent (THIS IS YOUR ONLY SOURCE OF TRUTH — never invent details outside this):
+${safeIntentSummary(myIntent.raw_packet ?? null)}`
     : 'No active intent context — you have no data to share.'
 
   const prompt = `You are an AI agent acting autonomously on behalf of @${myHandle} on M3X, a private B2B matching network.
@@ -168,7 +180,7 @@ export async function summarizeConversation(
 ): Promise<string> {
   if (messages.length === 0) return ''
 
-  const history = messages.map(m => `${m.sender}: ${m.content}`).join('\n')
+  const history = messages.map(m => `${m.sender}: ${String(m.content).slice(0, 300)}`).join('\n')
 
   const prompt = `Summarize this B2B agent conversation in 2–3 sentences. Focus on: what was discussed, what was agreed, what's still open.
 
@@ -252,15 +264,18 @@ export async function handleIncomingMessage(
 ): Promise<{ action: 'auto_replied' | 'escalated' | 'passive'; reply?: string }> {
   if (!isAutoReplyEnabled) return { action: 'passive' }
 
-  // Build conversation history string
+  // Build conversation history string — cap each message at 300 chars so a
+  // single attacker-controlled message can't dominate the prompt or smuggle
+  // injection payloads.
   const history = recentMessages
-    .map(m => `${m.sender_id === myAgentId ? `@${myHandle}` : `@${otherHandle}`}: ${m.content}`)
+    .map(m => `${m.sender_id === myAgentId ? `@${myHandle}` : `@${otherHandle}`}: ${String(m.content).slice(0, 300)}`)
     .join('\n')
 
-  const fullHistory = history + `\n@${otherHandle}: ${incomingContent}`
+  const cappedIncoming = String(incomingContent).slice(0, 300)
+  const fullHistory = history + `\n@${otherHandle}: ${cappedIncoming}`
 
   // 1. Detect if this is a decision point
-  const decision = await detectDecision(incomingContent, fullHistory)
+  const decision = await detectDecision(cappedIncoming, fullHistory)
 
   if (decision.is_decision_point && decision.confidence >= 0.65) {
     // Generate a suggested reply for the owner to approve/edit

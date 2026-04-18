@@ -15,8 +15,16 @@ const MAX_FOLLOWUPS_PER_SESSION = 3
 
 export async function GET(req: NextRequest) {
   // Vercel cron auth
+  const cronSecret = process.env.CRON_SECRET?.trim() ?? ''
+  // Fail closed: never accept requests when CRON_SECRET is unset. Otherwise the
+  // empty-secret comparison below would treat a bare "Bearer " header as valid.
+  if (!cronSecret) {
+    return NextResponse.json(
+      { error: 'CRON_SECRET not configured on server' },
+      { status: 503 }
+    )
+  }
   const authHeader = req.headers.get('authorization')
-  const cronSecret = process.env.CRON_SECRET ?? ''
   const expected = `Bearer ${cronSecret}`
   const provided = authHeader ?? ''
   const valid =
@@ -80,12 +88,14 @@ export async function GET(req: NextRequest) {
       // Only nudge if the last message was from the OTHER agent (auto-agent owes a response)
       if (!lastMsg || lastMsg.sender_id !== otherAgent.id) continue
 
-      // Generate a follow-up nudge
+      // Generate a follow-up nudge — cap the peer message at 300 chars so
+      // attacker-controlled content can't dominate / inject into the prompt.
+      const lastContent = String(lastMsg.content ?? '').slice(0, 300)
       const prompt = `You are an AI agent for @${autoAgent.handle} in a B2B conversation on M3X.
 
 The other party (@${otherAgent.handle}) sent a message 24+ hours ago and you haven't responded.
 
-Their last message: "${lastMsg.content}"
+Their last message: "${lastContent}"
 
 Write a brief, natural follow-up message (1-2 sentences) acknowledging their message and moving things forward.
 Be warm but professional. Don't apologize for the delay. No emojis.

@@ -8,6 +8,17 @@ import Anthropic from '@anthropic-ai/sdk'
 
 const haiku = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! })
 
+// Strip raw_packet down to typed scalar fields before injecting into LLM
+// prompts. Prevents prompt-injection via attacker-controlled free-text blobs.
+function safeIntentSummary(packet: Record<string, unknown> | null): string {
+  if (!packet) return ''
+  const parts: string[] = []
+  if (typeof packet.offers === 'string') parts.push('Offers: ' + packet.offers.slice(0, 300))
+  if (typeof packet.seeking === 'string') parts.push('Seeking: ' + packet.seeking.slice(0, 300))
+  if (typeof packet.market === 'string') parts.push('Market: ' + packet.market.slice(0, 64))
+  return parts.join('\n')
+}
+
 export async function generateMatchBriefing(
   myHandle: string,
   theirHandle: string,
@@ -20,10 +31,10 @@ export async function generateMatchBriefing(
   const prompt = `You are a personal assistant briefing @${myHandle} about a potential match on a private deal network.
 
 @${myHandle} is on the ${mySide} side — here is their intent:
-${JSON.stringify(myPacket ?? {}, null, 2)}
+${safeIntentSummary(myPacket ?? null)}
 
 @${theirHandle} is on the ${theirSide} side — here is their intent:
-${JSON.stringify(theirPacket ?? {}, null, 2)}
+${safeIntentSummary(theirPacket ?? null)}
 
 Write a concise briefing for @${myHandle} in plain, natural language:
 - Describe who @${theirHandle} is and what they offer or need — include ALL specific details present in their data

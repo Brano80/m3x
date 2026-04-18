@@ -6,12 +6,16 @@ import { runMatchingForIntent } from '@/lib/matching'
 
 const MAX_RUNS_PER_DAY = 5
 
+// Atomic, race-free daily rate limit. Reads + writes happen in a single
+// conditional UPDATE — two concurrent requests can no longer both pass the
+// "still under limit" check.
 async function checkRateLimit(supabase: any, agent: any): Promise<{ allowed: boolean; remaining: number }> {
   const now = new Date()
   const resetAt = agent.match_runs_reset_at ? new Date(agent.match_runs_reset_at) : new Date(0)
   const isNewDay = now.toDateString() !== resetAt.toDateString()
 
   if (isNewDay) {
+    // First run of a new day — reset counter to 1.
     await supabase
       .from('agents')
       .update({ daily_match_runs: 1, match_runs_reset_at: now.toISOString() })
@@ -19,17 +23,27 @@ async function checkRateLimit(supabase: any, agent: any): Promise<{ allowed: boo
     return { allowed: true, remaining: MAX_RUNS_PER_DAY - 1 }
   }
 
-  const runs = agent.daily_match_runs ?? 0
-  if (runs >= MAX_RUNS_PER_DAY) {
+  const currentRuns = agent.daily_match_runs ?? 0
+
+  // Atomic increment guarded by `daily_match_runs < MAX_RUNS_PER_DAY`. Postgres
+  // serialises concurrent UPDATEs on the same row, so only one of N concurrent
+  // callers under the limit will succeed at the boundary.
+  const { data: updated } = await supabase
+    .from('agents')
+    .update({
+      daily_match_runs: currentRuns + 1,
+      match_runs_reset_at: agent.match_runs_reset_at,
+    })
+    .eq('id', agent.id)
+    .lt('daily_match_runs', MAX_RUNS_PER_DAY)
+    .select('id, daily_match_runs')
+    .single()
+
+  if (!updated) {
     return { allowed: false, remaining: 0 }
   }
 
-  await supabase
-    .from('agents')
-    .update({ daily_match_runs: runs + 1 })
-    .eq('id', agent.id)
-
-  return { allowed: true, remaining: MAX_RUNS_PER_DAY - runs - 1 }
+  return { allowed: true, remaining: Math.max(0, MAX_RUNS_PER_DAY - (updated.daily_match_runs ?? currentRuns + 1)) }
 }
 
 export async function POST(req: NextRequest) {

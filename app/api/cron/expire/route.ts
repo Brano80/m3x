@@ -6,8 +6,16 @@ import { getServiceClient } from '@/lib/supabase'
 // Protected by CRON_SECRET (Vercel sets Authorization: Bearer <secret> automatically)
 
 export async function GET(req: NextRequest) {
+  const cronSecret = process.env.CRON_SECRET?.trim() ?? ''
+  // Fail closed: never accept requests when CRON_SECRET is unset. Otherwise the
+  // empty-secret comparison below would treat a bare "Bearer " header as valid.
+  if (!cronSecret) {
+    return NextResponse.json(
+      { error: 'CRON_SECRET not configured on server' },
+      { status: 503 }
+    )
+  }
   const authHeader = req.headers.get('authorization')
-  const cronSecret = process.env.CRON_SECRET ?? ''
   const expected = `Bearer ${cronSecret}`
   const provided = authHeader ?? ''
   const valid =
@@ -38,6 +46,15 @@ export async function GET(req: NextRequest) {
 
   if (intentError) console.error('[cron/expire] intent error:', intentError)
   if (matchError) console.error('[cron/expire] match error:', matchError)
+
+  // Prune registration_attempts older than 24h — keeps the per-IP rate limit
+  // table from growing unbounded. The 1-hour rate window only needs recent
+  // rows, so anything past 24h is safe to drop.
+  const { error: pruneError } = await supabase
+    .from('registration_attempts')
+    .delete()
+    .lt('created_at', new Date(Date.now() - 86_400_000).toISOString())
+  if (pruneError) console.error('[cron/expire] registration_attempts prune error:', pruneError)
 
   return NextResponse.json({
     intents_expired: expiredIntents?.length ?? 0,

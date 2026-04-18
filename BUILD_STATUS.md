@@ -180,7 +180,7 @@ Making M3X findable and usable by AI agents without human setup. Ordered by impa
 |------|----------|--------|-------|
 | `llms.txt` | High | ✅ | `/llms.txt` — tells AI agents what M3X is, how to connect via MCP/REST/A2A, how matching works, privacy model, markets. |
 | OpenAPI spec at `/api/openapi.json` | High | ✅ | Full machine-readable API spec — all 15 endpoints, schemas, auth, descriptions. CORS-open, cached 1h. Any agent or tool can self-configure. |
-| MCP registry listings | High | ❌ | Submit `m3x-mcp-server` to Anthropic MCP registry, `mcp.so`, `glama.ai`. Manual submission required. |
+| MCP registry listings | High | ✅ | `mcp.so` — live (2026-04-18). `glama.ai` — submitted for review (2026-04-18). |
 | `<link rel="agent">` in `<head>` | Medium | ✅ | Added to `app/layout.tsx` — points to `/.well-known/agent.json` on every page. |
 | `robots.txt` + sitemap | Medium | ✅ | `robots.txt` explicitly allows GPTBot, ClaudeBot, PerplexityBot. Sitemap at `/sitemap.xml` covers homepage, /register, all 8 market pages. |
 | A2A agent card quality | Low | ❌ | `capabilities` and `skills` arrays are empty for new agents — richer cards = better A2A agent matching. Prompt agents to fill on registration. |
@@ -190,6 +190,74 @@ Making M3X findable and usable by AI agents without human setup. Ordered by impa
 ## ❌ Phase 3 (not started)
 
 x402/AP2, ERC-8004, NANDA index, network analytics dashboard.
+
+---
+
+## 🧭 Strategy — 2026-04-18
+
+### What's been built that matters
+
+`lib/conversation.ts` implements the "autonomous-but-escalates-before-committing" pattern — agent handles info-gathering autonomously, stops and notifies owner at any decision point (price, timeline, commitment). The escalation UI (Approve / Edit / Discard) is the productized human-in-the-loop primitive. This is what the industry is calling "Harness Engineering" right now. M3X shipped it April 16.
+
+### Positioning decision (standing)
+
+M3X = private introduction layer. Not a Tobira competitor. Not a deal-execution platform. The "step out after handshake" decision is correct and stays.
+
+New question to hold: **Is M3X competing with vertical compliance agents (Spektr, etc.) or is M3X the substrate they run on?** The trust + DID + handshake layer M3X already has is exactly what vertical agents need for cross-org introductions. Watch whether Spektr-style players build their own identity/DID or outsource it — if they outsource it, that's a BD opportunity.
+
+---
+
+### Next 2 weeks — ordered by priority
+
+| Priority | Item | Notes |
+|----------|------|-------|
+| 1 | MCP registry submissions | mcp.so + glama.ai — hours of work, biggest distribution miss right now. Every week unlisted = lost installs. |
+| 2 | Phase E spec doc — Receipt Attestation | Write the open spec now (GitHub repo + short doc). Category language is first-mover, code isn't. See Phase E below. |
+| 3 | Agent Health dashboard tab | Data already exists (`auto_reply_count`, `response_rate`, escalation patterns). One tab, no new infrastructure. |
+| 4 | BD outreach | Only after registry submissions. Reach out to Spektr-adjacent vertical agents once llms.txt / OpenAPI are indexed. |
+
+---
+
+### Phase E — Receipt Attestation (spec first, ship later)
+
+**The idea:** After a handshake goes active, agents that transact in their own tools (x402, AP2, ERC-8004, Stripe, anything) can optionally POST a signed receipt attestation back to M3X.
+
+Attestation says: *"Agent A confirms value $X transferred to Agent B, referencing handshake Y, on rail Z."*
+
+M3X verifies the signature, stores the receipt. Nothing else. M3X does not hold funds, does not escrow, does not arbitrate.
+
+**Why it matters:**
+
+- **Trust score gets ground truth.** Right now trust is behavioral (handshake response rate). With receipts, trust is weighted by real closed deal volume — that's the moat.
+- **Take rate becomes possible.** Charge a few bps on receipts settled via x402/AP2. Zero custodial risk. Optional, opt-in.
+- **Market intelligence database.** Right now M3X sees handshakes. With receipts, M3X sees actual conversion. The long-term monetization noted in the Negotiation Toolkit section — this is how you get that data.
+- **Zero new legal surface.** Same posture as Plaid's transaction feed, not Stripe's ledger.
+
+**Sequencing:**
+- Now: write M3X Receipt Attestation v0.1 as an open spec. GitHub repo + Show HN.
+- Q3 2026: ship read-side only — view receipts on agent profiles, trust weighted by closed volume.
+- Q4 2026 / 2027: optional bps fee when x402 or AP2 reach critical mass.
+
+**Why write the spec now:** x402 hasn't won yet. Writing the spec now plants the flag while the category has no incumbent. Shipping code can wait for market signal; owning the language cannot.
+
+---
+
+### Opportunities — ranked
+
+| Score | Opportunity | Decision |
+|-------|-------------|----------|
+| 8/10 | Phase E — Receipt Attestation spec | ✅ Do it — write spec next |
+| 8/10 | Agent Health dashboard tab | ✅ Do it — data already exists |
+| 7/10 | Reframe as substrate for vertical compliance agents (Spektr-style) | 🟡 Hold — watch if they build or outsource identity/DID |
+| 5/10 | Open SDK (`@m3x/agent-loop`) from `lib/conversation.ts` | ❌ Premature — too coupled to Supabase, no user base yet. Revisit after M3X has traction. |
+
+### Risks — standing
+
+| Risk | Status |
+|------|--------|
+| "Private pool" terminology adjacent to regulated finance terms | 🟡 Note for fundraising materials — use "private matching pool". Not a blocker at this stage. |
+| Phase 3 x402/AP2 dismissal may be premature if agent payments standardize in 2026 | 🟡 Addressed by Phase E receipt spec — captures value without custody risk |
+| MCP registry unlisted = distribution miss | ❌ Fix this week |
 
 ---
 
@@ -401,18 +469,20 @@ Full codebase audit completed. Findings ordered by severity. Quick wins marked a
 | H5 | `webhook_url` leaked in public `/api/did/*` and `/api/a2a/:handle` — contradicts dark pool promise | `lib/did.ts`: removed `#webhook` service; `AgentForDid` type no longer carries `webhook_url`/`a2a_endpoint`; `#a2a` always points to M3X proxy. DID routes: dropped `webhook_url`/`a2a_endpoint` from `SELECT`. A2A card: `url`/`provider.url` → `${APP_URL}/api/a2a`; `capabilities.pushNotifications` hard-`false`. Private identity only revealed after mutual handshake accept. |
 | H6 | `/api/debug` unauthenticated — exposes infra state for reconnaissance | `app/api/debug/route.ts`: requires `Authorization: Bearer <DEBUG_SECRET>`, compared with `crypto.timingSafeEqual`. Returns 404 when `DEBUG_SECRET` unset (endpoint disabled), 401 on wrong/missing token, infra JSON only on valid match. |
 
-### ❌ To fix — before real users (pre-launch)
+### ✅ Fixed (2026-04-17) — batch 2
 
-| ID | Severity | Finding | Notes |
-|----|----------|---------|-------|
-| C2 | Critical | SSRF via `webhook_url` — raw `fetch()` with no IP allowlist | Block RFC1918, loopback, link-local, metadata IPs; require `https://`; add on registration + on PATCH |
-| C3 | Critical | Unauthenticated registration, no rate limit → spam / cost abuse | Per-IP rate limit minimum; Cloudflare Turnstile when public |
-| C4 | Critical | Gemini API key passed as URL query string (`?key=`) — leaks in logs | Scrub `?key=` from error traces; confirm no APM logs request URLs |
-| H1 | High | Bearer token in URL query string (MCP, QR) + stored in `localStorage` | Issue short-lived single-use magic link for QR; accept MCP token only in `Authorization` header |
-| H2 | High | BYOK key derivation uses static salt — all records share same derived key | Use random per-record salt stored with ciphertext; or HKDF from KMS-held master key |
-| H4 | High | Prompt injection via chat history — `raw_packet` in LLM context; crafted message could echo private intent fields | Inject summarized fields only (not raw JSON); add output filter rejecting drafts that echo `raw_packet` keys |
-| M6 | Medium | Cron secret compared with `!==` (not constant-time) | Replace with `crypto.timingSafeEqual` |
-| M9 | Medium | TOCTOU race on `handshake/accept` — two concurrent accepts can both pass state check | Guard with optimistic update (`UPDATE … WHERE state = 'pending'`), check `rowCount === 0` |
+| ID | Finding | Fix |
+|----|---------|-----|
+| C2 | SSRF via `webhook_url` — raw `fetch()` with no IP allowlist | `lib/ssrf.ts`: `isSafeWebhookUrl()` — requires `https://`, DNS-resolves hostname, blocks all RFC1918/loopback/link-local/ULA ranges (IPv4 + IPv6). Called in `register` and `PATCH /api/agent/me` before saving. |
+| C3 | Unauthenticated registration, no rate limit → spam / cost abuse | `app/api/agent/register/route.ts`: in-memory `ipRegistry` — 5 registrations per IP per hour; returns 429 `RATE_LIMITED` on breach. |
+| C4 | Gemini API key in URL query string (`?key=`) — leaks in logs | `lib/gemini.ts`: both `geminiStructured` and `geminiConversational` now pass key via `x-goog-api-key` header; `?key=` removed from URL entirely. |
+
+### ❌ To fix — before real users (pre-launch)
+| H1 | High | Bearer token in URL query string (MCP, QR) + stored in `localStorage` | ✅ Fixed 2026-04-17: MCP reads `Authorization: Bearer` first, `?token=` as fallback. Register page connector URL no longer contains token — shown separately with env var instructions. |
+| H2 | High | BYOK key derivation uses static salt — all records share same derived key | ✅ Fixed 2026-04-17: `lib/crypto.ts` — `encryptKey()` generates random 16-byte salt per record; format is now `iv:salt:tag:ciphertext`. Legacy 3-part format still decrypts via static salt for existing rows. |
+| H4 | High | Prompt injection via chat history — `raw_packet` in LLM context; crafted message could echo private intent fields | ✅ Fixed 2026-04-17: `draft/route.ts` — `safeIntentSummary()` extracts only typed scalar fields (capped at 300 chars each); `JSON.stringify(raw_packet)` removed from prompt. Message content also capped at 300 chars. |
+| M6 | Medium | Cron secret compared with `!==` (not constant-time) | ✅ Fixed 2026-04-17: all 3 cron routes use `timingSafeEqual` — match, expire, followup. |
+| M9 | Medium | TOCTOU race on `handshake/accept` — two concurrent accepts can both pass state check | ✅ Fixed 2026-04-17: load handshake without state filter; explicit 409 if already resolved; atomic `.update().eq('state','pending')` — only first concurrent accept wins. |
 
 ### 🟡 Known / accepted for now
 
