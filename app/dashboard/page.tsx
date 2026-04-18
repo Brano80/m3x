@@ -403,7 +403,7 @@ function Dashboard({
         text: `Intent posted — ${marketLabel} (${sideLabel}) · ${timeUntil(intent.expires_at)}`,
         timeIso: intent.created_at,
         read: true,
-        href: '/dashboard',
+        href: '/intents',
       })
     }
 

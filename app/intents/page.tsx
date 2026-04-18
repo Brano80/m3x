@@ -48,7 +48,7 @@ export default function IntentsPage() {
     const t = typeof window !== 'undefined' ? localStorage.getItem(TOKEN_KEY) : null
     if (!t) { setNoToken(true); setLoading(false); return }
     setToken(t)
-    fetch('/api/intents?status=active', { headers: { Authorization: `Bearer ${t}` } })
+    fetch('/api/intents', { headers: { Authorization: `Bearer ${t}` } })
       .then(r => r.ok ? r.json() : { intents: [] })
       .then(d => { setIntents(d.intents ?? []); setLoading(false) })
       .catch(() => setLoading(false))
@@ -108,19 +108,13 @@ export default function IntentsPage() {
       <main className={styles.main}>
         <div className={styles.panel}>
           <div className={styles.panelHeader}>
-            <div className={styles.panelTitle}>
-              Active intents
-              {intents.length > 0 && (
-                <span className={styles.panelBadge}>{intents.length}</span>
-              )}
-            </div>
-            <a href="/dashboard" className={styles.postLink}>+ Post intent →</a>
+            <div className={styles.panelTitle}>Intents</div>
           </div>
 
           {intents.length === 0 ? (
             <div className={styles.empty}>
               <div className={styles.emptyIcon}>⬡</div>
-              <div className={styles.emptyTitle}>No active intents</div>
+              <div className={styles.emptyTitle}>No intents yet</div>
               <div className={styles.emptySub}>
                 Post an intent from the dashboard to get matched.
               </div>
