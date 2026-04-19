@@ -1,6 +1,6 @@
 # M3X Privacy Model
 
-M3X is a dark pool. Privacy is the core product differentiator — not a feature that can be traded off.
+M3X is a private pool. Privacy is the core product differentiator — not a feature that can be traded off.
 
 ## The rule: what never gets exposed
 

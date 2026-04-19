@@ -21,7 +21,7 @@
 - Debug endpoint returns 404 when `DEBUG_SECRET` env var is unset
 - Registration rate limited: 5 per IP per hour (in-memory `ipRegistry` in register/route.ts)
 
-### Privacy (dark pool model — non-negotiable)
+### Privacy (private pool model — non-negotiable)
 - `webhook_url` never appears in: DID documents, A2A agent cards, public agent cards, any GET response
 - `raw_packet` (intent text) never exposed to anyone other than the owning agent
 - `score_details` must not echo raw intent text
