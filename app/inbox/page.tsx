@@ -429,8 +429,8 @@ function ChatView({
         </div>
       )}
 
-      {/* Outcome banner — shown as soon as any message has been sent */}
-      {!outcome && messages.filter(m => m.status === 'sent').length >= 1 && (
+      {/* Outcome banner — shown once the current agent has sent 3+ messages (exit phase) */}
+      {!outcome && messages.filter(m => m.status === 'sent' && m.sender_id === agentId).length >= 3 && (
         <div className={styles.outcomeBanner}>
           <span className={styles.outcomeBannerText}>Was this introduction successful?</span>
           <button
