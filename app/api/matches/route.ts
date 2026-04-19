@@ -61,13 +61,16 @@ export async function GET(req: NextRequest) {
     }
   })
 
-  // Deduplicate — one card per matched agent, keep highest score
+  // Deduplicate — one card per (matched agent + my intent) pair, keep highest score
+  // Keyed on both IDs so the same agent can appear for different markets/intents
   const seen = new Map<string, typeof mapped[0]>()
   for (const m of mapped) {
     const agentId = (m.matched_agent as any)?.id
+    const intentId = (m.my_intent as any)?.id
     if (!agentId) continue
-    const existing = seen.get(agentId)
-    if (!existing || m.score > existing.score) seen.set(agentId, m)
+    const key = `${agentId}:${intentId ?? 'none'}`
+    const existing = seen.get(key)
+    if (!existing || m.score > existing.score) seen.set(key, m)
   }
   const sanitized = Array.from(seen.values())
 
