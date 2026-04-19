@@ -497,6 +497,7 @@ export default function InboxPage() {
       const d = await convsRes.json()
       setConversations(d.conversations ?? [])
       if (autoSelectHandle) {
+        // Pick the newest conversation with that handle (first in list — API sorts newest first)
         const conv = (d.conversations ?? []).find(
           (c: Conversation) => c.other_agent.handle === autoSelectHandle
         )

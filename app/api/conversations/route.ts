@@ -21,7 +21,7 @@ export async function GET(req: NextRequest) {
     .select('id, handshake_id, agent_a_id, agent_b_id, state, session_state, pending_reply, agent_analysis, last_message_at, created_at')
     .or(`agent_a_id.eq.${agent.id},agent_b_id.eq.${agent.id}`)
     .eq('state', 'active')
-    .order('last_message_at', { ascending: false, nullsFirst: false })
+    .order('last_message_at', { ascending: false, nullsFirst: true })
 
   if (!sessions?.length) {
     return NextResponse.json({ conversations: [], count: 0 })
