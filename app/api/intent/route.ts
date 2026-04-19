@@ -10,8 +10,9 @@ import { geminiStructured } from '@/lib/gemini'
 import { recomputeAgentCard } from '@/lib/enrich-agent-card'
 
 const VALID_MARKETS = [
-  'venture_capital', 'b2b_saas', 'freelance', 'cofounder',
-  'hiring', 'partnerships', 'legal_services', 'procurement'
+  'venture_capital', 'ma_deal_flow', 'real_estate', 'private_equity',
+  'b2b_saas', 'legal_services', 'procurement', 'healthcare',
+  'freelance', 'cofounder', 'hiring', 'partnerships',
 ]
 
 // Hard caps on user-supplied intent text. Without these, an attacker can post
@@ -24,7 +25,7 @@ const MIN_TTL_HOURS = 1
 async function classifyMarket(offersText: string, seekingText: string): Promise<string> {
   try {
     const prompt = `Given this intent, classify it into exactly one of these markets:
-venture_capital, b2b_saas, freelance, cofounder, hiring, partnerships, legal_services, procurement
+venture_capital, ma_deal_flow, real_estate, private_equity, b2b_saas, legal_services, procurement, healthcare, freelance, cofounder, hiring, partnerships
 
 Intent:
 Offering: ${offersText}

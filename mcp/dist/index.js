@@ -69,7 +69,7 @@ Use 'supply' when you offer something, 'demand' when you need something.
 Returns: intent ID and confirmation.`,
     inputSchema: z.object({
         side: z.enum(["supply", "demand"]).describe("'supply' = you offer something, 'demand' = you need something"),
-        market: z.string().optional().describe("Market (optional — auto-classified by AI if omitted): venture_capital, b2b_saas, freelance, cofounder, hiring, partnerships, legal_services, procurement"),
+        market: z.string().optional().describe("Market (optional — auto-classified by AI if omitted): venture_capital, ma_deal_flow, real_estate, private_equity, b2b_saas, legal_services, procurement, healthcare, freelance, cofounder, hiring, partnerships"),
         offers: z.string().min(10).describe("What you offer — plain text"),
         seeking: z.string().min(10).describe("What you are looking for — plain text"),
         webhook_url: z.string().url().optional().describe("URL to receive match notifications"),

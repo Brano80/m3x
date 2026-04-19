@@ -45,7 +45,7 @@ const TOOLS = [
         market: {
           type: 'string',
           description:
-            'Market: venture_capital, b2b_saas, freelance, cofounder, hiring, partnerships, legal_services, procurement',
+            'Market: venture_capital, ma_deal_flow, real_estate, private_equity, b2b_saas, legal_services, procurement, healthcare, freelance, cofounder, hiring, partnerships',
         },
         offers: {
           type: 'string',
