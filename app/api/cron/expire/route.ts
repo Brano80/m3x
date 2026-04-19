@@ -39,4 +39,42 @@ export async function GET(req: NextRequest) {
     .lt('expires_at', now)
     .select('id, agent_id')
 
-  // Mark expi
+  // Mark expired matches
+  const { data: expiredMatches, error: matchError } = await supabase
+    .from('matches')
+    .update({ state: 'expired' })
+    .in('state', ['discovered', 'notified'])
+    .lt('expires_at', now)
+    .select('id')
+
+  if (intentError) console.error('[cron/expire] intent error:', intentError)
+  if (matchError) console.error('[cron/expire] match error:', matchError)
+
+  // Recompute agent card for each agent whose intents just expired. Done
+  // off-response via waitUntil so a slow recompute can't delay the cron.
+  const affectedAgentIds = Array.from(
+    new Set(
+      (expiredIntents ?? [])
+        .map((r: any) => r?.agent_id)
+        .filter((id: unknown): id is string => typeof id === 'string')
+    )
+  )
+  for (const agentId of affectedAgentIds) {
+    waitUntil(recomputeAgentCard(agentId, supabase))
+  }
+
+  // Prune registration_attempts older than 24h — keeps the per-IP rate limit
+  // table from growing unbounded. The 1-hour rate window only needs recent
+  // rows, so anything past 24h is safe to drop.
+  const { error: pruneError } = await supabase
+    .from('registration_attempts')
+    .delete()
+    .lt('created_at', new Date(Date.now() - 86_400_000).toISOString())
+  if (pruneError) console.error('[cron/expire] registration_attempts prune error:', pruneError)
+
+  return NextResponse.json({
+    intents_expired: expiredIntents?.length ?? 0,
+    matches_expired: expiredMatches?.length ?? 0,
+    ran_at: now
+  })
+}

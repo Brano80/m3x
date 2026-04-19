@@ -125,4 +125,23 @@ Reply with ONLY the message text.`
           last_followup_at: new Date().toISOString(),
           auto_reply_count: (session.auto_reply_count ?? 0) + 1,
         })
-        .eq('id', sess
+        .eq('id', session.id)
+
+      // Notify the other agent via FCM
+      if (otherAgent?.fcm_token) {
+        await sendFcmPush(otherAgent.fcm_token, {
+          title: `@${autoAgent.handle}`,
+          body: nudgeText.slice(0, 100),
+          url: 'https://m3x.space/inbox',
+          tag: 'm3x-message',
+        })
+      }
+
+      nudged++
+    } catch (err) {
+      console.error('[followup] session error', session.id, err)
+    }
+  }
+
+  return NextResponse.json({ nudged })
+}

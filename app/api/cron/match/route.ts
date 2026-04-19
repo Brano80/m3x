@@ -156,4 +156,15 @@ export async function GET(req: NextRequest) {
           sendWebhook(candidateAgent.webhook_url, webhookPayload(candidateAgent, agent, candidate, intent))
         }
 
-        if (agent.webhook_url || candidateAgent.webhook_url)
+        if (agent.webhook_url || candidateAgent.webhook_url) {
+          await supabase
+            .from('matches')
+            .update({ state: 'notified', push_sent_at: new Date().toISOString() })
+            .eq('id', match.id)
+        }
+      }
+    }
+  }
+
+  return NextResponse.json({ matches_found: totalMatches, agents_processed: agentsProcessed, started_at })
+}

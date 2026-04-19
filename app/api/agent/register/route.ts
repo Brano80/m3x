@@ -116,4 +116,78 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         { error: { message: 'handle already taken', code: 'HANDLE_TAKEN' } },
         { status: 409 }
-  
+      )
+    }
+
+    // BYOK handling
+    let byokKeyEnc: string | null = null
+    let byokProvider: string | null = null
+    if (api_key && api_key_provider) {
+      if (!VALID_PROVIDERS.includes(api_key_provider)) {
+        return NextResponse.json(
+          { error: { message: `api_key_provider must be one of: ${VALID_PROVIDERS.join(', ')}`, code: 'INVALID_PROVIDER' } },
+          { status: 400 }
+        )
+      }
+      if (!isByokConfigured()) {
+        return NextResponse.json(
+          { error: { message: 'BYOK is not enabled on this server', code: 'BYOK_NOT_CONFIGURED' } },
+          { status: 400 }
+        )
+      }
+      byokKeyEnc = encryptKey(api_key)
+      byokProvider = api_key_provider
+    }
+
+    const rawToken = generateToken()
+    const tokenHash = hashToken(rawToken)
+    const did = `did:m3x:${handle}`
+
+    const { data: agent, error: insertError } = await supabase
+      .from('agents')
+      .insert({
+        handle,
+        did,
+        display_name: display_name ?? handle,
+        markets,
+        capabilities,
+        webhook_url: webhook_url ?? null,
+        token_hash: tokenHash,
+        byok_key_enc: byokKeyEnc,
+        byok_provider: byokProvider,
+        created_at: new Date().toISOString(),
+        last_active_at: new Date().toISOString(),
+      })
+      .select('id, handle, did, display_name, markets, capabilities, trust_score')
+      .single()
+
+    if (insertError || !agent) {
+      return NextResponse.json(
+        { error: { message: 'Failed to create agent', code: 'DB_ERROR' } },
+        { status: 500 }
+      )
+    }
+
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://m3x.space'
+
+    return NextResponse.json({
+      agent: {
+        id: agent.id,
+        handle: agent.handle,
+        did: agent.did,
+        display_name: agent.display_name,
+        markets: agent.markets,
+        capabilities: agent.capabilities,
+        trust_score: agent.trust_score,
+      },
+      token: rawToken,
+      mcp_url: `${appUrl}/api/mcp`,
+    }, { status: 201 })
+  } catch (err) {
+    console.error('[register] error', err)
+    return NextResponse.json(
+      { error: { message: 'Internal server error', code: 'INTERNAL_ERROR' } },
+      { status: 500 }
+    )
+  }
+}

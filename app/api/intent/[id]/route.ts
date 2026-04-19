@@ -40,4 +40,11 @@ export async function DELETE(
 
   await supabase
     .from('intents')
-    .update(
+    .update({ status: 'withdrawn' })
+    .eq('id', id)
+
+  // Recompute agent card now that one fewer intent is active. Fire-and-forget.
+  waitUntil(recomputeAgentCard(agent.id, supabase))
+
+  return NextResponse.json({ message: 'Intent withdrawn.' })
+}

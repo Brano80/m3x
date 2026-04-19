@@ -47,4 +47,26 @@ Rules:
 - Do not invent or assume any detail not in the data above
 - Do not mention scores, algorithms, or network names
 - No bullet points — flowing sentences only
-- Under 100 w
+- Under 100 words
+
+Reply with ONLY the briefing text.`
+
+  try {
+    if (process.env.GEMINI_API_KEY) {
+      const text = await geminiConversational(prompt, process.env.GEMINI_API_KEY, 400)
+      if (text?.trim()) return text.trim()
+    }
+  } catch { /* fall through */ }
+
+  try {
+    const res = await haiku.messages.create({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 250,
+      messages: [{ role: 'user', content: prompt }],
+    })
+    const text = res.content[0].type === 'text' ? res.content[0].text.trim() : ''
+    if (text) return text
+  } catch { /* give up */ }
+
+  return ''
+}

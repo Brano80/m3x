@@ -314,4 +314,32 @@ export async function handleIncomingMessage(
   await supabase
     .from('negotiation_sessions')
     .update({
-      last_message_at: new Date().t
+      last_message_at: new Date().toISOString(),
+      last_followup_at: new Date().toISOString(),
+      agent_analysis: analysis,
+      auto_reply_count: (session?.auto_reply_count ?? 0) + 1,
+    })
+    .eq('id', sessionId)
+
+  // Update conversation summary every 5 messages
+  const totalMessages = recentMessages.length + 2 // +incoming +reply
+  if (totalMessages % 5 === 0) {
+    const allMessages = [
+      ...recentMessages.map(m => ({
+        sender: m.sender_id === myAgentId ? `@${myHandle}` : `@${otherHandle}`,
+        content: m.content,
+      })),
+      { sender: `@${otherHandle}`, content: incomingContent },
+      { sender: `@${myHandle}`, content: reply },
+    ]
+    const summary = await summarizeConversation(allMessages)
+    if (summary) {
+      await supabase
+        .from('negotiation_sessions')
+        .update({ summary })
+        .eq('id', sessionId)
+    }
+  }
+
+  return { action: 'auto_replied', reply }
+}

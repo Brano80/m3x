@@ -80,4 +80,22 @@ export async function POST(req: NextRequest) {
 
   if (!myIntents?.length) {
     return NextResponse.json(
-      { matches_
+      { matches_found: 0, matches: [], message: 'No active intents', rate_limit: { remaining } },
+      { headers: { 'X-RateLimit-Limit': String(MAX_RUNS_PER_DAY), 'X-RateLimit-Remaining': String(remaining) } }
+    )
+  }
+
+  let totalFound = 0
+  const allMatches: any[] = []
+
+  for (const intent of myIntents) {
+    const result = await runMatchingForIntent(intent, agent, supabase, resolvedByok)
+    totalFound += result.matches_found
+    allMatches.push(...result.matches)
+  }
+
+  return NextResponse.json(
+    { matches_found: totalFound, matches: allMatches, rate_limit: { remaining } },
+    { headers: { 'X-RateLimit-Limit': String(MAX_RUNS_PER_DAY), 'X-RateLimit-Remaining': String(remaining) } }
+  )
+}
