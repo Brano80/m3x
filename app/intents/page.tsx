@@ -20,6 +20,7 @@ interface Intent {
   raw_packet: RawPacket | null
   created_at: string
   expires_at: string
+  connected: boolean
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -144,6 +145,7 @@ export default function IntentsPage() {
                 const text   = intentText(intent)
                 const isActive = intent.status === 'active'
                 const isWithdrawn = intent.status === 'withdrawn' || intent.status === 'expired'
+                const isConnected = intent.connected
 
                 return (
                   <div key={intent.id} className={`${styles.intentCard} ${isOpen ? styles.intentCardOpen : ''} ${isWithdrawn ? styles.intentCardWithdrawn : ''}`}>
@@ -168,6 +170,9 @@ export default function IntentsPage() {
                               ? <span className={styles.statusBadge}>{intent.status}</span>
                               : null
                             }
+                            {isConnected && (
+                              <span className={styles.connectedBadge}>CONNECTED ✓</span>
+                            )}
                             Posted {timeAgo(intent.created_at)} · {timeUntil(intent.expires_at)}
                           </div>
                         </div>

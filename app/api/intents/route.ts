@@ -34,5 +34,36 @@ export async function GET(req: NextRequest) {
     )
   }
 
-  return NextResponse.json({ intents: data ?? [] })
+  const intents = data ?? []
+
+  // Find which intents have a successful conversation outcome
+  // intent → match → handshake → negotiation_session (outcome = 'successful')
+  const intentIds = intents.map((i: any) => i.id)
+  let connectedIntentIds = new Set<string>()
+
+  if (intentIds.length > 0) {
+    const { data: matches } = await supabase
+      .from('matches')
+      .select('intent_a_id, intent_b_id, agent_a_id, handshakes(id, negotiation_sessions(outcome))')
+      .or(`agent_a_id.eq.${agent.id},agent_b_id.eq.${agent.id}`)
+      .or(`intent_a_id.in.(${intentIds.join(',')}),intent_b_id.in.(${intentIds.join(',')})`)
+
+    for (const m of matches ?? []) {
+      const sessions = (m as any).handshakes?.negotiation_sessions
+      const hasSuccess = Array.isArray(sessions)
+        ? sessions.some((s: any) => s.outcome === 'successful')
+        : sessions?.outcome === 'successful'
+      if (hasSuccess) {
+        if (intentIds.includes(m.intent_a_id)) connectedIntentIds.add(m.intent_a_id)
+        if (intentIds.includes(m.intent_b_id)) connectedIntentIds.add(m.intent_b_id)
+      }
+    }
+  }
+
+  const result = intents.map((i: any) => ({
+    ...i,
+    connected: connectedIntentIds.has(i.id),
+  }))
+
+  return NextResponse.json({ intents: result })
 }
