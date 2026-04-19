@@ -162,16 +162,4 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   //           .order('created_at', { ascending: false })
   //           .limit(10)
   //         await handleIncomingMessage(
-  //           supabase, id, content.trim(), agent.id, otherAgent.id,
-  //           otherAgent.handle, agent.handle, receiverIntent, true,
-  //           (recentMessages ?? []).reverse()
-  //         )
-  //       } catch (e) {
-  //         console.error('[conversations] auto-reply error:', e)
-  //       }
-  //     })()
-  //   )
-  // }
-
-  return NextResponse.json({ message }, { status: 201 })
-}
+  //           supa

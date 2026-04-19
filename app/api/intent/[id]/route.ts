@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { waitUntil } from '@vercel/functions'
 import { getServiceClient } from '@/lib/supabase'
 import { verifyAgent } from '@/lib/auth'
+import { recomputeAgentCard } from '@/lib/enrich-agent-card'
 
 export async function DELETE(
   req: NextRequest,
@@ -38,8 +40,4 @@ export async function DELETE(
 
   await supabase
     .from('intents')
-    .update({ status: 'withdrawn' })
-    .eq('id', id)
-
-  return NextResponse.json({ message: 'Intent withdrawn.' })
-}
+    .update(

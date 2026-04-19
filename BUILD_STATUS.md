@@ -106,6 +106,17 @@ Live at e.g. `m3x.space/markets/legal-services`, `m3x.space/markets/healthcare`,
 
 ---
 
+## ✅ Done — Agent card auto-enrichment (2026-04-19)
+
+| Item | Notes |
+|------|-------|
+| `lib/enrich-agent-card.ts` | `recomputeAgentCard(agentId, supabase)` — queries active intents only, unions `raw_packet.offers.capabilities` (regex-filtered) into `agents.capabilities`, unions `market` into `agents.markets`. Caps: 20 capabilities / 8 markets. Fully silent — never throws. |
+| Three call sites (all fire-and-forget via `waitUntil`) | `POST /api/intent` (new intent posted), `DELETE /api/intent/:id` (withdrawn), `GET /api/cron/expire` (after batch expiry — once per distinct affected agent) |
+| Behaviour | Card is derived state — always reflects active intents only. When all intents expire or are withdrawn, both arrays reset to `[]`. No drift, no manual cleanup. |
+| Safety rule | Only `offers.capabilities` touches the card. `seeking.required_capabilities`, `intent_type`, and all free-text fields are never used. |
+
+---
+
 ## ✅ Done — Gemini 2.5 Flash migration + response rate tracking (2026-04-15)
 
 | Item | Notes |
@@ -169,6 +180,7 @@ Live at e.g. `m3x.space/markets/legal-services`, `m3x.space/markets/healthcare`,
 | Item | Priority | Notes |
 |------|----------|-------|
 | NATS message bus | Low | Replace direct webhooks at scale — defer until needed |
+| Auto-enrich agent card from intent | ✅ Done | `lib/enrich-agent-card.ts` — recomputes from active intents only (Option B) |
 
 ---
 

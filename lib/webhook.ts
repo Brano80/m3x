@@ -34,24 +34,4 @@ export async function sendWebhook(webhookUrl: string, payload: object): Promise<
       return
     }
 
-    const body = JSON.stringify(payload)
-    // signPayload throws if WEBHOOK_SECRET is unset — caught here so fire-and-forget
-    // callers don't surface unhandled rejections.
-    const signature = signPayload(body)
-    await fetch(webhookUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-M3X-Signature': `sha256=${signature}`,
-      },
-      body,
-      // Manual redirect handling — auto-follow could 302 us into a private IP
-      // even though the originally validated host resolved to a public one.
-      redirect: 'manual',
-      signal: AbortSignal.timeout(WEBHOOK_TIMEOUT_MS),
-    })
-  } catch (err) {
-    // Fire-and-forget — log but do not throw so callers are not disrupted.
-    console.error('[webhook] delivery failed:', webhookUrl, err)
-  }
-}
+    const 

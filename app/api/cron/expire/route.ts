@@ -1,6 +1,8 @@
 import { timingSafeEqual } from 'crypto'
 import { NextRequest, NextResponse } from 'next/server'
+import { waitUntil } from '@vercel/functions'
 import { getServiceClient } from '@/lib/supabase'
+import { recomputeAgentCard } from '@/lib/enrich-agent-card'
 
 // Vercel Cron: runs every hour — see vercel.json
 // Protected by CRON_SECRET (Vercel sets Authorization: Bearer <secret> automatically)
@@ -28,37 +30,13 @@ export async function GET(req: NextRequest) {
   const supabase = getServiceClient()
   const now = new Date().toISOString()
 
-  // Mark expired intents
+  // Mark expired intents — also pull agent_id so we can refresh each affected
+  // agent's card to reflect the new active set.
   const { data: expiredIntents, error: intentError } = await supabase
     .from('intents')
     .update({ status: 'expired' })
     .eq('status', 'active')
     .lt('expires_at', now)
-    .select('id')
+    .select('id, agent_id')
 
-  // Mark expired matches
-  const { data: expiredMatches, error: matchError } = await supabase
-    .from('matches')
-    .update({ state: 'expired' })
-    .in('state', ['discovered', 'notified'])
-    .lt('expires_at', now)
-    .select('id')
-
-  if (intentError) console.error('[cron/expire] intent error:', intentError)
-  if (matchError) console.error('[cron/expire] match error:', matchError)
-
-  // Prune registration_attempts older than 24h — keeps the per-IP rate limit
-  // table from growing unbounded. The 1-hour rate window only needs recent
-  // rows, so anything past 24h is safe to drop.
-  const { error: pruneError } = await supabase
-    .from('registration_attempts')
-    .delete()
-    .lt('created_at', new Date(Date.now() - 86_400_000).toISOString())
-  if (pruneError) console.error('[cron/expire] registration_attempts prune error:', pruneError)
-
-  return NextResponse.json({
-    intents_expired: expiredIntents?.length ?? 0,
-    matches_expired: expiredMatches?.length ?? 0,
-    ran_at: now
-  })
-}
+  // Mark expi

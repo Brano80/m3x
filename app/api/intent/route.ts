@@ -7,6 +7,7 @@ import { embedText } from '@/lib/embed'
 import { decryptKey } from '@/lib/crypto'
 import { runMatchingForIntent } from '@/lib/matching'
 import { geminiStructured } from '@/lib/gemini'
+import { recomputeAgentCard } from '@/lib/enrich-agent-card'
 
 const VALID_MARKETS = [
   'venture_capital', 'b2b_saas', 'freelance', 'cofounder',
@@ -149,54 +150,4 @@ export async function POST(req: NextRequest) {
       ? (() => { try { return { provider: agent.byok_provider, key: decryptKey(agent.byok_key_enc) } } catch { return undefined } })()
       : undefined
 
-    // Stage 1 — Extract signals (agent BYOK key if set, otherwise infra key)
-    const signals = await extractIntentSignals(offersText, seekingText, market, byok)
-
-    // Stage 2 — Embed (HuggingFace)
-    const vector = await embedText(`${offersText} ${seekingText}`)
-
-    // Stage 3 — Store
-    const { data: intent, error } = await supabase
-      .from('intents')
-      .insert({
-        agent_id: agent.id,
-        side,
-        market,
-        intent_type: signals?.intent_type ?? null,
-        raw_packet,
-        embedding: vector ? `[${vector.join(',')}]` : null,
-        guardrails,
-        expires_at,
-      })
-      .select('id, side, market, intent_type, status, expires_at, created_at')
-      .single()
-
-    if (error) throw error
-
-    await supabase
-      .from('agents')
-      .update({ last_active_at: new Date().toISOString() })
-      .eq('id', agent.id)
-
-    // Auto-trigger matching — kept alive by waitUntil so Vercel doesn't kill it
-    waitUntil(
-      runMatchingForIntent(intent, agent, supabase, byok).catch(
-        e => console.error('[intent] auto-match error:', e)
-      )
-    )
-
-    return NextResponse.json({
-      intent,
-      signals_extracted: !!signals,
-      embedded: !!vector,
-      message: 'Intent posted. Matching running in background.',
-    }, { status: 201 })
-
-  } catch (err: any) {
-    console.error('[intent]', err)
-    return NextResponse.json(
-      { error: { message: err.message ?? 'Internal server error', code: 'SERVER_ERROR' } },
-      { status: 500 }
-    )
-  }
-}
+    // Stage 1 — Extract signals (agent BYOK key if set, o
