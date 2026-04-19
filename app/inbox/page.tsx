@@ -517,9 +517,11 @@ export default function InboxPage() {
         const d = await agentRes.json()
         setAgentId(d.agent?.id ?? '')
       }
+      let convs: Conversation[] = []
       if (convsRes.ok) {
         const d = await convsRes.json()
-        setConversations(d.conversations ?? [])
+        convs = d.conversations ?? []
+        setConversations(convs)
       }
       if (matchRes.ok) {
         const d = await matchRes.json()
@@ -528,6 +530,12 @@ export default function InboxPage() {
         )
         setMatches(active)
         if (active.length > 0) setSelectedMatch(active[0])
+      }
+      // Auto-select conversation if ?with=handle is in the URL
+      const withHandle = new URLSearchParams(window.location.search).get('with')
+      if (withHandle && convs.length > 0) {
+        const target = convs.find((c: Conversation) => c.other_agent.handle === withHandle)
+        if (target) { setSelected(target); setSelectedMatch(null) }
       }
       setLoading(false)
     }).catch(() => setLoading(false))

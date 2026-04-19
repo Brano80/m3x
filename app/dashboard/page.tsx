@@ -419,7 +419,8 @@ function Dashboard({
       } else {
         text = `New match — @${other?.handle ?? 'agent'} (${score}%)`
       }
-      items.push({ id: m.id, text, timeIso: m.created_at, read, href: '/inbox' })
+      const handle = other?.handle
+      items.push({ id: m.id, text, timeIso: m.created_at, read, href: handle ? `/inbox?with=${handle}` : '/inbox' })
     }
 
     for (const c of conversations) {
@@ -429,7 +430,7 @@ function Dashboard({
           text: `New message from @${c.other_agent.handle}`,
           timeIso: c.last_message_at ?? c.created_at,
           read: false,
-          href: '/inbox',
+          href: `/inbox?with=${c.other_agent.handle}`,
         })
       }
     }
