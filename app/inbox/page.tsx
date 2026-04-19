@@ -429,8 +429,8 @@ function ChatView({
         </div>
       )}
 
-      {/* Outcome banner — shown after 6+ sent messages if no outcome yet */}
-      {!outcome && messages.filter(m => m.status === 'sent').length >= 6 && (
+      {/* Outcome banner — shown as soon as any message has been sent */}
+      {!outcome && messages.filter(m => m.status === 'sent').length >= 1 && (
         <div className={styles.outcomeBanner}>
           <span className={styles.outcomeBannerText}>Was this introduction successful?</span>
           <button
