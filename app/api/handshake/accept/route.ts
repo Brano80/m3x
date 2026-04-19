@@ -9,6 +9,7 @@ import { verifyAgent } from '@/lib/auth'
 import { sendWebhook } from '@/lib/webhook'
 import { recalculateTrust } from '@/lib/trust'
 import { notifyHandshakeAccepted } from '@/lib/fcm'
+import { generateMatchBriefing } from '@/lib/briefing'
 
 export async function POST(req: NextRequest) {
   const supabase = getServiceClient()
@@ -66,7 +67,7 @@ export async function POST(req: NextRequest) {
 
   const [{ data: otherAgent }, { data: matchData }] = await Promise.all([
     supabase.from('agents').select('id, handle, did, webhook_url, a2a_endpoint, capabilities, markets, trust_score, fcm_token').eq('id', otherAgentId).single(),
-    supabase.from('matches').select('score, tier, intent_a_id, intent_b_id, agent_a_id, summary_for_a, summary_for_b').eq('id', handshake.match_id).single(),
+    supabase.from('matches').select('score, tier, intent_a_id, intent_b_id, agent_a_id, agent_b_id, summary_for_a, summary_for_b').eq('id', handshake.match_id).single(),
   ])
 
   if (!otherAgent) {
@@ -138,8 +139,31 @@ export async function POST(req: NextRequest) {
   // Seed briefing messages — one per agent, visible only to them
   if (session && matchData) {
     const isInitiatorA = matchData.agent_a_id === handshake.initiated_by
-    const summaryForInitiator = isInitiatorA ? (matchData as any).summary_for_a : (matchData as any).summary_for_b
-    const summaryForAcceptor  = isInitiatorA ? (matchData as any).summary_for_b : (matchData as any).summary_for_a
+    let summaryForInitiator = isInitiatorA ? (matchData as any).summary_for_a : (matchData as any).summary_for_b
+    let summaryForAcceptor  = isInitiatorA ? (matchData as any).summary_for_b : (matchData as any).summary_for_a
+
+    // If summaries were not pre-generated, generate them now on-the-fly
+    if (!summaryForInitiator || !summaryForAcceptor) {
+      try {
+        const [intentA, intentB] = await Promise.all([
+          supabase.from('intents').select('side, market, intent_type, raw_packet').eq('id', matchData.intent_a_id).single(),
+          supabase.from('intents').select('side, market, intent_type, raw_packet').eq('id', matchData.intent_b_id).single(),
+        ])
+        const pktA = intentA.data ? { ...(intentA.data.raw_packet ?? {}), side: intentA.data.side } : null
+        const pktB = intentB.data ? { ...(intentB.data.raw_packet ?? {}), side: intentB.data.side } : null
+        const initiatorAgent = await supabase.from('agents').select('handle').eq('id', handshake.initiated_by).single()
+        const initiatorHandle = initiatorAgent.data?.handle ?? 'unknown'
+        const acceptorHandle  = otherAgent.handle  // otherAgent is the initiator from acceptor's perspective — swap
+        // initiator = handshake.initiated_by; acceptor = agent.id
+        const [initiatorPkt, acceptorPkt] = matchData.agent_a_id === handshake.initiated_by ? [pktA, pktB] : [pktB, pktA]
+        const [genForInitiator, genForAcceptor] = await Promise.all([
+          summaryForInitiator ? Promise.resolve(summaryForInitiator) : generateMatchBriefing(initiatorHandle, agent.handle, initiatorPkt, acceptorPkt),
+          summaryForAcceptor  ? Promise.resolve(summaryForAcceptor)  : generateMatchBriefing(agent.handle, initiatorHandle, acceptorPkt, initiatorPkt),
+        ])
+        summaryForInitiator = genForInitiator
+        summaryForAcceptor  = genForAcceptor
+      } catch { /* non-fatal */ }
+    }
 
     const briefings = []
     if (summaryForInitiator) briefings.push({
