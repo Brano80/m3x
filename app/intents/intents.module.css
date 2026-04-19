@@ -162,13 +162,16 @@
 }
 
 .intentCardWithdrawn {
-  border-color: rgba(79, 146, 232, 0.06);
-  opacity: 0.45;
+  border-color: rgba(79, 146, 232, 0.08);
+  filter: grayscale(1);
+}
+
+.intentCardWithdrawn .intentMarket {
+  color: rgba(232, 234, 240, 0.4);
 }
 
 .intentCardWithdrawn:hover {
-  border-color: rgba(79, 146, 232, 0.12);
-  opacity: 0.6;
+  border-color: rgba(79, 146, 232, 0.14);
 }
 
 .intentRow {
