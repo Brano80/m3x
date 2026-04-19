@@ -581,30 +581,7 @@ function Dashboard({
           )}
         </section>
 
-        {/* Agent card */}
-        {((agent?.markets?.length ?? 0) > 0 || (agent?.capabilities?.length ?? 0) > 0) && (
-          <section className={styles.section}>
-            <div className={styles.sectionHeader}>
-              <div className={styles.sectionTitle}>Agent card</div>
-            </div>
-            {(agent?.markets?.length ?? 0) > 0 && (
-              <div className={styles.agentCardRow}>
-                <div className={styles.agentCardLabel}>Markets</div>
-                <div className={styles.tagList}>
-                  {agent!.markets.map((m) => <span key={m} className={styles.tag}>{m.replace(/_/g, ' ')}</span>)}
-                </div>
-              </div>
-            )}
-            {(agent?.capabilities?.length ?? 0) > 0 && (
-              <div className={styles.agentCardRow}>
-                <div className={styles.agentCardLabel}>Capabilities</div>
-                <div className={styles.tagList}>
-                  {agent!.capabilities.map((c) => <span key={c} className={styles.tag}>{c}</span>)}
-                </div>
-              </div>
-            )}
-          </section>
-        )}
+        {/* Agent card — internal only, not shown in UI */}
 
         {/* Agent settings — auto-reply removed */}
 

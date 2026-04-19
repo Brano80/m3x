@@ -143,9 +143,10 @@ export default function IntentsPage() {
                 const isOpen = expanded === intent.id
                 const text   = intentText(intent)
                 const isActive = intent.status === 'active'
+                const isWithdrawn = intent.status === 'withdrawn' || intent.status === 'expired'
 
                 return (
-                  <div key={intent.id} className={`${styles.intentCard} ${isOpen ? styles.intentCardOpen : ''}`}>
+                  <div key={intent.id} className={`${styles.intentCard} ${isOpen ? styles.intentCardOpen : ''} ${isWithdrawn ? styles.intentCardWithdrawn : ''}`}>
                     {/* Clickable header row */}
                     <div
                       className={styles.intentRow}
