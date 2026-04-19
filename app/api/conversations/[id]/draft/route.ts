@@ -15,12 +15,16 @@ function safeIntentSummary(intent: any): string {
   const offers = p?.offers ?? {}
   const seeking = p?.seeking ?? {}
   const guardrails = p?.guardrails ?? {}
-  // Extract only typed scalar fields — never embed free-text blobs directly
+  // Handle both string format (MCP) and object format (structured packet)
+  const offersText = typeof p.offers === 'string' ? p.offers.slice(0, 300)
+    : (offers.description ? String(offers.description).slice(0, 300) : null)
+  const seekingText = typeof p.seeking === 'string' ? p.seeking.slice(0, 300)
+    : (seeking.description ? String(seeking.description).slice(0, 300) : null)
   const lines = [
     `Role: ${intent.side} in the ${intent.market} market`,
     `Intent type: ${intent.intent_type}`,
-    offers.description ? `Offering: ${String(offers.description).slice(0, 300)}` : null,
-    seeking.description ? `Seeking: ${String(seeking.description).slice(0, 300)}` : null,
+    offersText ? `Offering: ${offersText}` : null,
+    seekingText ? `Seeking: ${seekingText}` : null,
     seeking.budget_range ? `Budget: ${String(seeking.budget_range).slice(0, 50)}` : null,
     seeking.timeline ? `Timeline: ${String(seeking.timeline).slice(0, 50)}` : null,
     guardrails.min_trust_score != null ? `Min trust score required: ${guardrails.min_trust_score}` : null,
@@ -116,17 +120,35 @@ ${matchBriefingMsg.content}`
     ? chronological.map(m => `${m.sender_id === agent.id ? 'You' : `@${otherAgent?.handle ?? 'them'}`}: ${String(m.content).slice(0, 300)}`).join('\n')
     : 'No messages yet — this is the opening message.'
 
-  const systemPrompt = `You are an AI agent acting on behalf of a user on M3X, a private agent matching network.
-Draft a natural, conversational reply based on the intent context and conversation history.
+  // Determine conversation phase based on message count
+  const myMessageCount = chronological.filter(m => m.sender_id === agent.id).length
+  const totalMessages = chronological.length
+
+  let phaseInstruction: string
+  if (totalMessages === 0) {
+    phaseInstruction = `This is the opening message. Introduce yourself briefly, reference what you're looking for, and ask one specific qualifying question to move things forward.`
+  } else if (myMessageCount <= 1) {
+    phaseInstruction = `Early stage (round 1-2). Share one key piece of relevant information about your situation and ask one specific question to understand their position better. Be direct and concrete.`
+  } else if (myMessageCount <= 3) {
+    phaseInstruction = `Mid stage (round 2-3). You now have some context on each other. Start converging — summarize where you agree, identify the key open question, and signal whether you're interested in taking this further.`
+  } else {
+    phaseInstruction = `Exit stage (round 4+). You've exchanged enough context. If there's genuine mutual interest, propose a concrete next step: either exchange contact details directly (email, phone, calendar link) or suggest a specific meeting time. If it's not a fit, politely close the conversation. Do not keep the dialogue going without a concrete commitment.`
+  }
+
+  const systemPrompt = `You are an AI agent acting on behalf of a user on M3X, a private matching network for AI agents.
+Your goal: help two matched parties determine within ~5 exchanges whether they want to connect directly and exchange contact details.
 Be direct and specific — reference actual details from the conversation and the match briefing. No corporate language, no fluff, no emojis.
 Write 2-4 complete sentences. Always finish the last sentence fully — never cut off mid-sentence.
-The human will review and edit before sending.`
+The human will review and edit before sending.
+
+Phase instruction: ${phaseInstruction}`
 
   const userPrompt = `Context about my agent:
 ${intentContext}
 ${briefingContext ? `\n${briefingContext}` : ''}
 
 Other agent: @${otherAgent?.handle ?? 'unknown'}
+Messages exchanged so far: ${totalMessages} total, ${myMessageCount} from me.
 
 Conversation so far:
 ${conversationHistory}

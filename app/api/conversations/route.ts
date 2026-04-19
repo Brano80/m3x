@@ -18,7 +18,7 @@ export async function GET(req: NextRequest) {
   // Fetch all sessions where agent is a participant
   const { data: sessions } = await supabase
     .from('negotiation_sessions')
-    .select('id, handshake_id, agent_a_id, agent_b_id, state, session_state, pending_reply, agent_analysis, last_message_at, created_at')
+    .select('id, handshake_id, agent_a_id, agent_b_id, state, session_state, pending_reply, agent_analysis, last_message_at, created_at, outcome, closed_at')
     .or(`agent_a_id.eq.${agent.id},agent_b_id.eq.${agent.id}`)
     .eq('state', 'active')
     .order('last_message_at', { ascending: false, nullsFirst: true })
@@ -82,6 +82,8 @@ export async function GET(req: NextRequest) {
       created_at: s.created_at,
       unread: unreadMap[s.id] ?? 0,
       other_agent: other ?? { id: otherId, handle: 'unknown' },
+      outcome: s.outcome ?? null,
+      closed_at: s.closed_at ?? null,
       last_message: lastMsg
         ? { content: lastMsg.content.slice(0, 120), sender_id: lastMsg.sender_id, created_at: lastMsg.created_at }
         : null,

@@ -36,12 +36,14 @@ interface Conversation {
   id: string
   handshake_id: string
   state: string
-  session_state: string        // 'autonomous' | 'escalated'
+  session_state: string        // 'autonomous' | 'escalated' | 'closed'
   pending_reply: string | null
   agent_analysis: string | null
   unread: number
   last_message_at: string | null
   created_at: string
+  outcome: string | null       // 'successful' | 'unsuccessful' | null
+  closed_at: string | null
   other_agent: OtherAgent
   last_message: LastMessage | null
 }
@@ -213,6 +215,8 @@ function ChatView({
   const [pendingEdit, setPendingEdit]     = useState('')
   const [editingPending, setEditingPending] = useState(false)
   const [error, setError]                 = useState('')
+  const [outcome, setOutcome]             = useState<string | null>(conv.outcome ?? null)
+  const [recordingOutcome, setRecordingOutcome] = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
   const headers = { Authorization: `Bearer ${token}` }
 
@@ -341,6 +345,23 @@ function ChatView({
     }
   }
 
+  const recordOutcome = async (value: 'successful' | 'unsuccessful') => {
+    setRecordingOutcome(true)
+    try {
+      const res = await fetch(`/api/conversations/${conv.id}/outcome`, {
+        method: 'POST',
+        headers: { ...headers, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ outcome: value }),
+      })
+      if (res.ok) {
+        setOutcome(value)
+        onConversationUpdate()
+      }
+    } catch { /* silent */ } finally {
+      setRecordingOutcome(false)
+    }
+  }
+
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
       e.preventDefault()
@@ -405,6 +426,32 @@ function ChatView({
       {draft && input === draft && (
         <div className={styles.draftBanner}>
           ✦ AI draft — review before sending
+        </div>
+      )}
+
+      {/* Outcome banner — shown after 6+ sent messages if no outcome yet */}
+      {!outcome && messages.filter(m => m.status === 'sent').length >= 6 && (
+        <div className={styles.outcomeBanner}>
+          <span className={styles.outcomeBannerText}>Was this introduction successful?</span>
+          <button
+            className={`${styles.outcomeBtn} ${styles.outcomeBtnYes}`}
+            onClick={() => recordOutcome('successful')}
+            disabled={recordingOutcome}
+          >Yes</button>
+          <button
+            className={`${styles.outcomeBtn} ${styles.outcomeBtnNo}`}
+            onClick={() => recordOutcome('unsuccessful')}
+            disabled={recordingOutcome}
+          >No</button>
+        </div>
+      )}
+
+      {/* Outcome recorded confirmation */}
+      {outcome && (
+        <div className={`${styles.outcomeBanner} ${styles.outcomeRecorded}`}>
+          {outcome === 'successful'
+            ? '✓ Marked as successful — great match!'
+            : '✗ Marked as unsuccessful — feedback noted.'}
         </div>
       )}
 

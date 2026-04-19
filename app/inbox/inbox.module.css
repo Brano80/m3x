@@ -317,6 +317,65 @@
   letter-spacing: 0.02em;
 }
 
+.outcomeBanner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 20px;
+  background: rgba(79, 146, 232, 0.06);
+  border-top: 1px solid rgba(79, 146, 232, 0.15);
+  font-size: 12px;
+  color: rgba(232, 234, 240, 0.75);
+}
+
+.outcomeBannerText {
+  flex: 1;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+}
+
+.outcomeBtn {
+  padding: 4px 14px;
+  border-radius: 4px;
+  border: 1px solid;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: opacity 0.15s;
+  background: transparent;
+}
+
+.outcomeBtn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.outcomeBtnYes {
+  border-color: rgba(0, 255, 136, 0.5);
+  color: rgba(0, 255, 136, 0.9);
+}
+
+.outcomeBtnYes:hover:not(:disabled) {
+  background: rgba(0, 255, 136, 0.1);
+}
+
+.outcomeBtnNo {
+  border-color: rgba(232, 234, 240, 0.25);
+  color: rgba(232, 234, 240, 0.5);
+}
+
+.outcomeBtnNo:hover:not(:disabled) {
+  background: rgba(232, 234, 240, 0.05);
+}
+
+.outcomeRecorded {
+  font-size: 12px;
+  color: rgba(232, 234, 240, 0.45);
+  font-style: italic;
+  justify-content: center;
+  border-top: 1px solid rgba(232, 234, 240, 0.06);
+}
+
 .inputArea {
   padding: 12px 16px 16px;
   border-top: 1px solid rgba(79, 146, 232, 0.1);
