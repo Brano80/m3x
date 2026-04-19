@@ -14,13 +14,13 @@ import { SupabaseClient } from '@supabase/supabase-js'
 
 // ---------- Component calculators ----------
 
-function profileCompleteness(agent: Record<string, any>): number {
+function profileCompleteness(agent: Record<string, any>, intentCount: number): number {
   let score = 0
-  if (agent.handle)                                    score += 5
-  if (agent.display_name)                              score += 5
-  if (Array.isArray(agent.markets)    && agent.markets.length > 0)      score += 5
-  if (Array.isArray(agent.capabilities) && agent.capabilities.length > 0) score += 5
-  if (agent.webhook_url)                               score += 5
+  if (agent.handle)                                              score += 5
+  if (agent.display_name)                                        score += 5
+  if (Array.isArray(agent.markets) && agent.markets.length > 0) score += 5
+  if (intentCount > 0)                                           score += 5  // has posted at least one intent
+  if (agent.webhook_url)                                         score += 5
   return score  // max 25
 }
 
@@ -101,7 +101,7 @@ export async function recalculateTrust(
     .in('state', ['active', 'declined'])
 
   // 4. Compute components
-  const pc  = profileCompleteness(agent)
+  const pc  = profileCompleteness(agent, intentCount ?? 0)
   const act = activityScore(agent, intentCount ?? 0)
   const { rateScore, rate } = responseRateScore(responded ?? 0, received ?? 0)
   const ver = verificationScore(agent)
