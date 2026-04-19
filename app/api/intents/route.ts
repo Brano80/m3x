@@ -38,24 +38,48 @@ export async function GET(req: NextRequest) {
 
   // Find which intents have a successful conversation outcome
   // intent → match → handshake → negotiation_session (outcome = 'successful')
-  const intentIds = intents.map((i: any) => i.id)
-  let connectedIntentIds = new Set<string>()
+  const intentIds: string[] = intents.map((i: any) => i.id)
+  const connectedIntentIds = new Set<string>()
 
   if (intentIds.length > 0) {
-    const { data: matches } = await supabase
+    // Step 1: get all matches involving this agent
+    const { data: matchRows } = await supabase
       .from('matches')
-      .select('intent_a_id, intent_b_id, agent_a_id, handshakes(id, negotiation_sessions(outcome))')
+      .select('id, intent_a_id, intent_b_id')
       .or(`agent_a_id.eq.${agent.id},agent_b_id.eq.${agent.id}`)
-      .or(`intent_a_id.in.(${intentIds.join(',')}),intent_b_id.in.(${intentIds.join(',')})`)
 
-    for (const m of matches ?? []) {
-      const sessions = (m as any).handshakes?.negotiation_sessions
-      const hasSuccess = Array.isArray(sessions)
-        ? sessions.some((s: any) => s.outcome === 'successful')
-        : sessions?.outcome === 'successful'
-      if (hasSuccess) {
-        if (intentIds.includes(m.intent_a_id)) connectedIntentIds.add(m.intent_a_id)
-        if (intentIds.includes(m.intent_b_id)) connectedIntentIds.add(m.intent_b_id)
+    const matchRows_ = matchRows ?? []
+    const matchIds = matchRows_.map((m: any) => m.id)
+
+    if (matchIds.length > 0) {
+      // Step 2: get handshakes for those matches
+      const { data: handshakeRows } = await supabase
+        .from('handshakes')
+        .select('id, match_id')
+        .in('match_id', matchIds)
+
+      const handshakeRows_ = handshakeRows ?? []
+      const handshakeIds = handshakeRows_.map((h: any) => h.id)
+      const handshakeMatchMap: Record<string, string> = Object.fromEntries(
+        handshakeRows_.map((h: any) => [h.id, h.match_id])
+      )
+
+      if (handshakeIds.length > 0) {
+        // Step 3: find sessions with successful outcome
+        const { data: sessionRows } = await supabase
+          .from('negotiation_sessions')
+          .select('handshake_id')
+          .in('handshake_id', handshakeIds)
+          .eq('outcome', 'successful')
+
+        for (const session of sessionRows ?? []) {
+          const matchId = handshakeMatchMap[session.handshake_id]
+          const match = matchRows_.find((m: any) => m.id === matchId)
+          if (match) {
+            if (intentIds.includes(match.intent_a_id)) connectedIntentIds.add(match.intent_a_id)
+            if (intentIds.includes(match.intent_b_id)) connectedIntentIds.add(match.intent_b_id)
+          }
+        }
       }
     }
   }
