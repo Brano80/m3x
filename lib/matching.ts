@@ -107,8 +107,8 @@ export async function runMatchingForIntent(
     if (scoreResult.tier !== 'near_match') {
       try {
         const [summaryForA, summaryForB] = await Promise.all([
-          generateMatchBriefing(agent.handle, candidateAgent.handle, intent.raw_packet, candidate.raw_packet),
-          generateMatchBriefing(candidateAgent.handle, agent.handle, candidate.raw_packet, intent.raw_packet),
+          generateMatchBriefing(agent.handle, candidateAgent.handle, { ...(intent.raw_packet ?? {}), side: intent.side }, { ...(candidate.raw_packet ?? {}), side: candidate.side }),
+          generateMatchBriefing(candidateAgent.handle, agent.handle, { ...(candidate.raw_packet ?? {}), side: candidate.side }, { ...(intent.raw_packet ?? {}), side: intent.side }),
         ])
         if (summaryForA || summaryForB) {
           await supabase
