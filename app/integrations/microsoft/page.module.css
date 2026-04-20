@@ -1,0 +1,406 @@
+/* Microsoft Integration Guide — M3X */
+
+.root {
+  min-height: 100vh;
+  background: #080c14;
+  color: #e8eaf0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  position: relative;
+  overflow-x: hidden;
+}
+
+.grid {
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(79, 146, 232, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(79, 146, 232, 0.04) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Nav */
+.nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 48px;
+  border-bottom: 1px solid rgba(79, 146, 232, 0.08);
+  position: relative;
+  z-index: 10;
+}
+
+.logo {
+  font-size: 18px;
+  font-weight: 700;
+  color: #4f92e8;
+  text-decoration: none;
+  letter-spacing: 0.05em;
+}
+
+.navRight {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+
+.navCta {
+  padding: 8px 20px;
+  background: rgba(79, 146, 232, 0.12);
+  border: 1px solid rgba(79, 146, 232, 0.3);
+  border-radius: 8px;
+  color: #4f92e8;
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none;
+  transition: background 0.15s;
+}
+
+.navCta:hover { background: rgba(79, 146, 232, 0.2); }
+
+/* Hero */
+.hero {
+  max-width: 760px;
+  margin: 80px auto 0;
+  padding: 0 24px;
+  text-align: center;
+  position: relative;
+  z-index: 1;
+}
+
+.heroBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 14px;
+  background: rgba(79, 146, 232, 0.08);
+  border: 1px solid rgba(79, 146, 232, 0.2);
+  border-radius: 20px;
+  font-size: 12px;
+  color: rgba(232, 234, 240, 0.6);
+  letter-spacing: 0.02em;
+  margin-bottom: 28px;
+}
+
+.badgeDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #00cc66;
+  box-shadow: 0 0 6px #00cc66;
+}
+
+.heroTitle {
+  font-size: clamp(32px, 5vw, 52px);
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  margin: 0 0 20px;
+  color: #e8eaf0;
+}
+
+.accent {
+  background: linear-gradient(135deg, #4f92e8, #7ab0ff);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.heroSub {
+  font-size: 17px;
+  line-height: 1.7;
+  color: rgba(232, 234, 240, 0.55);
+  margin: 0 0 36px;
+}
+
+.heroCtas {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.ctaPrimary {
+  padding: 12px 28px;
+  background: #4f92e8;
+  color: #fff;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 0.15s;
+}
+
+.ctaPrimary:hover { background: #6aa3ef; }
+
+.ctaSecondary {
+  padding: 12px 28px;
+  border: 1px solid rgba(79, 146, 232, 0.3);
+  color: rgba(232, 234, 240, 0.7);
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 500;
+  text-decoration: none;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.ctaSecondary:hover {
+  border-color: rgba(79, 146, 232, 0.6);
+  color: #e8eaf0;
+}
+
+/* Sections */
+.section {
+  max-width: 860px;
+  margin: 80px auto 0;
+  padding: 0 24px;
+  position: relative;
+  z-index: 1;
+}
+
+.sectionLabel {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(79, 146, 232, 0.7);
+  margin-bottom: 28px;
+}
+
+/* Why cards */
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+}
+
+.card {
+  background: rgba(79, 146, 232, 0.04);
+  border: 1px solid rgba(79, 146, 232, 0.12);
+  border-radius: 12px;
+  padding: 24px;
+}
+
+.cardIcon {
+  font-size: 20px;
+  color: #4f92e8;
+  margin-bottom: 12px;
+}
+
+.cardTitle {
+  font-size: 15px;
+  font-weight: 600;
+  color: #e8eaf0;
+  margin-bottom: 8px;
+}
+
+.cardDesc {
+  font-size: 13px;
+  line-height: 1.65;
+  color: rgba(232, 234, 240, 0.5);
+}
+
+.cardDesc code {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 12px;
+  color: #4f92e8;
+  background: rgba(79, 146, 232, 0.1);
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+
+/* Steps */
+.steps {
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+}
+
+.step {
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+}
+
+.stepNum {
+  font-size: 12px;
+  font-weight: 700;
+  color: #4f92e8;
+  letter-spacing: 0.08em;
+  padding-top: 3px;
+  flex-shrink: 0;
+  width: 28px;
+}
+
+.stepContent {
+  flex: 1;
+}
+
+.stepTitle {
+  font-size: 16px;
+  font-weight: 600;
+  color: #e8eaf0;
+  margin-bottom: 6px;
+}
+
+.stepDesc {
+  font-size: 14px;
+  line-height: 1.65;
+  color: rgba(232, 234, 240, 0.5);
+  margin-bottom: 16px;
+}
+
+.inlineLink {
+  color: #4f92e8;
+  text-decoration: none;
+}
+
+.inlineLink:hover { text-decoration: underline; }
+
+/* Code */
+.codeBlock {
+  position: relative;
+  background: #0d1420;
+  border: 1px solid rgba(79, 146, 232, 0.15);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.code {
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+  font-size: 13px;
+  line-height: 1.65;
+  color: rgba(232, 234, 240, 0.75);
+  padding: 20px 24px;
+  margin: 0;
+  overflow-x: auto;
+  white-space: pre;
+}
+
+.copyBtn {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  padding: 4px 12px;
+  background: rgba(79, 146, 232, 0.1);
+  border: 1px solid rgba(79, 146, 232, 0.2);
+  border-radius: 5px;
+  color: rgba(232, 234, 240, 0.6);
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.copyBtn:hover { background: rgba(79, 146, 232, 0.2); color: #e8eaf0; }
+
+/* Tabs */
+.tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 12px;
+}
+
+.tab {
+  padding: 6px 16px;
+  border-radius: 6px;
+  border: 1px solid rgba(79, 146, 232, 0.15);
+  background: transparent;
+  color: rgba(232, 234, 240, 0.45);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.tab:hover { color: rgba(232, 234, 240, 0.7); }
+
+.tabActive {
+  background: rgba(79, 146, 232, 0.12);
+  border-color: rgba(79, 146, 232, 0.35);
+  color: #e8eaf0;
+}
+
+/* Tools */
+.toolsGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  border: 1px solid rgba(79, 146, 232, 0.12);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.toolRow {
+  display: flex;
+  align-items: baseline;
+  gap: 20px;
+  padding: 14px 20px;
+  background: rgba(79, 146, 232, 0.03);
+  border-bottom: 1px solid rgba(79, 146, 232, 0.08);
+}
+
+.toolRow:last-child { border-bottom: none; }
+
+.toolName {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 13px;
+  color: #4f92e8;
+  flex-shrink: 0;
+  min-width: 220px;
+}
+
+.toolDesc {
+  font-size: 13px;
+  color: rgba(232, 234, 240, 0.45);
+  line-height: 1.5;
+}
+
+/* CTA section */
+.ctaSection {
+  max-width: 860px;
+  margin: 100px auto 0;
+  padding: 60px 24px;
+  text-align: center;
+  border-top: 1px solid rgba(79, 146, 232, 0.1);
+  position: relative;
+  z-index: 1;
+}
+
+.ctaTitle {
+  font-size: 28px;
+  font-weight: 700;
+  color: #e8eaf0;
+  margin-bottom: 10px;
+  letter-spacing: -0.01em;
+}
+
+.ctaSub {
+  font-size: 15px;
+  color: rgba(232, 234, 240, 0.4);
+  margin-bottom: 28px;
+}
+
+/* Footer */
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 32px 24px 48px;
+  position: relative;
+  z-index: 1;
+}
+
+.footerLink {
+  font-size: 13px;
+  color: rgba(232, 234, 240, 0.35);
+  text-decoration: none;
+  transition: color 0.15s;
+}
+
+.footerLink:hover { color: rgba(232, 234, 240, 0.7); }
+
+.footerSep {
+  color: rgba(232, 234, 240, 0.15);
+  font-size: 13px;
+}

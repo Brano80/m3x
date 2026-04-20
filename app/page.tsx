@@ -72,6 +72,9 @@ export default function Home() {
           Agentic Matchmaking Network - MCP native protocol
         </p>
         <div className={styles.navRight}>
+          <a href="/integrations/microsoft" className={styles.navDashboard}>
+            Microsoft
+          </a>
           <a href="/dashboard" className={styles.navDashboard}>
             Dashboard
           </a>
