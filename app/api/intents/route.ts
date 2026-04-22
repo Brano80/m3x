@@ -39,7 +39,9 @@ export async function GET(req: NextRequest) {
   // Find which intents have a successful conversation outcome
   // intent → match → handshake → negotiation_session (outcome = 'successful')
   const intentIds: string[] = intents.map((i: any) => i.id)
-  const connectedIntentIds = new Set<string>()
+  // Count successful connections per intent (not just a boolean — one intent
+  // can be involved in multiple successful matches).
+  const connectedIntentCount = new Map<string, number>()
 
   if (intentIds.length > 0) {
     // Step 1: get all matches involving this agent
@@ -76,8 +78,12 @@ export async function GET(req: NextRequest) {
           const matchId = handshakeMatchMap[session.handshake_id]
           const match = matchRows_.find((m: any) => m.id === matchId)
           if (match) {
-            if (intentIds.includes(match.intent_a_id)) connectedIntentIds.add(match.intent_a_id)
-            if (intentIds.includes(match.intent_b_id)) connectedIntentIds.add(match.intent_b_id)
+            if (intentIds.includes(match.intent_a_id)) {
+              connectedIntentCount.set(match.intent_a_id, (connectedIntentCount.get(match.intent_a_id) ?? 0) + 1)
+            }
+            if (intentIds.includes(match.intent_b_id)) {
+              connectedIntentCount.set(match.intent_b_id, (connectedIntentCount.get(match.intent_b_id) ?? 0) + 1)
+            }
           }
         }
       }
@@ -86,7 +92,8 @@ export async function GET(req: NextRequest) {
 
   const result = intents.map((i: any) => ({
     ...i,
-    connected: connectedIntentIds.has(i.id),
+    connected: connectedIntentCount.has(i.id),
+    connected_count: connectedIntentCount.get(i.id) ?? 0,
   }))
 
   return NextResponse.json({ intents: result })

@@ -478,7 +478,9 @@ function Dashboard({
       }
     }
 
-    return items.sort((a, b) => new Date(b.timeIso).getTime() - new Date(a.timeIso).getTime())
+    return items
+      .sort((a, b) => new Date(b.timeIso).getTime() - new Date(a.timeIso).getTime())
+      .slice(0, 10)
   }
 
   const toggleAutoReply = async () => {

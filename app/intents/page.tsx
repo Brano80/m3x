@@ -21,6 +21,7 @@ interface Intent {
   created_at: string
   expires_at: string
   connected: boolean
+  connected_count: number
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -146,6 +147,7 @@ export default function IntentsPage() {
                 const isActive = intent.status === 'active'
                 const isWithdrawn = intent.status === 'withdrawn' || intent.status === 'expired'
                 const isConnected = intent.connected
+                const connectedCount = intent.connected_count ?? 0
 
                 return (
                   <div key={intent.id} className={`${styles.intentCard} ${isOpen ? styles.intentCardOpen : ''} ${isWithdrawn ? styles.intentCardWithdrawn : ''}`}>
@@ -171,7 +173,9 @@ export default function IntentsPage() {
                               : null
                             }
                             {isConnected && (
-                              <span className={styles.connectedBadge}>CONNECTED ✓</span>
+                              <span className={styles.connectedBadge}>
+                                CONNECTED{connectedCount > 1 ? ` ${connectedCount}` : ''}
+                              </span>
                             )}
                             Posted {timeAgo(intent.created_at)} · {timeUntil(intent.expires_at)}
                           </div>
