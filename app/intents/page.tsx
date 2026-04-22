@@ -166,17 +166,17 @@ export default function IntentsPage() {
                         <div className={styles.intentInfo}>
                           <div className={styles.intentMarket}>
                             {intent.market.replace(/_/g, ' ')}
+                            {isConnected && (
+                              <span className={styles.connectedBadge}>
+                                CONNECTED{connectedCount > 1 ? ` ${connectedCount}` : ''}
+                              </span>
+                            )}
                           </div>
                           <div className={styles.intentMeta}>
                             {intent.status !== 'active'
                               ? <span className={styles.statusBadge}>{intent.status}</span>
                               : null
                             }
-                            {isConnected && (
-                              <span className={styles.connectedBadge}>
-                                CONNECTED{connectedCount > 1 ? ` ${connectedCount}` : ''}
-                              </span>
-                            )}
                             Posted {timeAgo(intent.created_at)} · {timeUntil(intent.expires_at)}
                           </div>
                         </div>
