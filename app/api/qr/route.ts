@@ -12,7 +12,10 @@ const QR_LIMIT = 20
 const QR_WINDOW_MS = 60_000 // 20 requests per minute per IP
 
 export async function GET(req: NextRequest) {
-  const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'anon'
+  const ip =
+    req.headers.get('x-real-ip')?.trim() ??
+    req.headers.get('x-forwarded-for')?.split(',').at(-1)?.trim() ??
+    'anon'
   const now = Date.now()
   const entry = qrRateMap.get(ip)
   if (entry && now < entry.resetAt) {

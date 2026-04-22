@@ -31,7 +31,10 @@ const RATE_LIMIT = 5 // max registrations per IP per hour
 const WINDOW_MS = 60 * 60 * 1000
 
 export async function POST(req: NextRequest) {
-  const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown'
+  const ip =
+    req.headers.get('x-real-ip')?.trim() ??
+    req.headers.get('x-forwarded-for')?.split(',').at(-1)?.trim() ??
+    'unknown'
   const supabase = getServiceClient()
 
   // Durable per-IP rate limit. In-memory Maps reset on every Vercel cold
@@ -58,7 +61,17 @@ export async function POST(req: NextRequest) {
     .insert({ ip, created_at: new Date().toISOString() })
 
   try {
-    const body = await req.json()
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let body: any
+    try {
+      body = await req.json()
+    } catch {
+      return NextResponse.json(
+        { error: { message: 'Request body must be valid JSON', code: 'INVALID_JSON' } },
+        { status: 400 }
+      )
+    }
+
     const { handle, display_name, markets = [], capabilities = [], webhook_url, a2a_endpoint, public_key_multibase, api_key, api_key_provider } = body
 
     if (!handle) {
