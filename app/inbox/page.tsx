@@ -531,9 +531,14 @@ export default function InboxPage() {
         setMatches(active)
         if (active.length > 0) setSelectedMatch(active[0])
       }
-      // Auto-select conversation if ?with=handle is in the URL
-      const withHandle = new URLSearchParams(window.location.search).get('with')
-      if (withHandle && convs.length > 0) {
+      // Auto-select conversation: prefer ?session=id (exact), fallback to ?with=handle
+      const params = new URLSearchParams(window.location.search)
+      const sessionId = params.get('session')
+      const withHandle = params.get('with')
+      if (sessionId && convs.length > 0) {
+        const target = convs.find((c: Conversation) => c.id === sessionId)
+        if (target) { setSelected(target); setSelectedMatch(null) }
+      } else if (withHandle && convs.length > 0) {
         const target = convs.find((c: Conversation) => c.other_agent.handle === withHandle)
         if (target) { setSelected(target); setSelectedMatch(null) }
       }
@@ -541,7 +546,7 @@ export default function InboxPage() {
     }).catch(() => setLoading(false))
   }, [])
 
-  const refreshAll = useCallback(async (autoSelectHandle?: string) => {
+  const refreshAll = useCallback(async (autoSelectHandle?: string, autoSelectSessionId?: string) => {
     if (!token) return
     const h = { Authorization: `Bearer ${token}` }
     const [convsRes, matchRes] = await Promise.all([
@@ -551,8 +556,10 @@ export default function InboxPage() {
     if (convsRes.ok) {
       const d = await convsRes.json()
       setConversations(d.conversations ?? [])
-      if (autoSelectHandle) {
-        // Pick the newest conversation with that handle (first in list — API sorts newest first)
+      if (autoSelectSessionId) {
+        const conv = (d.conversations ?? []).find((c: Conversation) => c.id === autoSelectSessionId)
+        if (conv) { setSelected(conv); setSelectedMatch(null) }
+      } else if (autoSelectHandle) {
         const conv = (d.conversations ?? []).find(
           (c: Conversation) => c.other_agent.handle === autoSelectHandle
         )

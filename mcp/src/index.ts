@@ -65,15 +65,123 @@ async function callM3X(path: string, method = "GET", body?: unknown): Promise<un
 
 const server = new McpServer({ name: "m3x-mcp-server", version: "1.0.4" });
 
+server.registerTool("m3x_list_markets", {
+  title: "List Available M3X Markets",
+  description: `List all available markets on M3X with descriptions.
+
+Call this when the user expresses an intent and you're unsure which market fits best.
+Read the list, pick the closest match, then call m3x_get_intent_template with that market.
+If nothing fits well, use 'misc' — it accepts any intent.
+
+Returns: all 17 markets with slug, label, and who each side is for.`,
+  inputSchema: z.object({}).strict(),
+  annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false }
+}, async () => {
+  const markets = [
+    { slug: 'venture_capital',   label: 'Venture Capital',    demand: 'Founders seeking investment',              supply: 'Investors posting their thesis' },
+    { slug: 'ma_deal_flow',      label: 'M&A Deal Flow',      demand: 'Acquirers posting mandates',               supply: 'Founders exploring exit or acquisition' },
+    { slug: 'real_estate',       label: 'Real Estate',        demand: 'Buyers posting acquisition mandates',      supply: 'Asset owners exploring sale' },
+    { slug: 'private_equity',    label: 'Private Equity',     demand: 'PE firms posting investment mandates',     supply: 'Founders open to PE investment' },
+    { slug: 'b2b_saas',          label: 'B2B SaaS',           demand: 'Buyers or companies seeking SaaS vendors', supply: 'SaaS vendors seeking buyers or partners' },
+    { slug: 'legal_services',    label: 'Legal Services',     demand: 'Clients seeking legal representation',     supply: 'Law firms posting their practice areas' },
+    { slug: 'procurement',       label: 'Procurement',        demand: 'Enterprise buyers posting sourcing needs', supply: 'Suppliers posting capabilities' },
+    { slug: 'healthcare',        label: 'Healthcare',         demand: 'Health orgs seeking partners or vendors',  supply: 'Digital health companies seeking partners' },
+    { slug: 'freelance',         label: 'Freelance',          demand: 'Project owners seeking freelancers',       supply: 'Freelancers posting availability' },
+    { slug: 'cofounder',         label: 'Cofounder',          demand: 'Founders seeking a cofounder',             supply: 'People open to cofounder opportunities' },
+    { slug: 'hiring',            label: 'Hiring',             demand: 'Employers posting open roles',             supply: 'Candidates open to opportunities' },
+    { slug: 'partnerships',      label: 'Partnerships',       demand: 'Companies seeking distribution partners',  supply: 'Companies offering distribution reach' },
+    { slug: 'marketing',         label: 'Marketing & Growth', demand: 'Companies seeking marketing agencies',     supply: 'Agencies posting their capabilities' },
+    { slug: 'supply_chain',      label: 'Supply Chain',       demand: 'Enterprises seeking suppliers',            supply: 'Suppliers posting capacity' },
+    { slug: 'sustainability',    label: 'Sustainability',      demand: 'Companies seeking ESG investment',         supply: 'Impact investors posting mandates' },
+    { slug: 'executive_search',  label: 'Executive Search',   demand: 'Companies seeking C-suite or board',       supply: 'Executives open to opportunities' },
+    { slug: 'misc',              label: 'Other (catch-all)',   demand: 'Any need that doesn\'t fit above',         supply: 'Any offer that doesn\'t fit above' },
+  ]
+
+  const lines = [
+    'Available M3X markets:',
+    '',
+    ...markets.map(m =>
+      `• ${m.slug.padEnd(20)} ${m.label}\n  demand: ${m.demand}\n  supply: ${m.supply}`
+    ),
+    '',
+    'Pick the closest match, then call m3x_get_intent_template(market, side).',
+    'When nothing fits cleanly, use misc.',
+  ]
+
+  return { content: [{ type: "text", text: lines.join('\n') }] }
+});
+
+server.registerTool("m3x_get_intent_template", {
+  title: "Get Intent Template for a Market",
+  description: `Get the interview guide and field structure for posting an intent in a specific market.
+
+ALWAYS call this before m3x_post_intent when the user expresses a need or offering.
+It returns ordered questions to ask the user in plain language — do NOT show the raw JSON.
+Ask each question conversationally, one or two at a time, then use the answers to build the intent.
+
+Workflow:
+1. Identify the market from what the user says (e.g. "I need an investor" → venture_capital)
+2. Call m3x_get_intent_template with that market and the user's side (demand/supply)
+3. Ask the user the interview questions naturally — skip optional ones if context is clear
+4. Call m3x_post_intent with the collected answers
+
+Markets: venture_capital, ma_deal_flow, real_estate, private_equity, b2b_saas,
+         legal_services, procurement, healthcare, freelance, cofounder, hiring, partnerships,
+         marketing, supply_chain, sustainability, executive_search, misc (catch-all for anything else)`,
+  inputSchema: z.object({
+    market: z.string().describe("Market slug, e.g. venture_capital, cofounder, freelance, hiring, real_estate"),
+    side: z.enum(["demand", "supply"]).describe("'demand' = user needs something, 'supply' = user offers something")
+  }).strict(),
+  annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false }
+}, async (params) => {
+  try {
+    const slug = params.market.replace(/_/g, '-')
+    const result = await fetch(`${M3X_API_URL}/markets/${slug}/template`) as any
+    const data = await result.json() as any
+    if (!data.template) return { content: [{ type: "text", text: JSON.stringify(data, null, 2) }] }
+
+    const side = data.template[params.side]
+    const questions = side.interview as Array<{ field: string; question: string; required: boolean; example?: string }>
+
+    // Format as a clear agent briefing — not raw JSON
+    const lines = [
+      `Market: ${data.template.label} — ${params.side === 'demand' ? 'seeking' : 'offering'}`,
+      `Who posts on this side: ${side.description}`,
+      ``,
+      `Ask the user these questions (required first, then optional):`,
+      ...questions.map((q, i) =>
+        `${i + 1}. [${q.required ? 'REQUIRED' : 'optional'}] ${q.question}${q.example ? `\n   Example: "${q.example}"` : ''}`
+      ),
+      ``,
+      `Assembly hint: ${side.assemblyHint}`,
+      ``,
+      `Once you have the answers, call m3x_post_intent with:`,
+      `  side: "${params.side}"`,
+      `  market: "${params.market}"`,
+      `  offers: <assembled from answers about what the user brings>`,
+      `  seeking: <assembled from answers about what the user needs>`,
+    ]
+
+    return { content: [{ type: "text", text: lines.join('\n') }] }
+  } catch (e) {
+    return { content: [{ type: "text", text: `Error: ${e instanceof Error ? e.message : String(e)}` }] }
+  }
+});
+
 server.registerTool("m3x_post_intent", {
   title: "Post Intent to M3X",
   description: `Post a demand or supply intent to the M3X Agentic Matchmaking Network.
 M3X embeds the intent as a vector and matches it against other agents in real time.
 Use 'supply' when you offer something, 'demand' when you need something.
+
+IMPORTANT: Before calling this, call m3x_get_intent_template to get the right questions
+to ask the user. Gather their answers conversationally, then post a well-structured intent.
+Do NOT post with placeholder text — the quality of the intent determines match quality.
+
 Returns: intent ID and confirmation.`,
   inputSchema: z.object({
     side: z.enum(["supply", "demand"]).describe("'supply' = you offer something, 'demand' = you need something"),
-    market: z.string().optional().describe("Market (optional — auto-classified by AI if omitted): venture_capital, ma_deal_flow, real_estate, private_equity, b2b_saas, legal_services, procurement, healthcare, freelance, cofounder, hiring, partnerships"),
+    market: z.string().optional().describe("Market (optional — auto-classified by AI if omitted): venture_capital, ma_deal_flow, real_estate, private_equity, b2b_saas, legal_services, procurement, healthcare, freelance, cofounder, hiring, partnerships, marketing, supply_chain, sustainability, executive_search, misc"),
     offers: z.string().min(10).describe("What you offer — plain text"),
     seeking: z.string().min(10).describe("What you are looking for — plain text"),
     webhook_url: z.string().url().optional().describe("URL to receive match notifications"),

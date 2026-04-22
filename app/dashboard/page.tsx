@@ -44,6 +44,7 @@ interface Intent {
 
 interface Conversation {
   id: string
+  match_id: string | null
   unread: number
   last_message_at: string | null
   created_at: string
@@ -370,7 +371,7 @@ function Dashboard({
       const [agentRes, matchesRes, intentsRes, convsRes] = await Promise.all([
         fetch('/api/agent/me', { headers }),
         fetch('/api/matches?limit=20', { headers }),
-        fetch('/api/intents?status=active', { headers }),
+        fetch('/api/intents', { headers }),   // all statuses — feed must not lose history
         fetch('/api/conversations', { headers }),
       ])
       if (!agentRes.ok) { setError('Session expired. Please reconnect.'); return }
@@ -391,6 +392,9 @@ function Dashboard({
 
   useEffect(() => { load() }, [load])
 
+  // Only active intents count for badges and stats.
+  const activeIntents = intents.filter(i => i.status === 'active')
+
   // Build activity feed from intents + matches + conversations
   const buildFeed = (): FeedItem[] => {
     const items: FeedItem[] = []
@@ -398,13 +402,46 @@ function Dashboard({
     for (const intent of intents) {
       const marketLabel = intent.market.replace(/_/g, ' ')
       const sideLabel = intent.side === 'demand' ? 'seeking' : 'offering'
+
+      // "Intent posted" entry — always kept, regardless of current status.
+      const activeText = intent.status === 'active'
+        ? ` · ${timeUntil(intent.expires_at)}`
+        : ''
       items.push({
-        id: `intent-${intent.id}`,
-        text: `Intent posted — ${marketLabel} (${sideLabel}) · ${timeUntil(intent.expires_at)}`,
+        id: `intent-posted-${intent.id}`,
+        text: `Intent posted — ${marketLabel} (${sideLabel})${activeText}`,
         timeIso: intent.created_at,
         read: true,
         href: '/intents',
       })
+
+      // Additional status-change entry for withdrawn / expired intents.
+      // Timestamp is 1 s after `created_at` so it sorts just after the posted
+      // entry when both are on the same day. Not a real DB timestamp — purely
+      // for ordering the two synthetic items correctly in the feed.
+      if (intent.status === 'withdrawn') {
+        items.push({
+          id: `intent-withdrawn-${intent.id}`,
+          text: `Intent withdrawn — ${marketLabel} (${sideLabel})`,
+          timeIso: new Date(new Date(intent.created_at).getTime() + 1_000).toISOString(),
+          read: true,
+          href: '/intents',
+        })
+      } else if (intent.status === 'expired') {
+        items.push({
+          id: `intent-expired-${intent.id}`,
+          text: `Intent expired — ${marketLabel} (${sideLabel})`,
+          timeIso: new Date(new Date(intent.created_at).getTime() + 1_000).toISOString(),
+          read: true,
+          href: '/intents',
+        })
+      }
+    }
+
+    // Build match_id → session_id map from loaded conversations
+    const matchSessionMap: Record<string, string> = {}
+    for (const c of conversations) {
+      if (c.match_id) matchSessionMap[c.match_id] = c.id
     }
 
     for (const m of matches) {
@@ -413,14 +450,20 @@ function Dashboard({
       const read = m.state !== 'notified' && m.state !== 'discovered'
       let text = ''
       if (m.state === 'accepted') {
-        text = `Connected with @${other?.handle}`
+        const marketLabel = m.my_intent?.market?.replace(/_/g, ' ') ?? ''
+        text = `Connected with @${other?.handle}${marketLabel ? ` · ${marketLabel}` : ''}`
       } else if (m.state === 'handshake_initiated') {
         text = `Handshake pending with @${other?.handle}`
       } else {
         text = `New match — @${other?.handle ?? 'agent'} (${score}%)`
       }
+      // For accepted matches, link to exact session; otherwise fall back to ?with=handle
+      const sessionId = matchSessionMap[m.id]
       const handle = other?.handle
-      items.push({ id: m.id, text, timeIso: m.created_at, read, href: handle ? `/inbox?with=${handle}` : '/inbox' })
+      const href = sessionId
+        ? `/inbox?session=${sessionId}`
+        : handle ? `/inbox?with=${handle}` : '/inbox'
+      items.push({ id: m.id, text, timeIso: m.created_at, read, href })
     }
 
     for (const c of conversations) {
@@ -537,7 +580,7 @@ function Dashboard({
           </div>
           <div className={styles.statDivider} />
           <div className={styles.stat}>
-            <div className={styles.statVal}>{intents.length}</div>
+            <div className={styles.statVal}>{activeIntents.length}</div>
             <div className={styles.statLabel}>Intents</div>
           </div>
           <div className={styles.statDivider} />

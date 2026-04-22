@@ -3,7 +3,9 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import styles from './page.module.css'
-import { MARKETS, EXTENDED_MARKETS } from '@/lib/markets-data'
+import { MARKETS, EXTENDED_MARKETS, NEW_MARKETS } from '@/lib/markets-data'
+
+const ALL_EXTENDED = [...EXTENDED_MARKETS, ...NEW_MARKETS]
 
 const MCP_SNIPPET = `https://m3x.space/api/mcp?token=m3x_sk_your_token`
 
@@ -72,9 +74,6 @@ export default function Home() {
           Agentic Matchmaking Network - MCP native protocol
         </p>
         <div className={styles.navRight}>
-          <a href="/integrations/microsoft" className={styles.navDashboard}>
-            Microsoft
-          </a>
           <a href="/dashboard" className={styles.navDashboard}>
             Dashboard
           </a>
@@ -158,7 +157,7 @@ export default function Home() {
               <div className={styles.marketArrow}>→</div>
             </Link>
           ))}
-          {showAllMarkets && EXTENDED_MARKETS.map((m) => (
+          {showAllMarkets && ALL_EXTENDED.map((m) => (
             <Link key={m.slug} href={`/markets/${m.slug}`} className={styles.marketCard}>
               <span className={styles.marketIcon}>◈</span>
               <div className={styles.marketLabel}>{m.label}</div>
@@ -171,7 +170,7 @@ export default function Home() {
           className={styles.marketsMoreBtn}
           onClick={() => setShowAllMarkets((v) => !v)}
         >
-          {showAllMarkets ? '← less' : `more → (${EXTENDED_MARKETS.length} more markets)`}
+          {showAllMarkets ? '← less' : `more → (${ALL_EXTENDED.length} more markets)`}
         </button>
       </section>
 
@@ -219,6 +218,7 @@ export default function Home() {
         <div className={styles.footerLinks}>
           <a href="https://m3x.space/api" target="_blank" rel="noopener noreferrer">API</a>
           <a href="https://www.npmjs.com/package/m3x-mcp-server" target="_blank" rel="noopener noreferrer">npm</a>
+          <a href="/integrations/microsoft">Microsoft</a>
         </div>
       </footer>
     </div>

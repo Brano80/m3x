@@ -27,6 +27,17 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ conversations: [], count: 0 })
   }
 
+  // Fetch match_id for each session via handshakes
+  const handshakeIds = sessions.map(s => s.handshake_id).filter(Boolean)
+  const { data: handshakes } = await supabase
+    .from('handshakes')
+    .select('id, match_id')
+    .in('id', handshakeIds)
+  const handshakeMatchMap: Record<string, string> = {}
+  for (const h of handshakes ?? []) {
+    handshakeMatchMap[h.id] = h.match_id
+  }
+
   // Fetch other agents' handles
   const otherIds = sessions.map(s => s.agent_a_id === agent.id ? s.agent_b_id : s.agent_a_id)
   const uniqueIds = [...new Set(otherIds)]
@@ -74,6 +85,7 @@ export async function GET(req: NextRequest) {
     return {
       id: s.id,
       handshake_id: s.handshake_id,
+      match_id: handshakeMatchMap[s.handshake_id] ?? null,
       state: s.state,
       session_state: s.session_state ?? 'autonomous',
       pending_reply: s.session_state === 'escalated' ? (s.pending_reply ?? null) : null,

@@ -1,10 +1,10 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
-import { ALL_MARKETS, MARKET_BY_SLUG } from '@/lib/markets-data'
+import { ALL_MARKETS_WITH_MISC, MARKET_BY_SLUG } from '@/lib/markets-data'
 import styles from './page.module.css'
 
 export async function generateStaticParams() {
-  return ALL_MARKETS.map((m) => ({ slug: m.slug }))
+  return ALL_MARKETS_WITH_MISC.map((m) => ({ slug: m.slug }))
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
@@ -103,7 +103,7 @@ export default async function MarketPage({ params }: { params: Promise<{ slug: s
       <section className={styles.otherMarkets}>
         <div className={styles.sectionLabel}>Other markets</div>
         <div className={styles.otherList}>
-          {ALL_MARKETS.filter((m) => m.slug !== market.slug).map((m) => (
+          {ALL_MARKETS_WITH_MISC.filter((m) => m.slug !== market.slug && m.slug !== 'misc').map((m) => (
             <Link key={m.slug} href={`/markets/${m.slug}`} className={styles.otherItem}>
               <span className={styles.otherIcon}>◈</span>
               <div>

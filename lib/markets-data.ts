@@ -988,6 +988,370 @@ export const EXTENDED_MARKETS: MarketData[] = [
   },
 ]
 
-export const ALL_MARKETS = [...MARKETS, ...EXTENDED_MARKETS]
+// ── 4 New Markets ──────────────────────────────────────────────────────────────
 
-export const MARKET_BY_SLUG = Object.fromEntries(ALL_MARKETS.map((m) => [m.slug, m]))
+export const NEW_MARKETS: MarketData[] = [
+  {
+    slug: 'marketing',
+    label: 'Marketing & Growth',
+    tagline: 'Agencies ↔ Companies',
+    desc: 'Agencies ↔ Companies',
+    headline: 'Qualified marketing partnerships. No cold pitches.',
+    sub: 'Growth agencies, SEO specialists, and performance marketers post capabilities. Companies post budgets and goals. Matched on fit — not on who spends most on ads.',
+    privacyAngle:
+      'Companies that publicly broadcast their marketing budget or agency search attract inflated pitches and competitive intelligence leaks. Agencies that cold outreach publicly signal desperation. M3X keeps both sides private until a structural fit is confirmed.',
+    regulationFrameworks: ['GDPR', 'CCPA'],
+    examples: [
+      {
+        label: 'Scale-up seeking performance marketing agency',
+        packet: {
+          side: 'demand',
+          market: 'marketing',
+          intent_type: 'seeking_agency',
+          offers: {
+            description: 'B2B SaaS, $4M ARR, strong product, need to scale paid acquisition in EU and US markets',
+            capabilities: ['saas', 'b2b', 'established_product'],
+          },
+          seeking: {
+            description: 'Performance marketing agency with B2B SaaS experience, Google Ads and LinkedIn expertise, EU-based preferred',
+            required_capabilities: ['performance_marketing', 'b2b_marketing', 'google_ads', 'linkedin_ads'],
+            budget_range: '10k_30k_monthly',
+            geography: ['EU', 'US'],
+            timeline: 'q2_2026',
+          },
+          guardrails: { min_trust_score: 60 },
+          ttl_hours: 72,
+        },
+      },
+      {
+        label: 'SEO agency seeking enterprise clients',
+        packet: {
+          side: 'supply',
+          market: 'marketing',
+          intent_type: 'offering_services',
+          offers: {
+            description: 'Technical SEO agency, 8yr experience, 60+ B2B SaaS clients, avg 3x organic traffic growth in 12 months',
+            capabilities: ['seo', 'technical_seo', 'content_marketing', 'b2b_saas', 'link_building'],
+            traction: '60+ clients, avg 3x organic growth in 12 months',
+          },
+          seeking: {
+            description: 'B2B SaaS or tech company with €3k–€15k monthly SEO budget, looking for long-term partnership',
+            required_capabilities: ['saas', 'b2b', 'tech'],
+            budget_range: '3k_15k_monthly',
+            geography: ['EU', 'US', 'remote'],
+            timeline: 'immediate',
+          },
+          guardrails: { min_trust_score: 55 },
+          ttl_hours: 120,
+        },
+      },
+      {
+        label: 'Startup seeking fractional CMO',
+        packet: {
+          side: 'demand',
+          market: 'marketing',
+          intent_type: 'seeking_talent',
+          offers: {
+            description: 'Early-stage B2B SaaS, seed-funded, strong product-market fit, need marketing leadership 2–3 days/week',
+            capabilities: ['startup', 'b2b', 'seed_funded'],
+          },
+          seeking: {
+            description: 'Fractional CMO with B2B SaaS background, PLG or sales-led experience, EU timezone',
+            required_capabilities: ['cmo', 'b2b_marketing', 'product_led_growth', 'startup'],
+            budget_range: '5k_10k_monthly',
+            geography: ['EU', 'remote'],
+            timeline: 'immediate',
+          },
+          guardrails: { min_trust_score: 65 },
+          ttl_hours: 72,
+        },
+      },
+    ],
+  },
+  {
+    slug: 'supply-chain',
+    label: 'Supply Chain',
+    tagline: 'Suppliers ↔ Enterprises',
+    desc: 'Suppliers ↔ Enterprises',
+    headline: 'Supplier matching. Before the RFQ goes public.',
+    sub: 'Enterprise buyers post sourcing mandates privately. Qualified suppliers post capabilities. Matched before competitors know you\'re looking.',
+    privacyAngle:
+      'Supply chain sourcing intent revealed early gives competitors and existing suppliers leverage to inflate prices or copy your strategy. M3X keeps procurement mandates private until a qualified supplier is confirmed — protecting both negotiating position and strategic intent.',
+    regulationFrameworks: ['ISO9001', 'ISO14001', 'GDPR'],
+    examples: [
+      {
+        label: 'Manufacturer seeking EU-based component supplier',
+        packet: {
+          side: 'demand',
+          market: 'supply_chain',
+          intent_type: 'supplier_search',
+          offers: {
+            description: 'Automotive tier-1 manufacturer, €500M annual procurement, ISO 9001 certified, stable long-term contracts',
+            capabilities: ['automotive', 'enterprise_buyer', 'iso9001'],
+          },
+          seeking: {
+            description: 'Precision machined components supplier, EU-based, ISO 9001 and IATF 16949, 5yr+ automotive experience',
+            required_capabilities: ['precision_machining', 'automotive', 'iso9001', 'iatf16949'],
+            budget_range: '500k_5m_annually',
+            geography: ['EU'],
+            timeline: 'q3_2026',
+          },
+          guardrails: {
+            min_trust_score: 75,
+            regulation_framework: ['ISO9001'],
+          },
+          ttl_hours: 96,
+        },
+      },
+      {
+        label: 'Logistics provider posting capacity',
+        packet: {
+          side: 'supply',
+          market: 'supply_chain',
+          intent_type: 'offering_capacity',
+          offers: {
+            description: 'Pan-European 3PL, 12 warehouses, cold chain capability, 50k sqm storage, real-time tracking',
+            capabilities: ['logistics', '3pl', 'cold_chain', 'warehousing', 'eu_distribution'],
+            traction: '200+ enterprise clients, 15yr operating history',
+          },
+          seeking: {
+            description: 'FMCG or pharma clients needing EU distribution and cold chain logistics, 2yr+ contracts preferred',
+            required_capabilities: ['fmcg', 'pharma', 'enterprise'],
+            budget_range: '200k_2m_annually',
+            geography: ['EU'],
+            timeline: 'rolling',
+          },
+          guardrails: { min_trust_score: 70 },
+          ttl_hours: 240,
+        },
+      },
+      {
+        label: 'Retail chain — private label supplier search',
+        packet: {
+          side: 'demand',
+          market: 'supply_chain',
+          intent_type: 'supplier_search',
+          offers: {
+            description: 'EU retail chain, 400+ stores, looking to source private label food products, €20M annual volume',
+            capabilities: ['retail', 'enterprise_buyer', 'private_label'],
+          },
+          seeking: {
+            description: 'Food manufacturer with private label capacity, EU-based, BRC or IFS certified, min €2M annual capacity',
+            required_capabilities: ['food_manufacturing', 'private_label', 'brc_certified'],
+            budget_range: '2m_10m_annually',
+            geography: ['EU'],
+            timeline: 'h2_2026',
+          },
+          guardrails: {
+            min_trust_score: 70,
+            regulation_framework: ['ISO14001', 'GDPR'],
+          },
+          ttl_hours: 120,
+        },
+      },
+    ],
+  },
+  {
+    slug: 'sustainability',
+    label: 'Sustainability',
+    tagline: 'Climate tech ↔ Impact investors',
+    desc: 'Climate tech ↔ Impact investors',
+    headline: 'Climate and ESG partnerships. Matched on real impact.',
+    sub: 'Climate tech companies, ESG investors, and green infrastructure projects post structured intents. Matched on impact thesis, compliance posture, and geography.',
+    privacyAngle:
+      'ESG investment mandates and green procurement strategies are competitively sensitive. Companies exploring decarbonization partnerships or carbon credit strategies cannot afford public disclosure. M3X keeps both sides anonymous until a qualified match accepts the handshake.',
+    regulationFrameworks: ['SFDR', 'TCFD', 'EU_Taxonomy', 'CSRD'],
+    examples: [
+      {
+        label: 'Climate tech startup seeking impact investor',
+        packet: {
+          side: 'demand',
+          market: 'sustainability',
+          intent_type: 'seeking_investment',
+          offers: {
+            description: 'Carbon capture SaaS, 12 industrial clients, verified MRV methodology, EU ETS compatible, €800k ARR',
+            capabilities: ['carbon_capture', 'mrv', 'eu_ets', 'climate_tech', 'saas'],
+            traction: '12 industrial clients, €800k ARR, 2.1M tCO2e tracked',
+          },
+          seeking: {
+            description: 'Impact investor with climate thesis, EU-based, €2–8M Series A, SFDR Article 9 fund preferred',
+            required_capabilities: ['impact_investing', 'climate_tech', 'sfdr_article9'],
+            budget_range: '2m_8m',
+            geography: ['EU'],
+            timeline: 'h1_2026',
+          },
+          guardrails: {
+            min_trust_score: 65,
+            regulation_framework: ['SFDR', 'TCFD'],
+          },
+          ttl_hours: 96,
+        },
+      },
+      {
+        label: 'Corporate seeking renewable energy PPA',
+        packet: {
+          side: 'demand',
+          market: 'sustainability',
+          intent_type: 'energy_partnership',
+          offers: {
+            description: 'Manufacturing group, €50M energy spend, CSRD reporting obligation, net-zero by 2030 target',
+            capabilities: ['enterprise_buyer', 'manufacturing', 'csrd_reporting'],
+          },
+          seeking: {
+            description: 'Renewable energy provider for long-term PPA, solar or wind, EU-based, Guarantee of Origin included',
+            required_capabilities: ['renewable_energy', 'ppa', 'solar', 'wind', 'guarantee_of_origin'],
+            budget_range: '5m_20m_annually',
+            geography: ['EU'],
+            timeline: 'q4_2026',
+          },
+          guardrails: {
+            min_trust_score: 75,
+            regulation_framework: ['EU_Taxonomy', 'CSRD'],
+          },
+          ttl_hours: 120,
+        },
+      },
+      {
+        label: 'ESG fund posting investment mandate',
+        packet: {
+          side: 'supply',
+          market: 'sustainability',
+          intent_type: 'deploying_capital',
+          offers: {
+            description: 'SFDR Article 9 impact fund, €180M AUM, focus on EU Green Deal sectors, active portfolio support',
+            capabilities: ['impact_investing', 'sfdr_article9', 'eu_green_deal', 'sustainability'],
+          },
+          seeking: {
+            description: 'Climate tech or circular economy companies, €500k–€5M revenue, proven impact metrics, EU-based',
+            required_capabilities: ['climate_tech', 'circular_economy', 'impact_metrics'],
+            budget_range: '3m_15m',
+            geography: ['EU'],
+            timeline: 'rolling',
+          },
+          guardrails: {
+            min_trust_score: 70,
+            regulation_framework: ['SFDR', 'TCFD', 'EU_Taxonomy'],
+          },
+          ttl_hours: 240,
+        },
+      },
+    ],
+  },
+  {
+    slug: 'executive-search',
+    label: 'Executive Search',
+    tagline: 'C-suite ↔ Companies',
+    desc: 'C-suite ↔ Companies',
+    headline: 'Confidential leadership search. No recruiters in the loop.',
+    sub: 'Companies post leadership mandates privately. C-suite executives and board candidates post availability. Matched before any headhunter touches the process.',
+    privacyAngle:
+      'Executive search is the most privacy-sensitive hiring category. Companies that broadcast a CEO or CFO vacancy signal instability to markets, competitors, and employees. Executives exploring new opportunities cannot be visible to their current employer. M3X enforces confidentiality at both ends of the match.',
+    regulationFrameworks: ['GDPR'],
+    examples: [
+      {
+        label: 'PE-backed company seeking CFO',
+        packet: {
+          side: 'demand',
+          market: 'executive_search',
+          intent_type: 'executive_hire',
+          offers: {
+            description: 'PE-backed B2B SaaS, €25M ARR, preparing for Series C or exit in 18–24 months, strong board',
+            capabilities: ['employer', 'pe_backed', 'saas', 'growth_stage'],
+          },
+          seeking: {
+            description: 'CFO with SaaS and M&A experience, investor relations background, EU-based, open to equity',
+            required_capabilities: ['cfo', 'saas_finance', 'ma_experience', 'investor_relations'],
+            budget_range: '200k_320k_eur',
+            geography: ['EU', 'remote'],
+            timeline: 'q3_2026',
+          },
+          guardrails: {
+            min_trust_score: 80,
+            regulation_framework: ['GDPR'],
+          },
+          ttl_hours: 96,
+        },
+      },
+      {
+        label: 'Experienced CTO open to new opportunity',
+        packet: {
+          side: 'supply',
+          market: 'executive_search',
+          intent_type: 'open_to_opportunity',
+          offers: {
+            description: 'CTO with 3 exits, scaled 2 engineering teams from 5 to 80+, deep cloud-native and AI infrastructure background',
+            capabilities: ['cto', 'engineering_leadership', 'cloud_native', 'ai', 'team_scaling'],
+            traction: '3 exits, IPO experience, 15yr engineering leadership',
+          },
+          seeking: {
+            description: 'CTO or VP Engineering role at Series B–D, technical product company, meaningful equity',
+            required_capabilities: ['series_b', 'series_c', 'technical_product', 'equity'],
+            budget_range: '250k_400k_eur',
+            geography: ['EU', 'remote'],
+            timeline: 'q3_2026',
+          },
+          guardrails: { min_trust_score: 75 },
+          ttl_hours: 120,
+        },
+      },
+      {
+        label: 'Board member mandate — independent director',
+        packet: {
+          side: 'demand',
+          market: 'executive_search',
+          intent_type: 'board_search',
+          offers: {
+            description: 'VC-backed fintech, €12M ARR, seeking independent board director with regulatory and financial services background',
+            capabilities: ['employer', 'fintech', 'vc_backed'],
+          },
+          seeking: {
+            description: 'Independent board director, fintech or banking regulatory experience, EU-based, 1 board seat available',
+            required_capabilities: ['board_experience', 'fintech', 'regulatory', 'financial_services'],
+            budget_range: '30k_60k_annually',
+            geography: ['EU'],
+            timeline: 'q2_2026',
+          },
+          guardrails: {
+            min_trust_score: 85,
+            regulation_framework: ['GDPR'],
+          },
+          ttl_hours: 72,
+        },
+      },
+    ],
+  },
+]
+
+// ── Misc market — catch-all, not shown on homepage ──────────────────────────
+
+export const MISC_MARKET: MarketData = {
+  slug: 'misc',
+  label: 'Other',
+  tagline: 'Anything ↔ Anyone',
+  desc: 'Any intent that doesn\'t fit a specific market',
+  headline: 'Post any intent. M3X will find the match.',
+  sub: 'For intents that don\'t fit a standard market category. M3X uses semantic matching to find the right counterparty regardless of category.',
+  privacyAngle:
+    'Even unconventional intents deserve privacy. M3X keeps your intent invisible until a match is found, regardless of category.',
+  regulationFrameworks: [],
+  examples: [
+    {
+      label: 'General request example',
+      packet: {
+        side: 'demand',
+        market: 'misc',
+        intent_type: 'general_request',
+        offers: { description: 'Describe what you bring to this arrangement' },
+        seeking: { description: 'Describe what you are looking for' },
+        ttl_hours: 72,
+      },
+    },
+  ],
+}
+
+export const ALL_MARKETS = [...MARKETS, ...EXTENDED_MARKETS, ...NEW_MARKETS]
+
+// ALL_MARKETS_WITH_MISC includes the catch-all for routing and API purposes
+export const ALL_MARKETS_WITH_MISC = [...ALL_MARKETS, MISC_MARKET]
+
+export const MARKET_BY_SLUG = Object.fromEntries(ALL_MARKETS_WITH_MISC.map((m) => [m.slug, m]))
