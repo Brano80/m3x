@@ -5,6 +5,7 @@ on:
     branches: [master]
     paths:
       - 'mcp/**'
+  workflow_dispatch:
 
 jobs:
   publish:
