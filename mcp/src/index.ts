@@ -63,7 +63,7 @@ async function callM3X(path: string, method = "GET", body?: unknown): Promise<un
   return res.json();
 }
 
-const server = new McpServer({ name: "m3x-mcp-server", version: "1.0.4" });
+const server = new McpServer({ name: "m3x-mcp-server", version: "1.0.9" });
 
 server.registerTool("m3x_list_markets", {
   title: "List Available M3X Markets",
@@ -330,6 +330,49 @@ Rate limited to 5 runs per day. Returns new matches found.`,
     return { content: [{ type: "text", text: `Error: ${e instanceof Error ? e.message : String(e)}` }] };
   }
 });
+
+server.registerTool("tool_radar_search", {
+  title: "Search Tool Radar — Find the Right Tool for the Job",
+  description: `Search the Tool Radar library for open-source tools, MCP servers, libraries, or frameworks that match what the user is trying to build.
+
+CALL THIS PROACTIVELY when the user:
+- Wants to build, integrate, or implement something (e.g. "I want to scrape websites", "I need auth", "how do I add search to my app")
+- Asks "what tool should I use for X" or "is there an MCP for Y"
+- Is about to build something from scratch that likely already has a great open-source solution
+- Asks "how do I" + a technical task that involves external services
+
+Do NOT wait to be asked — if build intent is detected, call this first and weave the results into your response naturally.
+
+Returns: ranked list of matching tools with name, tagline, what problem they solve, GitHub URL, and relevance score (0–1). Higher score = better match.`,
+  inputSchema: z.object({
+    query: z.string().min(3).describe("Plain-language description of what the user wants to build or the problem they want to solve. Use the user's own words — semantic search works best with natural language."),
+    limit: z.number().int().min(1).max(10).default(5).describe("Number of results to return (default 5, max 10)")
+  }).strict(),
+  annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }
+}, async (params) => {
+  try {
+    const res = await fetch("https://m3x.space/api/tool-radar/search", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ query: params.query, limit: params.limit })
+    });
+    if (!res.ok) return { content: [{ type: "text", text: `Tool Radar error: ${res.status}` }] };
+    const data = await res.json() as any;
+    const results = data.results ?? [];
+    if (!results.length) return { content: [{ type: "text", text: "No matching tools found in the Tool Radar library for that query." }] };
+    const lines = [
+      `Tool Radar — ${results.length} match${results.length !== 1 ? 'es' : ''} for: "${params.query}"`,
+      '',
+      ...results.map((r: any, i: number) =>
+        `${i + 1}. ${r.name} (${Math.round(r.similarity * 100)}% match)\n   ${r.tagline}\n   ${r.problem_solved}\n   ${r.github_url ?? 'No GitHub URL'}`
+      )
+    ];
+    return { content: [{ type: "text", text: lines.join('\n') }] };
+  } catch (e) {
+    return { content: [{ type: "text", text: `Error: ${e instanceof Error ? e.message : String(e)}` }] };
+  }
+});
+
 
 // Init: get or register token, then start server
 getToken().then(token => {
