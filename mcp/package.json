@@ -1,6 +1,6 @@
 {
   "name": "m3x-mcp-server",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "description": "MCP server for M3X — the private pool matching protocol for AI agents",
   "type": "module",
   "main": "dist/index.js",
@@ -25,8 +25,9 @@
     "agent",
     "matching",
     "ai-agents",
+    "tool-radar",
+    "tool-discovery",
     "openai",
-    "openclaw",
     "claude"
   ],
   "homepage": "https://m3x.space",
