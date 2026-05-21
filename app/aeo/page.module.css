@@ -250,9 +250,9 @@
   font-weight: 400;
 }
 
-.scoreLabelGood { font-size: 11px; font-weight: 600; color: var(--m3x-blue, #4f92e8); letter-spacing: 0.08em; text-transform: uppercase; }
-.scoreLabelMid  { font-size: 11px; font-weight: 600; color: #f59e0b; letter-spacing: 0.08em; text-transform: uppercase; }
-.scoreLabelBad  { font-size: 11px; font-weight: 600; color: #ef4444; letter-spacing: 0.08em; text-transform: uppercase; }
+.scoreLabelGood { font-size: 11px; font-weight: 700; color: #00ff88; letter-spacing: 0.08em; text-transform: uppercase; }
+.scoreLabelMid  { font-size: 11px; font-weight: 700; color: #f59e0b; letter-spacing: 0.08em; text-transform: uppercase; }
+.scoreLabelBad  { font-size: 11px; font-weight: 700; color: #ef4444; letter-spacing: 0.08em; text-transform: uppercase; }
 
 .scoreRight {
   display: flex;
@@ -516,8 +516,8 @@
   align-items: center;
   justify-content: space-between;
   gap: 24px;
-  background: rgba(79,146,232,0.04);
-  border: 1px solid rgba(79,146,232,0.18);
+  background: rgba(0,255,136,0.04);
+  border: 1px solid rgba(0,255,136,0.25);
   border-radius: 6px;
   padding: 24px 28px;
 }
@@ -542,8 +542,8 @@
   flex-shrink: 0;
   display: inline-block;
   background: transparent;
-  color: var(--m3x-blue, #4f92e8);
-  border: 1px solid rgba(79,146,232,0.45);
+  color: #00ff88;
+  border: 1px solid rgba(0,255,136,0.45);
   padding: 11px 20px;
   font-size: 13px;
   font-weight: 600;
@@ -553,8 +553,8 @@
   white-space: nowrap;
 }
 .m3xCtaBtn:hover {
-  background: rgba(79,146,232,0.1);
-  border-color: rgba(79,146,232,0.7);
+  background: rgba(0,255,136,0.08);
+  border-color: rgba(0,255,136,0.7);
 }
 
 /* ── Checks info (pre-scan) ──────────────────────────────────────────── */

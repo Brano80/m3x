@@ -45,8 +45,8 @@ function ScoreBar({ score, max }: { score: number; max: number }) {
 }
 
 function ScoreLabel({ score }: { score: number }) {
-  if (score >= 70) return <span className={styles.scoreLabelGood}>Agent-ready</span>
-  if (score >= 40) return <span className={styles.scoreLabelMid}>Partial coverage</span>
+  if (score >= 70) return <span className={styles.scoreLabelGood}>Agent-ready ✓</span>
+  if (score >= 50) return <span className={styles.scoreLabelMid}>Partial coverage</span>
   return <span className={styles.scoreLabelBad}>Not agent-ready</span>
 }
 
@@ -148,8 +148,7 @@ export default function AeoPage() {
         </form>
 
         <p className={styles.heroNote}>
-          Free · No login · Scores m3x.space itself at&nbsp;
-          <button className={styles.inlineLink} onClick={() => { setUrl('m3x.space'); }}>83/100</button>
+          Free · No login required
         </p>
       </section>
 
