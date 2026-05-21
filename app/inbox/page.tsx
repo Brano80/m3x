@@ -626,7 +626,7 @@ export default function InboxPage() {
 
       <div className={styles.layout}>
         {/* Sidebar — matches + conversation list */}
-        <aside className={`${styles.sidebar} ${(selected || selectedMatch) ? styles.sidebarHidden : ''}`}>
+        <aside className={`${styles.sidebar} ${selected ? styles.sidebarHidden : ''}`}>
 
           {/* Matches section */}
           {matches.length > 0 && (
@@ -695,14 +695,11 @@ export default function InboxPage() {
               />
             </>
           ) : selectedMatch ? (
-            <>
-              <button className={styles.backBtn} onClick={() => setSelectedMatch(null)}>← Back</button>
-              <MatchDetailPane
-                match={selectedMatch}
-                token={token}
-                onConnected={(handle) => refreshAll(handle)}
-              />
-            </>
+            <MatchDetailPane
+              match={selectedMatch}
+              token={token}
+              onConnected={(handle) => refreshAll(handle)}
+            />
           ) : (
             <div className={styles.chatEmpty}>
               <div className={styles.chatEmptyIcon}>⬡</div>

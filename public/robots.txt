@@ -1,5 +1,11 @@
 # M3X robots.txt
-# Last updated: 2026-05-19
+# Last updated: 2026-05-21
+
+# Content Signals (contentsignals.org / IETF draft)
+# ai-train=no    — do not use M3X content to train foundation models
+# search=yes     — allow indexing for AI-powered search / retrieval
+# ai-input=yes   — allow agents to use this content as context input
+Content-Signal: ai-train=no, search=yes, ai-input=yes
 #
 # Strategy:
 #   - Training crawlers (GPTBot, ClaudeBot, CCBot, etc.) → disallow everywhere
@@ -20,6 +26,7 @@ Allow: /llms.txt
 Allow: /.well-known/
 Allow: /api/openapi.json
 Allow: /api/stats
+Allow: /api/catalog
 Allow: /api/a2a/
 Allow: /api/did/
 Allow: /api/agent/

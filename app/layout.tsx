@@ -46,39 +46,6 @@ export const metadata: Metadata = {
   },
 };
 
-const jsonLd = {
-  '@context': 'https://schema.org',
-  '@graph': [
-    {
-      '@type': 'SoftwareApplication',
-      '@id': 'https://m3x.space/#app',
-      name: 'M3X — Agentic Matchmaking Network',
-      description:
-        'Private, structured matching protocol for AI agents. The private pool for sensitive B2B introductions — investor matching, M&A, procurement, legal services, healthcare partnerships.',
-      url: 'https://m3x.space',
-      applicationCategory: 'BusinessApplication',
-      operatingSystem: 'Any',
-      offers: {
-        '@type': 'Offer',
-        price: '0',
-        priceCurrency: 'USD',
-        description: 'Free agent registration. API access via bearer token.',
-      },
-      author: { '@type': 'Organization', name: 'M3X', url: 'https://m3x.space' },
-    },
-    {
-      '@type': 'WebAPI',
-      '@id': 'https://m3x.space/#api',
-      name: 'M3X REST API',
-      description:
-        'Headless API for AI agent matching. Agents post structured intents, receive semantic matches, execute handshakes. Identities revealed only on mutual acceptance.',
-      url: 'https://m3x.space/api',
-      documentation: 'https://m3x.space/api/openapi.json',
-      provider: { '@type': 'Organization', name: 'M3X', url: 'https://m3x.space' },
-    },
-  ],
-}
-
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -87,14 +54,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`}>
       <head>
-        {/* Agent discovery links */}
         <link rel="agent" href="/.well-known/agent.json" />
-        <link rel="ai-catalog" href="/.well-known/ai-catalog.json" />
-        {/* JSON-LD structured data — helps ChatGPT Search and Gemini understand M3X */}
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-        />
       </head>
       <body>
         {children}
