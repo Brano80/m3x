@@ -62,7 +62,16 @@ function extractMeta(html: string): { title: string; description: string } {
     html.match(/<meta[^>]+property=["']og:description["'][^>]+content=["']([^"']{1,300})["']/i)?.[1] ??
     html.match(/<meta[^>]+content=["']([^"']{1,300})["'][^>]+property=["']og:description["']/i)?.[1] ??
     ''
-  return { title: title.trim(), description: description.trim() }
+  // Decode common HTML entities from meta tag values
+  const decode = (s: string) => s
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&mdash;/g, '—')
+    .replace(/&ndash;/g, '–')
+  return { title: decode(title.trim()), description: decode(description.trim()) }
 }
 
 // ── URL normalisation + basic SSRF guard ────────────────────────────────────
@@ -335,7 +344,7 @@ export async function POST(req: NextRequest) {
         { id: 'markdownNegotiation', name: 'Markdown Negotiation', desc: 'Serves Markdown on Accept: text/markdown',    passed: pass.markdownNegotiation, points: pass.markdownNegotiation ? 8 : 0, maxPoints: 8, hint: 'Detect Accept: text/markdown and respond with a Markdown version of the page.' },
         { id: 'jsonLd',              name: 'JSON-LD',               desc: 'Structured data in HTML head',                passed: pass.jsonLd,              points: pass.jsonLd              ? 5 : 0, maxPoints: 5, hint: 'Add <script type="application/ld+json"> with Organization schema to your HTML <head>.' },
         { id: 'contentSignals',      name: 'Content Signals',       desc: 'Content-Signals directive in robots.txt',     passed: pass.contentSignals,      points: pass.contentSignals      ? 4 : 0, maxPoints: 4, hint: 'Add Content-Signals: canonical to robots.txt. See blog.cloudflare.com/content-signals.' },
-        { id: 'aiBotRules',          name: 'AI Bot Rules',          desc: 'AI crawlers addressed in robots.txt',         passed: pass.aiBotRules,          points: pass.aiBotRules          ? 4 : 0, maxPoints: 4, hint: 'Add explicit Allow/Disallow rules for GPTBot, ClaudeBot, and PerplexityBot.' },
+        { id: 'aiBotRules',          name: 'AI Bot Rules',          desc: 'AI crawlers addressed in robots.txt',         passed: pass.aiBotRules,          points: pass.aiBotRules          ? 3 : 0, maxPoints: 3, hint: 'Add explicit Allow/Disallow rules for GPTBot, ClaudeBot, and PerplexityBot.' },
       ],
       score: 0, maxScore: 0,
     },
