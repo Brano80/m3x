@@ -6,6 +6,7 @@
 # search=yes     — allow indexing for AI-powered search / retrieval
 # ai-input=yes   — allow agents to use this content as context input
 Content-Signal: ai-train=no, search=yes, ai-input=yes
+Content-Signals: canonical
 #
 # Strategy:
 #   - Training crawlers (GPTBot, ClaudeBot, CCBot, etc.) → disallow everywhere

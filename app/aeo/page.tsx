@@ -77,7 +77,7 @@ export default function AeoPage() {
         return
       }
       setResult(data)
-      setExpandedCats(new Set(data.categories.filter((c: Category) => c.score < c.maxScore).map((c: Category) => c.id)))
+      setExpandedCats(new Set(data.categories.map((c: Category) => c.id)))
       setTimeout(() => resultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100)
     } catch {
       setError('Network error. Check the domain and try again.')
