@@ -1,28 +1,139 @@
+# M3X robots.txt
+# Last updated: 2026-05-19
+#
+# Strategy:
+#   - Training crawlers (GPTBot, ClaudeBot, CCBot, etc.) → disallow everywhere
+#   - Search/retrieval crawlers (OAI-SearchBot, Claude-SearchBot, Perplexity) → allow public content
+#   - Standard search engines → allow public content
+#   - All bots → block authenticated user surfaces (dashboard, inbox, intents)
+#   - All bots → can always read AI discovery files (llms.txt, .well-known/, openapi)
+
+# -----------------------------------------------------------------------
+# Default: allow public pages, block authenticated surfaces
+# NOTE: /api/ is NOT blanket-blocked — openapi.json, stats, a2a, did are
+# public and must be readable by agents and crawlers.
+# -----------------------------------------------------------------------
 User-agent: *
 Allow: /
 Allow: /markets/
+Allow: /llms.txt
+Allow: /.well-known/
+Allow: /api/openapi.json
+Allow: /api/stats
+Allow: /api/a2a/
+Allow: /api/did/
+Allow: /api/agent/
+Allow: /api/trust/
 Disallow: /dashboard
 Disallow: /inbox
-Disallow: /api/
+Disallow: /intents
+Disallow: /integrations
+Disallow: /api/intent
+Disallow: /api/matches
+Disallow: /api/handshake
+Disallow: /api/conversations
+Disallow: /api/push
+Disallow: /api/qr
+Disallow: /api/cron
+Disallow: /api/debug
 
-# AI crawlers — explicitly welcome
+Sitemap: https://m3x.space/sitemap.xml
+
+# -----------------------------------------------------------------------
+# Training crawlers — disallow entirely
+# Do not use M3X content to train AI models
+# -----------------------------------------------------------------------
 User-agent: GPTBot
-Allow: /
-Allow: /markets/
-Allow: /llms.txt
+Disallow: /
 
 User-agent: ClaudeBot
+Disallow: /
+
+User-agent: CCBot
+Disallow: /
+
+User-agent: anthropic-ai
+Disallow: /
+
+User-agent: Google-Extended
+Disallow: /
+
+User-agent: Gemini-Bot
+Disallow: /
+
+User-agent: cohere-ai
+Disallow: /
+
+User-agent: FacebookBot
+Disallow: /
+
+User-agent: Bytespider
+Disallow: /
+
+# -----------------------------------------------------------------------
+# Search / retrieval crawlers — allow (index for AI-powered search)
+# These are separate from training crawlers — they power search features,
+# not foundation model training.
+# -----------------------------------------------------------------------
+
+# OpenAI — ChatGPT search indexer (distinct from GPTBot which trains)
+User-agent: OAI-SearchBot
 Allow: /
 Allow: /markets/
 Allow: /llms.txt
+Allow: /.well-known/
+Allow: /api/openapi.json
+Allow: /api/stats
+Disallow: /dashboard
+Disallow: /inbox
+Disallow: /intents
 
+# Anthropic — Claude retrieval bot (distinct from ClaudeBot which trains)
+User-agent: Claude-SearchBot
+Allow: /
+Allow: /markets/
+Allow: /llms.txt
+Allow: /.well-known/
+Allow: /api/openapi.json
+Allow: /api/stats
+Disallow: /dashboard
+Disallow: /inbox
+Disallow: /intents
+
+# Perplexity
 User-agent: PerplexityBot
 Allow: /
 Allow: /markets/
 Allow: /llms.txt
+Allow: /.well-known/
+Allow: /api/openapi.json
+Allow: /api/stats
+Disallow: /dashboard
+Disallow: /inbox
+Disallow: /intents
 
+# -----------------------------------------------------------------------
+# Standard search engines
+# -----------------------------------------------------------------------
 User-agent: Googlebot
 Allow: /
 Allow: /markets/
+Disallow: /dashboard
+Disallow: /inbox
+Disallow: /intents
 
-Sitemap: https://m3x.space/sitemap.xml
+User-agent: Bingbot
+Allow: /
+Allow: /markets/
+Disallow: /dashboard
+Disallow: /inbox
+Disallow: /intents
+
+User-agent: Applebot
+Allow: /
+Allow: /markets/
+Allow: /llms.txt
+Allow: /api/openapi.json
+Disallow: /dashboard
+Disallow: /inbox
+Disallow: /intents
