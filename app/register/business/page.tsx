@@ -48,11 +48,12 @@ function domainToHandle(domain: string): string {
 
 function BusinessRegisterInner() {
   const params = useSearchParams()
-  const rawDomain = params.get('domain') ?? ''
+  const rawDomain  = params.get('domain')  ?? ''
+  const rawCompany = params.get('company') ?? ''
 
-  const [companyName, setCompanyName] = useState('')
+  const [companyName, setCompanyName] = useState(rawCompany)
   const [domain,      setDomain]      = useState(rawDomain)
-  const [handle,      setHandle]      = useState(domainToHandle(rawDomain))
+  const [handle,      setHandle]      = useState(domainToHandle(rawDomain || rawCompany))
   const [markets,     setMarkets]     = useState<string[]>([])
   const [capInput,    setCapInput]    = useState('')
   const [caps,        setCaps]        = useState<string[]>([])

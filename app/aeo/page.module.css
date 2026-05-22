@@ -491,6 +491,71 @@
 .perfectTitle { font-size: 14px; font-weight: 700; color: rgba(255,255,255,0.9); margin-bottom: 2px; }
 .perfectSub { font-size: 12px; color: rgba(255,255,255,0.4); }
 
+/* ── Social card ─────────────────────────────────────────────────────── */
+.socialCard {
+  display: flex;
+  gap: 20px;
+  background: rgba(239, 68, 68, 0.04);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: 12px;
+  padding: 28px 32px;
+  margin-bottom: 32px;
+  align-items: flex-start;
+}
+
+.socialIcon {
+  font-size: 28px;
+  color: #ef4444;
+  flex-shrink: 0;
+  line-height: 1;
+  margin-top: 2px;
+}
+
+.socialBody {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.socialTitle {
+  font-size: 17px;
+  font-weight: 700;
+  color: #e8e8f0;
+  line-height: 1.3;
+}
+
+.socialDesc {
+  font-size: 13px;
+  color: #666;
+  line-height: 1.7;
+}
+.socialDesc code {
+  color: #4f92e8;
+  font-size: 12px;
+}
+
+.socialFix {
+  padding: 16px 20px;
+  background: rgba(0, 255, 136, 0.04);
+  border: 1px solid rgba(0, 255, 136, 0.15);
+  border-radius: 8px;
+}
+
+.socialFixTitle {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #00ff88;
+  margin-bottom: 6px;
+}
+
+.socialFixDesc {
+  font-size: 13px;
+  color: #888;
+  line-height: 1.6;
+}
+
 /* ── Badge section ───────────────────────────────────────────────────── */
 .badgeSection {
   margin-bottom: 24px;

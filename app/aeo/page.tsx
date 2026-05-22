@@ -50,11 +50,41 @@ function ScoreLabel({ score }: { score: number }) {
   return <span className={styles.scoreLabelBad}>Not agent-ready</span>
 }
 
+const SOCIAL_DOMAINS: Record<string, { name: string; icon: string }> = {
+  'facebook.com':  { name: 'Facebook',  icon: 'f' },
+  'fb.com':        { name: 'Facebook',  icon: 'f' },
+  'instagram.com': { name: 'Instagram', icon: '◎' },
+  'twitter.com':   { name: 'X / Twitter', icon: '𝕏' },
+  'x.com':         { name: 'X / Twitter', icon: '𝕏' },
+  'linkedin.com':  { name: 'LinkedIn',  icon: 'in' },
+  'tiktok.com':    { name: 'TikTok',    icon: '♪' },
+  'youtube.com':   { name: 'YouTube',   icon: '▶' },
+  'pinterest.com': { name: 'Pinterest', icon: '𝗣' },
+  'snapchat.com':  { name: 'Snapchat',  icon: '👻' },
+}
+
+function detectSocial(raw: string): { platform: string; handle: string } | null {
+  try {
+    let s = raw.trim()
+    if (!s.startsWith('http')) s = 'https://' + s
+    const u = new URL(s)
+    const host = u.hostname.replace(/^www\./, '')
+    const social = SOCIAL_DOMAINS[host]
+    if (!social) return null
+    // Try to extract handle from path: /acmecompany → acmecompany
+    const handle = u.pathname.replace(/^\//, '').split('/')[0].split('?')[0] || ''
+    return { platform: social.name, handle }
+  } catch {
+    return null
+  }
+}
+
 export default function AeoPage() {
   const [url, setUrl] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [result, setResult] = useState<ScanResult | null>(null)
+  const [social, setSocial] = useState<{ platform: string; handle: string } | null>(null)
   const [copied, setCopied] = useState(false)
   const [copiedBadge, setCopiedBadge] = useState(false)
   const [expandedCats, setExpandedCats] = useState<Set<string>>(new Set())
@@ -63,6 +93,18 @@ export default function AeoPage() {
   async function runScan(e: React.FormEvent) {
     e.preventDefault()
     if (!url.trim()) return
+
+    // Detect social media URLs before hitting the API
+    const detected = detectSocial(url)
+    if (detected) {
+      setSocial(detected)
+      setResult(null)
+      setError('')
+      setTimeout(() => resultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100)
+      return
+    }
+
+    setSocial(null)
     setLoading(true)
     setError('')
     setResult(null)
@@ -152,6 +194,56 @@ export default function AeoPage() {
           Free · No login required
         </p>
       </section>
+
+      {/* Social media detected */}
+      {social && (
+        <div className={styles.results} ref={resultRef}>
+          <div className={styles.socialCard}>
+            <div className={styles.socialIcon}>◈</div>
+            <div className={styles.socialBody}>
+              <div className={styles.socialTitle}>
+                {social.platform} profiles can't be made agent-ready directly
+              </div>
+              <div className={styles.socialDesc}>
+                Social media pages live on someone else's infrastructure — you can't add
+                the protocols AI agents look for (<code>llms.txt</code>, MCP endpoints,
+                identity files). No matter how optimised your {social.platform} page is,
+                it's invisible to AI agents browsing the open web.
+              </div>
+              <div className={styles.socialFix}>
+                <div className={styles.socialFixTitle}>The fix</div>
+                <div className={styles.socialFixDesc}>
+                  Register on M3X and get a free agent-discoverable profile — visible to AI agents
+                  even if your only web presence is {social.platform}.
+                  It takes 30 seconds and requires no code or website.
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className={styles.ctaDivider}>
+            <span className={styles.ctaDividerLine} />
+            <span className={styles.ctaDividerText}>your next step</span>
+            <span className={styles.ctaDividerLine} />
+          </div>
+
+          <div className={styles.m3xCta}>
+            <div className={styles.m3xCtaLeft}>
+              <div className={styles.m3xCtaTitle}>Get a free agent presence on M3X</div>
+              <div className={styles.m3xCtaSub}>
+                Your business gets a public profile on m3x.space — not just visible to humans,
+                but visible to AI agents browsing the open web. Free. No code or website required.
+              </div>
+            </div>
+            <a
+              href={`/register/business${social.handle ? `?company=${encodeURIComponent(social.handle)}` : ''}`}
+              className={styles.m3xCtaBtn}
+            >
+              Activate free presence →
+            </a>
+          </div>
+        </div>
+      )}
 
       {/* Results */}
       {result && (
