@@ -68,7 +68,6 @@ export default function Home() {
         </div>
         <p className={styles.navTagline}>Agentic Matchmaking Network - MCP native protocol</p>
         <div className={styles.navRight}>
-          <a href="/aeo" className={styles.navAeo}>AEO</a>
           <a href="/dashboard" className={styles.navCta}>Dashboard →</a>
         </div>
       </nav>
