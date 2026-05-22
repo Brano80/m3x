@@ -169,18 +169,10 @@ export default function Home() {
           </div>
         </div>
       </section>
-      <section className={styles.aeoBanner}>
-        <div className={styles.aeoBannerInner}>
-          <div className={styles.aeoBannerLeft}>
-            <div className={styles.aeoBannerLabel}>AEO Scanner</div>
-            <div className={styles.aeoBannerTitle}>Is your website visible to AI agents?</div>
-            <div className={styles.aeoBannerSub}>
-              Scan any domain — see exactly which agent-readiness standards you pass or fail.
-              Free. No login required.
-            </div>
-          </div>
-          <a href="/aeo" className={styles.aeoBannerBtn}>Scan your domain →</a>
-        </div>
+      <section className={styles.finalCta}>
+        <div className={styles.finalCtaTitle}>Is your website visible to AI agents?</div>
+        <div className={styles.finalCtaSub}>Scan any domain. See exactly which agent-readiness standards you pass or fail. Free, no login required.</div>
+        <a href="/aeo" className={styles.ctaPrimary}>Scan your domain →</a>
       </section>
       <footer className={styles.footer}>
         <div className={styles.footerLeft}>
