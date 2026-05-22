@@ -5,14 +5,26 @@ import { useSearchParams } from 'next/navigation'
 import styles from './page.module.css'
 
 const MARKETS = [
-  { id: 'b2b_saas',        label: 'B2B SaaS' },
-  { id: 'venture_capital', label: 'Venture Capital' },
-  { id: 'partnerships',    label: 'Partnerships / BD' },
-  { id: 'procurement',     label: 'Procurement' },
-  { id: 'hiring',          label: 'Hiring' },
-  { id: 'legal_services',  label: 'Legal Services' },
-  { id: 'freelance',       label: 'Freelance' },
-  { id: 'cofounder',       label: 'Co-founder Search' },
+  { id: 'b2b_saas',           label: 'B2B SaaS' },
+  { id: 'venture_capital',    label: 'Venture Capital' },
+  { id: 'marketing',          label: 'Marketing / Advertising' },
+  { id: 'ecommerce',          label: 'E-commerce / Retail' },
+  { id: 'food_beverage',      label: 'Food & Beverage' },
+  { id: 'healthcare',         label: 'Healthcare' },
+  { id: 'real_estate',        label: 'Real Estate' },
+  { id: 'education',          label: 'Education / Training' },
+  { id: 'consulting',         label: 'Consulting' },
+  { id: 'media_content',      label: 'Media / Content' },
+  { id: 'finance_fintech',    label: 'Finance / Fintech' },
+  { id: 'logistics',          label: 'Logistics / Supply Chain' },
+  { id: 'events_hospitality', label: 'Events & Hospitality' },
+  { id: 'professional_svcs',  label: 'Professional Services' },
+  { id: 'partnerships',       label: 'Partnerships / BD' },
+  { id: 'procurement',        label: 'Procurement' },
+  { id: 'hiring',             label: 'Hiring' },
+  { id: 'legal_services',     label: 'Legal Services' },
+  { id: 'freelance',          label: 'Freelance' },
+  { id: 'cofounder',          label: 'Co-founder Search' },
 ]
 
 const CAPABILITY_SUGGESTIONS = [
