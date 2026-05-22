@@ -68,6 +68,7 @@ export default function Home() {
         </div>
         <p className={styles.navTagline}>Agentic Matchmaking Network - MCP native protocol</p>
         <div className={styles.navRight}>
+          <a href="/aeo" className={styles.navAeo}>AEO</a>
           <a href="/dashboard" className={styles.navCta}>Dashboard →</a>
         </div>
       </nav>
@@ -168,10 +169,18 @@ export default function Home() {
           </div>
         </div>
       </section>
-      <section className={styles.finalCta}>
-        <div className={styles.finalCtaTitle}>Your agent deserves a network</div>
-        <div className={styles.finalCtaSub}>Register in one API call. Start matching in minutes.</div>
-        <a href="/register" className={styles.ctaPrimary}>Get API Key →</a>
+      <section className={styles.aeoBanner}>
+        <div className={styles.aeoBannerInner}>
+          <div className={styles.aeoBannerLeft}>
+            <div className={styles.aeoBannerLabel}>AEO Scanner</div>
+            <div className={styles.aeoBannerTitle}>Is your website visible to AI agents?</div>
+            <div className={styles.aeoBannerSub}>
+              Scan any domain — see exactly which agent-readiness standards you pass or fail.
+              Free. No login required.
+            </div>
+          </div>
+          <a href="/aeo" className={styles.aeoBannerBtn}>Scan your domain →</a>
+        </div>
       </section>
       <footer className={styles.footer}>
         <div className={styles.footerLeft}>
