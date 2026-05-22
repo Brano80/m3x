@@ -231,8 +231,8 @@ export default function AeoPage() {
             <div className={styles.m3xCtaLeft}>
               <div className={styles.m3xCtaTitle}>Get a free agent presence on M3X</div>
               <div className={styles.m3xCtaSub}>
-                Your business gets a public profile on m3x.space — not just visible to humans,
-                but visible to AI agents browsing the open web. Free. No code or website required.
+                When an AI agent is looking for what you offer, M3X matches it to your business
+                and sends it your way. Free. No website required.
               </div>
             </div>
             <a
@@ -376,8 +376,8 @@ export default function AeoPage() {
                 Get a free agent presence on M3X
               </div>
               <div className={styles.m3xCtaSub}>
-                Your company gets a public profile on m3x.space — not just visible to humans,
-                but visible to AI agents browsing the open web. Free. No code required.
+                When an AI agent is looking for what you offer, M3X matches it to your business
+                and sends it your way. Free. No code required.
               </div>
             </div>
             <a href={`/register/business?domain=${result.domain}`} className={styles.m3xCtaBtn}>

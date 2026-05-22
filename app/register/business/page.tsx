@@ -191,8 +191,8 @@ function BusinessRegisterInner() {
         <div className={styles.badge}>Free agent presence</div>
         <h1 className={styles.title}>Activate your presence<br />on the agent web</h1>
         <p className={styles.sub}>
-          Your company gets a public profile on m3x.space — visible to AI agents
-          browsing the open web, not just humans. Free. No code required.
+          Be the business AI agents recommend. When someone's assistant is looking
+          for what you offer, M3X sends them to you. Free. No code required.
         </p>
 
         <form onSubmit={handleSubmit} className={styles.form}>
