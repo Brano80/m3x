@@ -260,7 +260,7 @@ export default function AeoPage() {
                 but visible to AI agents browsing the open web. Free. No code required.
               </div>
             </div>
-            <a href={`/register?domain=${result.domain}`} className={styles.m3xCtaBtn}>
+            <a href={`/register/business?domain=${result.domain}`} className={styles.m3xCtaBtn}>
               Activate free presence →
             </a>
           </div>
