@@ -31,7 +31,6 @@ export default function RegisterPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           handle: sanitizeHandle(handle),
-          display_name: displayName || handle,
         }),
       })
       const data = await res.json()
@@ -196,18 +195,7 @@ export default function RegisterPage() {
             <div className={styles.hint}>Lowercase, hyphens allowed. This is your public identity on the network.</div>
           </div>
 
-          <div className={styles.field}>
-            <label className={styles.label}>Display name</label>
-            <input
-              className={styles.input}
-              placeholder="Your name or company"
-              value={displayName}
-              onChange={e => setDisplayName(e.target.value)}
-              maxLength={100}
-            />
-          </div>
-
-          {error && <div className={styles.error}>{error}</div>}
+{error && <div className={styles.error}>{error}</div>}
 
           <button
             type="submit"
