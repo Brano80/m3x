@@ -130,6 +130,29 @@ function generatePrompt(
 
   const parts: string[] = []
 
+  if (failed.find(f => f.id === 'agentsMd')) {
+    parts.push(`FILE: /public/agents.md
+---
+# ${companyName}
+
+## What I am
+${description || `Website at ${baseUrl}`}
+
+## Entry points for agents
+- Website: ${baseUrl}
+- MCP endpoint: (add your MCP server URL here)
+
+## What I can do
+- (describe your main capabilities for AI agents)
+
+## Constraints
+- Rate limit: (specify your limits)
+
+## Register / contact
+${baseUrl}/contact
+---`)
+  }
+
   if (failed.find(f => f.id === 'llmsTxt')) {
     parts.push(`FILE: /public/llms.txt
 ---
@@ -147,6 +170,46 @@ ${baseUrl}
 Discoverable via the M3X Agentic Matchmaking Network.
 Network: https://m3x.space
 Handle: pending — activate at https://m3x.space/aeo
+---`)
+  }
+
+  if (failed.find(f => f.id === 'agentPerms')) {
+    parts.push(`FILE: /public/.well-known/agent-permissions.json
+---
+{
+  "version": "1.0",
+  "description": "${companyName} — agent access policy",
+  "permissions": {
+    "read": { "allowed": true, "paths": ["/", "/llms.txt", "/agents.md", "/.well-known/"], "rateLimit": "1000/hour" },
+    "write": { "allowed": false }
+  },
+  "preferredEntryPoints": {
+    "website": "${baseUrl}",
+    "openapi": "${baseUrl}/api/openapi.json"
+  }
+}
+---`)
+  }
+
+  if (failed.find(f => f.id === 'ucp')) {
+    parts.push(`FILE: /public/.well-known/ucp
+---
+{
+  "version": "2026-04-08",
+  "provider": {
+    "name": "${companyName}",
+    "url": "${baseUrl}",
+    "description": "${description || companyName}"
+  },
+  "transports": [
+    {
+      "type": "rest",
+      "protocol": "http",
+      "endpoint": "${baseUrl}/api"
+    }
+  ],
+  "services": []
+}
 ---`)
   }
 
@@ -263,31 +326,37 @@ export async function POST(req: NextRequest) {
     homepageMd,
     robotsTxt,
     llmsTxt,
+    agentsMd,
     mcpJson,
     agentJson,
     aiCatalog,
     apiCatalog,
     agentSkills,
+    agentPerms,
     oauthPr,
     a2aCard,
     didJson,
     mcpServerCard,
     webBotAuth,
+    ucp,
   ] = await Promise.all([
     probe(baseUrl),
     probe(baseUrl, { headers: { Accept: 'text/markdown,text/plain;q=0.9,*/*;q=0.1' } }),
     probe(`${baseUrl}/robots.txt`),
     probe(`${baseUrl}/llms.txt`),
+    probe(`${baseUrl}/agents.md`),
     probe(`${baseUrl}/.well-known/mcp.json`),
     probe(`${baseUrl}/.well-known/agent.json`),
     probe(`${baseUrl}/.well-known/ai-catalog.json`),
     probe(`${baseUrl}/.well-known/api-catalog`),
     probe(`${baseUrl}/.well-known/agent-skills/index.json`),
+    probe(`${baseUrl}/.well-known/agent-permissions.json`),
     probe(`${baseUrl}/.well-known/oauth-protected-resource`),
     probe(`${baseUrl}/.well-known/agent-card.json`),
     probe(`${baseUrl}/.well-known/did.json`),
     probe(`${baseUrl}/.well-known/mcp/server-card.json`),
     probe(`${baseUrl}/.well-known/web-bot-auth`),
+    probe(`${baseUrl}/.well-known/ucp`),
   ])
 
   const meta = homepage ? extractMeta(homepage.body) : { title: '', description: '' }
@@ -297,6 +366,7 @@ export async function POST(req: NextRequest) {
   const pass = {
     robots:              robotsTxt?.ok === true,
     llmsTxt:             llmsTxt?.ok === true,
+    agentsMd:            agentsMd?.ok === true,
     sitemap:             !!(robotsTxt?.body?.includes('Sitemap:')),
     linkHeaders:         !!(homepage?.headers?.['link']),
     markdownNegotiation: !!(homepageMd?.headers?.['content-type']?.includes('markdown')),
@@ -317,6 +387,8 @@ export async function POST(req: NextRequest) {
     aiCatalogJson:       aiCatalog?.ok === true,
     apiCatalog:          apiCatalog?.ok === true,
     agentSkills:         agentSkills?.ok === true,
+    agentPerms:          agentPerms?.ok === true,
+    ucp:                 !!(ucp?.ok && ucp.body?.length > 10),
     a2aCard:             !!(a2aCard?.ok || (agentJson?.ok && agentJson.body?.includes('capabilities'))),
     oauthPr:             oauthPr?.ok === true,
     didJson:             didJson?.ok === true,
@@ -331,7 +403,8 @@ export async function POST(req: NextRequest) {
       name: 'Discoverability',
       checks: [
         { id: 'robots',       name: 'robots.txt',     desc: 'Valid robots.txt at domain root',          passed: pass.robots,       points: pass.robots       ? 5  : 0, maxPoints: 5,  hint: 'Add a robots.txt file at the root of your domain.' },
-        { id: 'llmsTxt',      name: 'llms.txt',       desc: 'AI-readable site overview',                passed: pass.llmsTxt,      points: pass.llmsTxt      ? 10 : 0, maxPoints: 10, hint: 'Add /llms.txt — a plain-text summary of your site for AI agents. See llmstxt.org.' },
+        { id: 'llmsTxt',      name: 'llms.txt',       desc: 'AI-readable site overview',                passed: pass.llmsTxt,      points: pass.llmsTxt      ? 8  : 0, maxPoints: 8,  hint: 'Add /llms.txt — a plain-text summary of your site for AI agents. See llmstxt.org.' },
+        { id: 'agentsMd',     name: 'agents.md',      desc: 'Agent-optimised entry point at /agents.md', passed: pass.agentsMd,     points: pass.agentsMd     ? 3  : 0, maxPoints: 3,  hint: 'Add /agents.md — a Markdown file describing what your site can do for AI agents, entry points, and constraints.' },
         { id: 'sitemap',      name: 'Sitemap',        desc: 'Sitemap declared in robots.txt',           passed: pass.sitemap,      points: pass.sitemap      ? 4  : 0, maxPoints: 4,  hint: 'Add Sitemap: https://yourdomain.com/sitemap.xml to robots.txt.' },
         { id: 'linkHeaders',  name: 'Link Headers',   desc: 'RFC 8288 Link headers on homepage',        passed: pass.linkHeaders,  points: pass.linkHeaders  ? 3  : 0, maxPoints: 3,  hint: 'Serve Link: </api>; rel="service-desc" HTTP response headers on your homepage.' },
       ],
@@ -341,7 +414,7 @@ export async function POST(req: NextRequest) {
       id: 'content',
       name: 'Content Signals',
       checks: [
-        { id: 'markdownNegotiation', name: 'Markdown Negotiation', desc: 'Serves Markdown on Accept: text/markdown',    passed: pass.markdownNegotiation, points: pass.markdownNegotiation ? 8 : 0, maxPoints: 8, hint: 'Detect Accept: text/markdown and respond with a Markdown version of the page.' },
+        { id: 'markdownNegotiation', name: 'Markdown Negotiation', desc: 'Serves Markdown on Accept: text/markdown',    passed: pass.markdownNegotiation, points: pass.markdownNegotiation ? 6 : 0, maxPoints: 6, hint: 'Detect Accept: text/markdown and respond with a Markdown version of the page.' },
         { id: 'jsonLd',              name: 'JSON-LD',               desc: 'Structured data in HTML head',                passed: pass.jsonLd,              points: pass.jsonLd              ? 5 : 0, maxPoints: 5, hint: 'Add <script type="application/ld+json"> with Organization schema to your HTML <head>.' },
         { id: 'contentSignals',      name: 'Content Signals',       desc: 'Content-Signals directive in robots.txt',     passed: pass.contentSignals,      points: pass.contentSignals      ? 4 : 0, maxPoints: 4, hint: 'Add Content-Signals: canonical to robots.txt. See blog.cloudflare.com/content-signals.' },
         { id: 'aiBotRules',          name: 'AI Bot Rules',          desc: 'AI crawlers addressed in robots.txt',         passed: pass.aiBotRules,          points: pass.aiBotRules          ? 3 : 0, maxPoints: 3, hint: 'Add explicit Allow/Disallow rules for GPTBot, ClaudeBot, and PerplexityBot.' },
@@ -352,11 +425,12 @@ export async function POST(req: NextRequest) {
       id: 'protocols',
       name: 'Agent Protocols',
       checks: [
-        { id: 'mcpJson',       name: 'MCP Endpoint',   desc: '/.well-known/mcp.json',                  passed: pass.mcpJson,       points: pass.mcpJson       ? 12 : 0, maxPoints: 12, hint: 'Add /.well-known/mcp.json pointing to your MCP server URL.' },
-        { id: 'agentJson',     name: 'Agent Card',     desc: '/.well-known/agent.json',                passed: pass.agentJson,     points: pass.agentJson     ? 8  : 0, maxPoints: 8,  hint: 'Add /.well-known/agent.json — a machine-readable profile of your agent.' },
-        { id: 'aiCatalogJson', name: 'AI Catalog',     desc: '/.well-known/ai-catalog.json',           passed: pass.aiCatalogJson, points: pass.aiCatalogJson ? 6  : 0, maxPoints: 6,  hint: 'Add /.well-known/ai-catalog.json with capabilities and contact info.' },
-        { id: 'apiCatalog',    name: 'API Catalog',    desc: '/.well-known/api-catalog (RFC 9727)',    passed: pass.apiCatalog,    points: pass.apiCatalog    ? 5  : 0, maxPoints: 5,  hint: 'Publish an API catalog at /.well-known/api-catalog per RFC 9727.' },
+        { id: 'mcpJson',       name: 'MCP Endpoint',   desc: '/.well-known/mcp.json',                  passed: pass.mcpJson,       points: pass.mcpJson       ? 10 : 0, maxPoints: 10, hint: 'Add /.well-known/mcp.json pointing to your MCP server URL.' },
+        { id: 'agentJson',     name: 'Agent Card',     desc: '/.well-known/agent.json',                passed: pass.agentJson,     points: pass.agentJson     ? 7  : 0, maxPoints: 7,  hint: 'Add /.well-known/agent.json — a machine-readable profile of your agent.' },
+        { id: 'aiCatalogJson', name: 'AI Catalog',     desc: '/.well-known/ai-catalog.json',           passed: pass.aiCatalogJson, points: pass.aiCatalogJson ? 5  : 0, maxPoints: 5,  hint: 'Add /.well-known/ai-catalog.json with capabilities and contact info.' },
+        { id: 'apiCatalog',    name: 'API Catalog',    desc: '/.well-known/api-catalog (RFC 9727)',    passed: pass.apiCatalog,    points: pass.apiCatalog    ? 4  : 0, maxPoints: 4,  hint: 'Publish an API catalog at /.well-known/api-catalog per RFC 9727.' },
         { id: 'agentSkills',   name: 'Agent Skills',   desc: '/.well-known/agent-skills/index.json',   passed: pass.agentSkills,   points: pass.agentSkills   ? 4  : 0, maxPoints: 4,  hint: 'Declare agent capabilities at /.well-known/agent-skills/index.json.' },
+        { id: 'ucp',           name: 'UCP',            desc: 'Universal Commerce Protocol at /.well-known/ucp', passed: pass.ucp,      points: pass.ucp           ? 3  : 0, maxPoints: 3,  hint: 'Publish /.well-known/ucp declaring your agentic transports and services. See ucp.dev.' },
       ],
       score: 0, maxScore: 0,
     },
@@ -368,6 +442,7 @@ export async function POST(req: NextRequest) {
         { id: 'oauthPr',  name: 'OAuth Resource',    desc: 'RFC 9728 OAuth Protected Resource',     passed: pass.oauthPr,  points: pass.oauthPr  ? 4 : 0, maxPoints: 4, hint: 'Add /.well-known/oauth-protected-resource per RFC 9728.' },
         { id: 'didJson',  name: 'DID Document',      desc: 'W3C Decentralized Identity document',   passed: pass.didJson,  points: pass.didJson  ? 3 : 0, maxPoints: 3, hint: 'Publish a W3C DID document at /.well-known/did.json.' },
         { id: 'webBotAuth', name: 'Web Bot Auth',    desc: 'Authenticated AI crawler access',       passed: pass.webBotAuth, points: pass.webBotAuth ? 3 : 0, maxPoints: 3, hint: 'Implement Web Bot Auth at /.well-known/web-bot-auth.' },
+        { id: 'agentPerms', name: 'Agent Permissions', desc: '/.well-known/agent-permissions.json', passed: pass.agentPerms, points: pass.agentPerms ? 3 : 0, maxPoints: 3, hint: 'Publish /.well-known/agent-permissions.json declaring read/write access rules for AI agents.' },
       ],
       score: 0, maxScore: 0,
     },

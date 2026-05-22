@@ -56,6 +56,7 @@ export default function AeoPage() {
   const [error, setError] = useState('')
   const [result, setResult] = useState<ScanResult | null>(null)
   const [copied, setCopied] = useState(false)
+  const [copiedBadge, setCopiedBadge] = useState(false)
   const [expandedCats, setExpandedCats] = useState<Set<string>>(new Set())
   const resultRef = useRef<HTMLDivElement>(null)
 
@@ -238,7 +239,34 @@ export default function AeoPage() {
               <span className={styles.perfectIcon}>◈</span>
               <div>
                 <div className={styles.perfectTitle}>Perfect score</div>
-                <div className={styles.perfectSub}>This site is fully agent-ready across all 20 checks.</div>
+                <div className={styles.perfectSub}>This site is fully agent-ready across all 25 checks.</div>
+              </div>
+            </div>
+          )}
+
+          {/* Badge embed — show for any score ≥ 70 */}
+          {scorePct >= 70 && (
+            <div className={styles.badgeSection}>
+              <div className={styles.badgeTitle}>Add a badge to your site</div>
+              <div className={styles.badgeRow}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={`/api/aeo/badge?score=${result.score}&max=${result.maxScore}&domain=${result.domain}`}
+                  alt="M3X Agent-Ready badge"
+                  height={20}
+                  className={styles.badgePreview}
+                />
+                <button
+                  className={styles.badgeCopyBtn}
+                  onClick={() => {
+                    const code = `<a href="https://m3x.space/aeo" title="AEO score by M3X"><img src="https://m3x.space/api/aeo/badge?score=${result.score}&max=${result.maxScore}&domain=${result.domain}" alt="M3X Agent-Ready" height="20" /></a>`
+                    navigator.clipboard.writeText(code)
+                    setCopiedBadge(true)
+                    setTimeout(() => setCopiedBadge(false), 2500)
+                  }}
+                >
+                  {copiedBadge ? '✓ Copied' : 'Copy embed code'}
+                </button>
               </div>
             </div>
           )}
@@ -271,13 +299,13 @@ export default function AeoPage() {
       {/* What we check */}
       {!result && (
         <section className={styles.checksInfo}>
-          <div className={styles.checksInfoTitle}>20 checks across 5 categories</div>
+          <div className={styles.checksInfoTitle}>25 checks across 5 categories</div>
           <div className={styles.checksInfoGrid}>
             {[
-              { label: 'Discoverability', items: ['robots.txt', 'llms.txt', 'Sitemap', 'Link Headers'] },
+              { label: 'Discoverability', items: ['robots.txt', 'llms.txt', 'agents.md', 'Sitemap', 'Link Headers'] },
               { label: 'Content Signals', items: ['Markdown Negotiation', 'JSON-LD', 'Content Signals', 'AI Bot Rules'] },
-              { label: 'Agent Protocols', items: ['MCP Endpoint', 'Agent Card', 'AI Catalog', 'API Catalog', 'Agent Skills'] },
-              { label: 'Identity & Auth', items: ['A2A Agent Card', 'OAuth Resource', 'DID Document', 'Web Bot Auth'] },
+              { label: 'Agent Protocols', items: ['MCP Endpoint', 'Agent Card', 'AI Catalog', 'API Catalog', 'Agent Skills', 'UCP'] },
+              { label: 'Identity & Auth', items: ['A2A Agent Card', 'OAuth Resource', 'DID Document', 'Web Bot Auth', 'Agent Permissions'] },
               { label: 'Commerce', items: ['x402 Payments', 'MCP Server Card'] },
             ].map(cat => (
               <div key={cat.label} className={styles.checksInfoCard}>

@@ -1,0 +1,27 @@
+{
+  "version": "1.0",
+  "description": "M3X Agentic Matchmaking Network — agent access policy",
+  "permissions": {
+    "read": {
+      "allowed": true,
+      "paths": ["/", "/markets/", "/llms.txt", "/agents.md", "/.well-known/", "/api/openapi.json", "/api/stats", "/api/catalog", "/api/a2a/", "/api/did/", "/api/agent/", "/api/trust/"],
+      "rateLimit": "1000/hour"
+    },
+    "write": {
+      "allowed": true,
+      "requires": "Bearer m3x_sk_*",
+      "paths": ["/api/intent", "/api/matches/run", "/api/handshake", "/api/agent/register"],
+      "rateLimit": "100/hour"
+    },
+    "restricted": {
+      "paths": ["/dashboard", "/inbox", "/intents", "/api/conversations", "/api/matches", "/api/handshake"],
+      "requires": "Bearer m3x_sk_*"
+    }
+  },
+  "preferredEntryPoints": {
+    "mcp": "https://m3x.space/api/mcp",
+    "rest": "https://m3x.space/api",
+    "openapi": "https://m3x.space/api/openapi.json"
+  },
+  "contact": "https://m3x.space"
+}
