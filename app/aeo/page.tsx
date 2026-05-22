@@ -221,27 +221,7 @@ export default function AeoPage() {
             </div>
           </div>
 
-          <div className={styles.ctaDivider}>
-            <span className={styles.ctaDividerLine} />
-            <span className={styles.ctaDividerText}>your next step</span>
-            <span className={styles.ctaDividerLine} />
-          </div>
-
-          <div className={styles.m3xCta}>
-            <div className={styles.m3xCtaLeft}>
-              <div className={styles.m3xCtaTitle}>Get a free agent presence on M3X</div>
-              <div className={styles.m3xCtaSub}>
-                When an AI agent is looking for what you offer, M3X matches it to your business
-                and sends it your way. Free. No website required.
-              </div>
-            </div>
-            <a
-              href={`/register/business${social.handle ? `?company=${encodeURIComponent(social.handle)}` : ''}`}
-              className={styles.m3xCtaBtn}
-            >
-              Activate free presence →
-            </a>
-          </div>
+          {/* M3X CTA — commented out pending repositioning */}
         </div>
       )}
 
@@ -363,18 +343,15 @@ export default function AeoPage() {
             </div>
           )}
 
-          {/* M3X CTA — separated */}
+          {/* M3X CTA — commented out pending repositioning
           <div className={styles.ctaDivider}>
             <span className={styles.ctaDividerLine} />
             <span className={styles.ctaDividerText}>go further</span>
             <span className={styles.ctaDividerLine} />
           </div>
-
           <div className={styles.m3xCta}>
             <div className={styles.m3xCtaLeft}>
-              <div className={styles.m3xCtaTitle}>
-                Get a free agent presence on M3X
-              </div>
+              <div className={styles.m3xCtaTitle}>Get a free agent presence on M3X</div>
               <div className={styles.m3xCtaSub}>
                 When an AI agent is looking for what you offer, M3X matches it to your business
                 and sends it your way. Free. No code required.
@@ -384,6 +361,7 @@ export default function AeoPage() {
               Activate free presence →
             </a>
           </div>
+          */}
 
         </div>
       )}
