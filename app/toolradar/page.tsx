@@ -16,7 +16,7 @@ export const metadata: Metadata = {
   },
 }
 
-export const revalidate = 3600 // ISR: rebuild at most once per hour
+export const revalidate = 604800 // ISR: rebuild at most once per week
 
 export default async function ToolRadarPage() {
   const supabase = getServiceClient()
