@@ -465,6 +465,94 @@
   max-width: 280px;
 }
 
+/* ── Mode toggle ─────────────────────────────────────────── */
+.modeToggle {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 24px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 10px;
+  padding: 4px;
+}
+
+.modeBtn {
+  flex: 1;
+  background: transparent;
+  border: none;
+  border-radius: 7px;
+  padding: 9px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #555;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s;
+}
+.modeBtn:hover { color: #aaa; }
+
+.modeBtnOn {
+  background: rgba(var(--m3x-rgb), 0.12);
+  color: var(--m3x-blue);
+  border: 1px solid rgba(var(--m3x-rgb), 0.25);
+}
+
+/* ── Agent mode ──────────────────────────────────────────── */
+.agentMode {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.agentModeDesc {
+  font-size: 13px;
+  color: #666;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.promptBox {
+  position: relative;
+  background: #07070c;
+  border: 1px solid rgba(var(--m3x-rgb), 0.2);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.promptPre {
+  margin: 0;
+  padding: 16px 16px 52px;
+  font-size: 12px;
+  font-family: var(--font-geist-mono), monospace;
+  color: #888;
+  line-height: 1.7;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.promptCopyBtn {
+  position: absolute;
+  bottom: 12px;
+  right: 12px;
+  background: rgba(var(--m3x-rgb), 0.12);
+  border: 1px solid rgba(var(--m3x-rgb), 0.3);
+  border-radius: 6px;
+  padding: 7px 16px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--m3x-blue);
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s;
+}
+.promptCopyBtn:hover { background: rgba(var(--m3x-rgb), 0.2); }
+
+.agentModeNote {
+  font-size: 12px;
+  color: #444;
+  margin: 0;
+}
+
 /* ── Responsive ──────────────────────────────────────────── */
 @media (max-width: 560px) {
   .card { padding: 32px 20px; }
