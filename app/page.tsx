@@ -155,7 +155,7 @@ export default function Home() {
       <section className={styles.section}>
         <div className={styles.sectionLabel}>Tool Radar</div>
         <div className={styles.mcpBlock}>
-          <div className={styles.mcpIntro}>Semantic tool discovery — built on M3X infrastructure. Claude calls it proactively mid-session when it detects you&apos;re building something. 98 curated tools, hand-picked. No search required — the right tool surfaces before you think to look.</div>
+          <div className={styles.mcpIntro}>Semantic tool discovery — built on M3X infrastructure. Claude calls it proactively mid-session when it detects you&apos;re building something. 116 curated tools, hand-picked. No search required — the right tool surfaces before you think to look.</div>
           <div className={styles.codeWrapper}>
             <div className={styles.codeHeader}>
               <span className={styles.codeFile}>Cowork plugin URL — paste into Cowork → Plugins</span>
@@ -164,7 +164,7 @@ export default function Home() {
             <pre className={styles.code}>{PLUGIN_URL}</pre>
           </div>
           <div className={styles.mcpInstall}>
-            <span className={styles.mcpInstallSub}>Free · works in Claude Cowork · 98 curated tools and growing</span>
+            <span className={styles.mcpInstallSub}>Free · works in Claude Cowork · 116 curated tools and growing</span>
           </div>
         </div>
       </section>
