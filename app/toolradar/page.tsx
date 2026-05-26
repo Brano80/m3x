@@ -5,18 +5,18 @@ import ToolRadarClient from './ToolRadarClient'
 import styles from './page.module.css'
 
 export const metadata: Metadata = {
-  title: 'Tool Radar — 118 curated MCP tools | M3X',
+  title: 'Tool Radar — curated MCP tools | M3X',
   description:
-    'Hand-picked MCP servers. 118 curated tools, semantically searchable, filterable by category. Find the right MCP tool for your Claude session.',
+    'Hand-picked MCP servers, semantically searchable and filterable by category. Find the right MCP tool for your Claude session.',
   openGraph: {
     title: 'Tool Radar — curated MCP tool library',
-    description: 'Hand-picked MCP servers. Searchable, filterable, updated weekly.',
+    description: 'Hand-picked MCP servers. Searchable, filterable, updated daily.',
     url: 'https://m3x.space/toolradar',
     siteName: 'M3X',
   },
 }
 
-export const revalidate = 604800 // ISR: rebuild at most once per week
+export const revalidate = 3600 // ISR: refresh at most once per hour
 
 export default async function ToolRadarPage() {
   const supabase = getServiceClient()

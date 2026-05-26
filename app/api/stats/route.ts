@@ -43,11 +43,24 @@ export async function GET(req: Request) {
       if (agents.error) console.error('[stats] agents:', agents.error)
       if (matches.error) console.error('[stats] matches:', matches.error)
 
+      // Fetch tool_radar count via supabase-js (separate schema, can't use fetchTableCount)
+      let toolsCount: number | null = null
+      try {
+        const sb = getServiceClient()
+        const { count } = await sb
+          .schema('tool_radar')
+          .from('tool_cards')
+          .select('id', { count: 'exact', head: true })
+        toolsCount = count ?? null
+      } catch (e) {
+        console.error('[stats] tool_radar count', e)
+      }
+
       if (agents.count !== null && matches.count !== null) {
         return NextResponse.json(
           verbose
-            ? { agents: agents.count, matches: matches.count, source: 'rest' }
-            : { agents: agents.count, matches: matches.count },
+            ? { agents: agents.count, matches: matches.count, tools: toolsCount, source: 'rest' }
+            : { agents: agents.count, matches: matches.count, tools: toolsCount },
           { headers: NO_STORE }
         )
       }
@@ -59,7 +72,7 @@ export async function GET(req: Request) {
           supabase = getServiceClient()
         } catch (e) {
           console.error('[stats] getServiceClient', e)
-          return NextResponse.json({ agents: null, matches: null }, { headers: NO_STORE })
+          return NextResponse.json({ agents: null, matches: null, tools: toolsCount }, { headers: NO_STORE })
         }
         const [aRes, mRes] = await Promise.all([
           supabase.from('agents').select('id', { count: 'exact', head: true }),
@@ -72,13 +85,14 @@ export async function GET(req: Request) {
               ? {
                   agents: null,
                   matches: null,
+                  tools: toolsCount,
                   reason: 'fallback_supabase_error',
                   agentsRest: agents.error,
                   matchesRest: matches.error,
                   agentsSdk: aRes.error?.message,
                   matchesSdk: mRes.error?.message,
                 }
-              : { agents: null, matches: null },
+              : { agents: null, matches: null, tools: toolsCount },
             { headers: NO_STORE }
           )
         }
@@ -87,11 +101,13 @@ export async function GET(req: Request) {
             ? {
                 agents: aRes.count ?? agents.count ?? 0,
                 matches: mRes.count ?? matches.count ?? 0,
+                tools: toolsCount,
                 source: 'supabase-js',
               }
             : {
                 agents: aRes.count ?? agents.count ?? 0,
                 matches: mRes.count ?? matches.count ?? 0,
+                tools: toolsCount,
               },
           { headers: NO_STORE }
         )
