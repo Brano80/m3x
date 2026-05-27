@@ -31,8 +31,13 @@ export default async function ToolRadarPage() {
 
   const totalStars = allTools.reduce((sum, t) => sum + (t.stars ?? 0), 0)
 
-  const allCategories = new Set<string>()
-  allTools.forEach(t => (t.stack_tags ?? []).forEach((tag: string) => allCategories.add(tag)))
+  // Count only tags that appear on 3+ tools — singletons aren't meaningful categories
+  const tagFreq: Record<string, number> = {}
+  allTools.forEach(t => (t.stack_tags ?? []).forEach((tag: string) => {
+    const n = tag.toLowerCase()
+    tagFreq[n] = (tagFreq[n] ?? 0) + 1
+  }))
+  const allCategories = { size: Object.values(tagFreq).filter(c => c >= 3).length }
 
   return (
     <div className={styles.root}>
