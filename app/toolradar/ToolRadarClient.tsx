@@ -19,6 +19,18 @@ interface Props {
   categoryCount: number
 }
 
+/** Returns false for raw API endpoints that aren't browsable pages */
+function isBrowsableUrl(url: string): boolean {
+  try {
+    const { pathname } = new URL(url)
+    // Block paths that look like API endpoints
+    if (/\/(mcp|api|v\d+|rest)(\/|$)/i.test(pathname)) return false
+    return true
+  } catch {
+    return false
+  }
+}
+
 function fmtStars(n: number | null): string {
   if (!n) return '—'
   if (n >= 1000) return (n / 1000).toFixed(1).replace(/\.0$/, '') + 'k'
@@ -153,7 +165,7 @@ export default function ToolRadarClient({ tools, totalStars, categoryCount }: Pr
             <div key={tool.id} className={styles.card}>
               <div className={styles.cardTop}>
                 <span className={styles.cardName}>{tool.name}</span>
-                {tool.github_url && (
+                {tool.github_url && isBrowsableUrl(tool.github_url) && (
                   <a
                     href={tool.github_url}
                     className={styles.cardGhLink}
