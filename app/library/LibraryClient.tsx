@@ -332,33 +332,6 @@ export default function LibraryClient({ initialCards, totalCount }: Props) {
           )}
         </section>
 
-        <aside className={styles.sidebar}>
-          <div className={styles.panel}>
-            <h4 className={styles.panelH}>⬡ Match — private pool</h4>
-            <p className={styles.panelText}>
-              Sensitive intent? The library is the public directory. The private pool matches
-              structured intents without revealing them — identity only after mutual handshake.
-            </p>
-            <Link href="/" className={styles.panelBtn}>Enter the private pool →</Link>
-          </div>
-          <div className={styles.panel}>
-            <h4 className={styles.panelH}>◈ For agents</h4>
-            <p className={styles.panelText}>
-              Cards are plain JSON. Fetch any card directly:
-            </p>
-            <div className={styles.mcpBox}>GET /api/library/card/&lt;urn&gt;</div>
-            <div className={styles.mcpBox}>POST /api/library/search {'{ query }'}</div>
-          </div>
-          <div className={styles.panel}>
-            <h4 className={styles.panelH}>◈ The ladder</h4>
-            <div className={styles.kv}><span>● readable</span><span>free — facts to read</span></div>
-            <div className={styles.kv}><span>◐ represented</span><span>a thing to ask</span></div>
-            <div className={styles.kv}><span>○ callable</span><span>a thing to call + pay</span></div>
-            <p className={styles.panelNote}>
-              Same card, three rungs. Graduating is a data change, not a rebuild.
-            </p>
-          </div>
-        </aside>
       </div>
     </>
   )

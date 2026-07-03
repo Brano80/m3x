@@ -57,6 +57,9 @@ export default async function LibraryPage() {
         <div className={styles.footerIn}>
           <span><b>M3X</b> · Library</span>
           <span>pay for verification, never for rank</span>
+          <span className={styles.footerApi}>
+            for agents: GET /api/library/card/&lt;urn&gt; · POST /api/library/search
+          </span>
           <Link href="/" className={styles.footerRight}>← Back to M3X</Link>
         </div>
       </footer>
