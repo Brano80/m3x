@@ -25,15 +25,10 @@ interface ClaimItem {
 async function getCard(rawUrn: string) {
   const urn = decodeURIComponent(rawUrn)
   if (!URN_RE.test(urn)) return null
+  // Reads via the SECURITY DEFINER RPC (migration #3) — the library schema
+  // itself stays locked; never query library.cards directly from app code.
   const supabase = getServiceClient()
-  const { data } = await supabase
-    .schema('library')
-    .from('cards')
-    .select(
-      'schema_version, type, urn, domain, name, one_liner, category, capabilities, serves_markets, customer_types, entity_size, industries, integrations, languages, credentials, pricing, claims, endpoints, callable, identity, trust, meta, status, trust_score'
-    )
-    .eq('urn', urn)
-    .maybeSingle()
+  const { data } = await supabase.rpc('library_get_card', { p_urn: urn })
   return data ?? null
 }
 

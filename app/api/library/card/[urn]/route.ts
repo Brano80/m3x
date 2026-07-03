@@ -22,14 +22,7 @@ export async function GET(
   }
 
   const supabase = getServiceClient()
-  const { data, error } = await supabase
-    .schema('library')
-    .from('cards')
-    .select(
-      'schema_version, type, urn, domain, name, one_liner, category, capabilities, serves_markets, customer_types, entity_size, industries, integrations, languages, credentials, pricing, claims, endpoints, callable, identity, trust, meta'
-    )
-    .eq('urn', urn)
-    .maybeSingle()
+  const { data, error } = await supabase.rpc('library_get_card', { p_urn: urn })
 
   if (error) {
     return NextResponse.json(
