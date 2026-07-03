@@ -42,18 +42,23 @@ interface Props {
 }
 
 const TYPES = ['all', 'business', 'agent', 'tool'] as const
+const PAGE_SIZE = 50
 
-function ringClass(score: number): string {
-  if (score >= 70) return styles.ringHi
-  if (score >= 40) return styles.ringMid
-  return styles.ringLo
+function trustClass(score: number): string {
+  if (score >= 70) return styles.tnumHi
+  if (score >= 40) return styles.tnumMid
+  return styles.tnumLo
 }
 
 export default function LibraryClient({ initialCards, totalCount }: Props) {
   const [query, setQuery] = useState('')
   const [type, setType] = useState<(typeof TYPES)[number]>('all')
   const [verifiedOnly, setVerifiedOnly] = useState(false)
-  const [results, setResults] = useState<CardRow[]>(initialCards)
+  const [results, setResults] = useState<CardRow[]>([])
+  const [browseCards, setBrowseCards] = useState<CardRow[]>(initialCards)
+  const [browseTotal, setBrowseTotal] = useState(totalCount)
+  const [page, setPage] = useState(0)
+  const [expanded, setExpanded] = useState<string | null>(null)
   const [searched, setSearched] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -65,6 +70,7 @@ export default function LibraryClient({ initialCards, totalCount }: Props) {
     if (!q) return
     setLoading(true)
     setError(null)
+    setExpanded(null)
     try {
       const res = await fetch('/api/library/search', {
         method: 'POST',
@@ -90,11 +96,47 @@ export default function LibraryClient({ initialCards, totalCount }: Props) {
     }
   }
 
-  const shown = searched
-    ? results
-    : results.filter(
-        c => (type === 'all' || c.type === type) && (!verifiedOnly || c.status === 'verified')
-      )
+  async function loadBrowse(t: string, v: boolean, p: number) {
+    setLoading(true)
+    setError(null)
+    setExpanded(null)
+    try {
+      const params = new URLSearchParams()
+      if (t !== 'all') params.set('type', t)
+      if (v) params.set('verified_only', 'true')
+      params.set('limit', String(PAGE_SIZE))
+      params.set('offset', String(p * PAGE_SIZE))
+      const res = await fetch(`/api/library/list?${params.toString()}`)
+      const json = await res.json()
+      if (!res.ok) {
+        setError(json?.error?.message ?? 'Load failed')
+      } else {
+        setBrowseCards(json.results ?? [])
+        setBrowseTotal(json.total ?? 0)
+        setPage(p)
+        setSearched(false)
+      }
+    } catch {
+      setError('Network error — try again')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  function onTypeChange(t: (typeof TYPES)[number]) {
+    setType(t)
+    if (searched && query.trim()) runSearch(t)
+    else loadBrowse(t, verifiedOnly, 0)
+  }
+
+  function onVerifiedChange(v: boolean) {
+    setVerifiedOnly(v)
+    if (searched && query.trim()) runSearch(undefined, v)
+    else loadBrowse(type, v, 0)
+  }
+
+  const shown = searched ? results : browseCards
+  const totalPages = Math.max(1, Math.ceil(browseTotal / PAGE_SIZE))
 
   return (
     <>
@@ -127,10 +169,7 @@ export default function LibraryClient({ initialCards, totalCount }: Props) {
               <button
                 key={t}
                 className={t === type ? styles.chipOn : styles.chip}
-                onClick={() => {
-                  setType(t)
-                  if (searched) runSearch(t)
-                }}
+                onClick={() => onTypeChange(t)}
               >
                 {t === 'all' ? 'all types' : `type: ${t}`}
               </button>
@@ -140,12 +179,20 @@ export default function LibraryClient({ initialCards, totalCount }: Props) {
               <input
                 type="checkbox"
                 checked={verifiedOnly}
-                onChange={e => {
-                  setVerifiedOnly(e.target.checked)
-                  if (searched) runSearch(undefined, e.target.checked)
-                }}
+                onChange={e => onVerifiedChange(e.target.checked)}
               />
             </label>
+            {searched && (
+              <button
+                className={styles.chip}
+                onClick={() => {
+                  setQuery('')
+                  loadBrowse(type, verifiedOnly, 0)
+                }}
+              >
+                ✕ clear search
+              </button>
+            )}
           </div>
 
           <div className={styles.resCount}>
@@ -155,81 +202,132 @@ export default function LibraryClient({ initialCards, totalCount }: Props) {
               </>
             ) : (
               <>
-                <b>{shown.length} of {totalCount}</b> cards · browse or search by intent
+                <b>
+                  {browseTotal === 0
+                    ? '0'
+                    : `${page * PAGE_SIZE + 1}–${page * PAGE_SIZE + shown.length} of ${browseTotal}`}
+                </b>{' '}
+                cards · browse or search by intent · sorted by trust
               </>
             )}
           </div>
 
           {error && <div className={styles.error}>{error}</div>}
 
-          {shown.map((c, i) => (
-            <div key={c.urn} className={i === 0 && searched ? styles.cardTop : styles.card}>
-              {searched && <div className={styles.rank}>#{i + 1}</div>}
-              <div className={styles.chead}>
-                <div className={styles.avatar}>◈</div>
-                <div className={styles.cid}>
-                  <h3 className={styles.cardName}>
-                    <Link href={`/library/${encodeURIComponent(c.urn)}`} className={styles.cardLink}>
-                      {c.name}
-                    </Link>
-                    <span className={styles.typeTag}>{c.type}</span>
-                  </h3>
-                  {c.one_liner && <div className={styles.oneliner}>{c.one_liner}</div>}
-                  <div className={styles.urn}>{c.urn}</div>
-                </div>
-                <div className={styles.tscore}>
+          <div className={styles.rows}>
+            {shown.map((c, i) => {
+              const isOpen = expanded === c.urn
+              const cred =
+                (c.credentials ?? []).find(cr => cr.status === 'confirmed') ??
+                (c.credentials ?? [])[0]
+              const region = (c.serves_markets ?? []).slice(0, 2).join(' · ')
+              const rightMeta =
+                typeof c.similarity === 'number'
+                  ? `match ${c.similarity.toFixed(2)}`
+                  : region || (c.callable ? 'callable' : '')
+              return (
+                <div key={c.urn} className={isOpen ? styles.rowOpen : styles.row}>
                   <div
-                    className={`${styles.ring} ${ringClass(c.trust_score)}`}
-                    style={{ ['--v' as string]: c.trust_score }}
+                    className={styles.rowHead}
+                    onClick={() => setExpanded(isOpen ? null : c.urn)}
+                    role="button"
+                    aria-expanded={isOpen}
                   >
-                    <span>{c.trust_score}</span>
+                    <div className={c.type === 'tool' ? styles.rowGlyphTool : styles.rowGlyph}>
+                      {c.type === 'tool' ? '⬡' : '◈'}
+                    </div>
+                    <div className={styles.rowName}>
+                      <div className={styles.rowTitle}>
+                        {searched && <span className={styles.rowRank}>#{i + 1}</span>}
+                        {c.name}
+                        {c.status === 'verified' && (
+                          <span className={styles.rowVerified}>✓ verified</span>
+                        )}
+                        <span className={styles.typeTag}>{c.type}</span>
+                      </div>
+                      {c.one_liner && <div className={styles.rowOneliner}>{c.one_liner}</div>}
+                    </div>
+                    {cred ? (
+                      <span
+                        className={cred.status === 'confirmed' ? styles.rowCredConf : styles.rowCredNone}
+                      >
+                        {cred.status === 'confirmed' ? '✓ ' : '◌ '}
+                        {cred.issuer} {cred.tier && cred.tier !== '—' ? cred.tier : cred.name}
+                      </span>
+                    ) : (
+                      <span className={styles.rowCredNone}>
+                        {c.type === 'tool' ? 'curated · Tool Radar' : 'unclaimed'}
+                      </span>
+                    )}
+                    {rightMeta && <span className={styles.rowGeo}>{rightMeta}</span>}
+                    <span className={`${styles.tnum} ${trustClass(c.trust_score)}`}>
+                      {c.trust_score}
+                    </span>
+                    <span className={styles.rowChev}>▶</span>
                   </div>
-                  <div className={styles.tscoreLbl}>TRUST</div>
-                </div>
-              </div>
 
-              <div className={styles.badges}>
-                {(c.credentials ?? []).slice(0, 3).map((cr, j) => (
-                  <span key={j} className={cr.status === 'confirmed' ? styles.bConf : styles.bUnc}>
-                    {cr.status === 'confirmed' ? '✓' : '◌'} {cr.issuer} {cr.tier && cr.tier !== '—' ? cr.tier : cr.name}
-                    {cr.status === 'confirmed' ? ' — confirmed' : ' — unconfirmed'}
-                  </span>
-                ))}
-                {c.status === 'unclaimed' && (
-                  <span className={styles.bUnc}>◌ unclaimed — auto-generated card</span>
-                )}
-                <span className={styles.bRung}>
-                  ● {c.callable ? 'callable' : 'readable'}
-                </span>
-                {(c.capabilities ?? []).slice(0, 3).map(cap => (
-                  <span key={cap} className={styles.bFacet}>{cap}</span>
-                ))}
-                {typeof c.similarity === 'number' && (
-                  <span className={styles.bFacet}>match {c.similarity.toFixed(2)}</span>
-                )}
-              </div>
-
-              {c.trust?.basis_string && (
-                <div className={styles.basis}>
-                  <span className={styles.basisLbl}>RECEIPT</span>
-                  {c.trust.basis_string}
+                  {isOpen && (
+                    <div className={styles.rowBody}>
+                      {c.trust?.basis_string && (
+                        <div className={styles.basis}>
+                          <span className={styles.basisLbl}>RECEIPT</span>
+                          {c.trust.basis_string}
+                        </div>
+                      )}
+                      {(c.capabilities ?? []).length > 0 && (
+                        <div className={styles.rowTags}>
+                          {(c.capabilities ?? []).slice(0, 8).map(cap => (
+                            <span key={cap} className={styles.bFacet}>{cap}</span>
+                          ))}
+                        </div>
+                      )}
+                      <div className={styles.rowUrn}>{c.urn}</div>
+                      <div className={styles.rowActions}>
+                        <Link href={`/library/${encodeURIComponent(c.urn)}`}>Full card →</Link>
+                        <span className={styles.rowJson}>
+                          {'{ }'} GET /api/library/card/{c.urn}
+                        </span>
+                        {c.status === 'unclaimed' && (
+                          <Link href="/register" className={styles.rowClaim}>
+                            {c.type === 'tool'
+                              ? 'Publisher? Claim this card →'
+                              : 'Is this yours? Claim free →'}
+                          </Link>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
-              )}
-
-              {c.status === 'unclaimed' && (
-                <div className={styles.claimCta}>
-                  Is this yours?{' '}
-                  <Link href="/register">Claim this card free →</Link>{' '}
-                  control your facts · get verified · never pay for rank
-                </div>
-              )}
-            </div>
-          ))}
+              )
+            })}
+          </div>
 
           {shown.length === 0 && !loading && (
             <div className={styles.empty}>
               No cards match. The library is filling — businesses land here as the crawler and
               claim flow ship.
+            </div>
+          )}
+
+          {!searched && totalPages > 1 && (
+            <div className={styles.pager}>
+              <button
+                className={styles.pgBtn}
+                disabled={page === 0 || loading}
+                onClick={() => loadBrowse(type, verifiedOnly, page - 1)}
+              >
+                ← prev
+              </button>
+              <span className={styles.pgInfo}>
+                page {page + 1} of {totalPages}
+              </span>
+              <button
+                className={styles.pgBtn}
+                disabled={page + 1 >= totalPages || loading}
+                onClick={() => loadBrowse(type, verifiedOnly, page + 1)}
+              >
+                next →
+              </button>
             </div>
           )}
         </section>

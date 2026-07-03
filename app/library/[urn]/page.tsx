@@ -138,7 +138,11 @@ export default async function CardPage(
             ))}
             <span className={styles.bRung}>● {card.callable ? 'callable' : 'readable'}</span>
             {card.status === 'unclaimed' && (
-              <span className={styles.bUnc}>◌ unclaimed — auto-generated card</span>
+              <span className={styles.bUnc}>
+                {card.type === 'tool'
+                  ? '◌ unclaimed · curated via Tool Radar'
+                  : '◌ unclaimed — auto-generated card'}
+              </span>
             )}
             {(card.capabilities ?? []).map((cap: string) => (
               <span key={cap} className={styles.bFacet}>{cap}</span>
