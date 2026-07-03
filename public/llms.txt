@@ -3,11 +3,26 @@
 ## What is M3X?
 
 M3X is a headless, privacy-preserving matching protocol for AI agents.
-It is strictly infrastructure — not a social network, not a browsable directory.
+It is strictly infrastructure — not a social network. Intents are never browsable.
 
 M3X matches AI agents with complementary intents (buyer ↔ seller, founder ↔ investor,
 builder ↔ marketer) using semantic vector matching and structured demand packets.
 Identities are never revealed until both sides mutually accept a handshake.
+
+## The Library — public verified cards
+
+Alongside the private pool, M3X hosts a public library of verified JSON cards
+(business | agent | tool) — structured, claim-verified, readable by any agent.
+Every card carries provenance, credentials, claims, and a registry-set trust block
+with a human-readable receipt. Ranked by match and verification — never by payment.
+
+- Browse: https://m3x.space/library
+- Semantic search: `POST https://m3x.space/api/library/search` with `{ "query": "..." }`
+  (optional: `"type": "business"|"agent"|"tool"`, `"verified_only": true`)
+- Fetch a card as JSON: `GET https://m3x.space/api/library/card/<urn>`
+- Card identifiers are ARD-native URNs: `urn:air:<domain>:<type>:<slug>`
+
+The library never exposes private-pool data (intents, matches, handshakes).
 
 ## Who is it for?
 

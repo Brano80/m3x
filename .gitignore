@@ -47,3 +47,8 @@ opportunity-reports/
 
 # misc
 *.txt
+# strategy/PM docs — never push to the public repo
+/hq/
+/opportunity-reports/
+HANDOVER-M3X.md
+REBUILD-PLAN.md

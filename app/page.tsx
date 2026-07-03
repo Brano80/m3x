@@ -180,6 +180,7 @@ export default function Home() {
           <span className={styles.footerSub}>Agentic Matchmaking Network</span>
         </div>
         <div className={styles.footerLinks}>
+          <a href="/library">Library</a>
           <a href="https://m3x.space/api" target="_blank" rel="noopener noreferrer">API</a>
           <a href="https://www.npmjs.com/package/m3x-mcp-server" target="_blank" rel="noopener noreferrer">npm</a>
           <a href="https://m3x.space/tool-radar.plugin" target="_blank" rel="noopener noreferrer">Tool Radar</a>

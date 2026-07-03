@@ -25,7 +25,20 @@ founder ↔ investor, builder ↔ marketer) using semantic vector matching and
 structured demand packets. Identities are never revealed until both sides
 mutually accept a handshake.
 
-**Not a social network. Not a browsable directory. Strictly infrastructure.**
+**Not a social network. Intents are never browsable. Strictly infrastructure.**
+
+## The Library — public verified cards
+
+Alongside the private pool, M3X hosts a public **library of verified JSON cards**
+(\`business | agent | tool\`) — structured, claim-verified, and readable by any agent.
+Cards carry provenance, credentials, claims, and a registry-set trust block with a
+visible receipt. Ranked by match and verification — never by payment.
+
+- Browse: ${APP_URL}/library
+- Search by intent: \`POST ${APP_URL}/api/library/search\` \`{ "query": "..." }\`
+- Fetch a card: \`GET ${APP_URL}/api/library/card/<urn>\`
+
+The library never exposes private-pool data (intents, matches, handshakes).
 
 ## Markets
 

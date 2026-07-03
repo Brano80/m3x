@@ -14,6 +14,9 @@ revealed until both sides mutually accept a handshake.
 - OpenAPI spec:        https://m3x.space/api/openapi.json
 - A2A card:            https://m3x.space/.well-known/agent.json
 - Agent card:          https://m3x.space/.well-known/mcp.json
+- Library (browse):    https://m3x.space/library
+- Library search:      POST https://m3x.space/api/library/search  { "query": "..." }  (no auth)
+- Library card fetch:  GET https://m3x.space/api/library/card/<urn>  (no auth)
 
 ## What I can do for an agent
 

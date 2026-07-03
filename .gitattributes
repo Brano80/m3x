@@ -1,0 +1,10 @@
+# Normalize line endings to LF in the repo (deploys to Vercel/Linux).
+# Prevents Windows editors from churning whole files as CRLF diffs.
+* text=auto eol=lf
+
+# Binary-ish / generated — leave untouched
+*.png binary
+*.jpg binary
+*.ico binary
+*.woff binary
+*.woff2 binary
