@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { getServiceClient } from '@/lib/supabase'
 
 // ── Rate limiting ────────────────────────────────────────────────────────────
 const RL = new Map<string, { count: number; resetAt: number }>()
@@ -469,6 +470,25 @@ export async function POST(req: NextRequest) {
   const failedChecks = categories.flatMap(c => c.checks.filter(ch => !ch.passed))
   const prompt = generatePrompt(domain, meta.title || domain, meta.description, failedChecks)
 
+  // Ship-2 intake: does this domain already have a library card? + persist the scan.
+  // Both are best-effort — a DB hiccup must never break the free scan.
+  let library: { urn: string; name: string; status: string; trust_score: number } | null = null
+  try {
+    const supabase = getServiceClient()
+    const { data: match } = await supabase.rpc('library_find_by_domain', { p_domain: domain })
+    if (Array.isArray(match) && match[0]) {
+      library = { urn: match[0].urn, name: match[0].name, status: match[0].status, trust_score: match[0].trust_score }
+    }
+    await supabase.rpc('library_log_scan', {
+      p_domain: domain,
+      p_score:  score,
+      p_max:    maxScore,
+      p_failed: failedChecks.map(ch => ch.id),
+      p_title:  meta.title || null,
+      p_urn:    library?.urn ?? null,
+    })
+  } catch { /* never fail the scan on logging */ }
+
   return NextResponse.json({
     url:        baseUrl,
     domain,
@@ -477,6 +497,7 @@ export async function POST(req: NextRequest) {
     maxScore,
     categories,
     prompt,
+    library,
     scannedAt:  new Date().toISOString(),
   })
 }

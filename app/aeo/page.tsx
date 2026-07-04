@@ -29,6 +29,7 @@ interface ScanResult {
   maxScore: number
   categories: Category[]
   prompt: string
+  library: { urn: string; name: string; status: string; trust_score: number } | null
   scannedAt: string
 }
 
@@ -221,7 +222,6 @@ export default function AeoPage() {
             </div>
           </div>
 
-          {/* M3X CTA — commented out pending repositioning */}
         </div>
       )}
 
@@ -343,25 +343,48 @@ export default function AeoPage() {
             </div>
           )}
 
-          {/* M3X CTA — commented out pending repositioning
+          {/* Library intake CTA — honest hooks only (NS §14): control · findable · verified */}
           <div className={styles.ctaDivider}>
             <span className={styles.ctaDividerLine} />
             <span className={styles.ctaDividerText}>go further</span>
             <span className={styles.ctaDividerLine} />
           </div>
-          <div className={styles.m3xCta}>
-            <div className={styles.m3xCtaLeft}>
-              <div className={styles.m3xCtaTitle}>Get a free agent presence on M3X</div>
-              <div className={styles.m3xCtaSub}>
-                When an AI agent is looking for what you offer, M3X matches it to your business
-                and sends it your way. Free. No code required.
+          {result.library ? (
+            <div className={styles.m3xCta}>
+              <div className={styles.m3xCtaLeft}>
+                <div className={styles.m3xCtaTitle}>
+                  {result.domain} is already in the M3X Library
+                </div>
+                <div className={styles.m3xCtaSub}>
+                  Card: {result.library.name} · {result.library.status} · trust {result.library.trust_score}.
+                  {result.library.status === 'unclaimed'
+                    ? ' Claim it to control what AI agents read about you. Free — and rank can never be bought.'
+                    : ' View the card AI agents read about this business.'}
+                </div>
               </div>
+              <a
+                href={result.library.status === 'unclaimed'
+                  ? `/register/business?domain=${result.domain}`
+                  : `/library/${encodeURIComponent(result.library.urn)}`}
+                className={styles.m3xCtaBtn}
+              >
+                {result.library.status === 'unclaimed' ? 'Claim your card free →' : 'View your card →'}
+              </a>
             </div>
-            <a href={`/register/business?domain=${result.domain}`} className={styles.m3xCtaBtn}>
-              Activate free presence →
-            </a>
-          </div>
-          */}
+          ) : (
+            <div className={styles.m3xCta}>
+              <div className={styles.m3xCtaLeft}>
+                <div className={styles.m3xCtaTitle}>Get {result.domain} into the M3X Library</div>
+                <div className={styles.m3xCtaSub}>
+                  One structured card AI agents can read instead of scraping your site.
+                  Control your facts · be findable by agents · get verified. Free.
+                </div>
+              </div>
+              <a href={`/register/business?domain=${result.domain}`} className={styles.m3xCtaBtn}>
+                Get your card →
+              </a>
+            </div>
+          )}
 
         </div>
       )}
