@@ -47,13 +47,16 @@ export default async function LibraryPage() {
 
       {/* Footer */}
       <footer className={styles.footer}>
-        <div className={styles.footerIn}>
-          <span><b>M3X</b> · Library</span>
-          <span>pay for verification, never for rank</span>
-          <span className={styles.footerApi}>
-            for agents: GET /api/library/card/&lt;urn&gt; · POST /api/library/search
-          </span>
-          <Link href="/" className={styles.footerRight}>← Back to M3X</Link>
+        <div className={styles.footerLeft}>
+          <span className={styles.logoMark}>M3X</span>
+          <span className={styles.footerSub}>Agentic Matchmaking Network</span>
+        </div>
+        <div className={styles.footerLinks}>
+          <a href="/library">Library</a>
+          <a href="https://m3x.space/api/openapi" target="_blank" rel="noopener noreferrer">API</a>
+          <a href="https://www.npmjs.com/package/m3x-mcp-server" target="_blank" rel="noopener noreferrer">npm</a>
+          <a href="/toolradar">Tool Radar</a>
+          <a href="/integrations/microsoft">Microsoft</a>
         </div>
       </footer>
     </div>
