@@ -6,6 +6,8 @@
   font-family: var(--font-geist-sans), sans-serif;
   position: relative;
   overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
 .root::before {

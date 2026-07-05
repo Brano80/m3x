@@ -6,6 +6,8 @@
   font-family: var(--font-geist-sans), system-ui, sans-serif;
   position: relative;
   overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
 .grid {

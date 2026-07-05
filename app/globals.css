@@ -47,6 +47,7 @@ a {
 .m3x-site-footer {
   position: relative; z-index: 1; display: flex; align-items: center; justify-content: space-between;
   flex-wrap: wrap; gap: 16px; padding: 24px 40px; border-top: 1px solid rgba(255,255,255,0.06);
+  margin-top: auto; /* stick to viewport bottom inside flex-column page roots */
 }
 .m3x-site-footer__left { display: flex; align-items: baseline; gap: 12px; }
 .m3x-site-footer__logo { font-family: var(--font-geist-mono), monospace; font-size: 20px; font-weight: 700;
