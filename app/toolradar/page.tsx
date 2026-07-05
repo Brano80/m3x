@@ -52,7 +52,6 @@ export default async function ToolRadarPage() {
           <span className={styles.navSep} aria-hidden="true" />
           <span className={styles.navCrumb}>Tool Radar</span>
         </div>
-        <span className={styles.navTagline}>Hand-picked MCP tools</span>
         <div className={styles.navRight}>
           <Link href="/register" className={styles.navCta}>Get API Key →</Link>
         </div>

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import styles from './page.module.css'
 
 interface Tool {
@@ -43,6 +43,9 @@ export default function ToolRadarClient({ tools, totalStars, categoryCount }: Pr
   const [sort, setSort] = useState<'stars' | 'name' | 'recent'>('stars')
   const [copied, setCopied] = useState(false)
 
+  const [page, setPage] = useState(0)
+  const PER_PAGE = 30
+
   const PLUGIN_URL = 'https://m3x.space/tool-radar.plugin'
   function copyPlugin() {
     navigator.clipboard.writeText(PLUGIN_URL)
@@ -82,9 +85,15 @@ export default function ToolRadarClient({ tools, totalStars, categoryCount }: Pr
     return result
   }, [tools, query, activeTag, sort])
 
+  useEffect(() => { setPage(0) }, [query, activeTag, sort])
+
   const fmtTotal = (n: number) => n >= 1000
     ? (n / 1000).toFixed(0) + 'k'
     : String(n)
+
+  const totalToolPages = Math.max(1, Math.ceil(filtered.length / PER_PAGE))
+  const pageSafe = Math.min(page, totalToolPages - 1)
+  const paged = filtered.slice(pageSafe * PER_PAGE, pageSafe * PER_PAGE + PER_PAGE)
 
   return (
     <>
@@ -188,7 +197,7 @@ export default function ToolRadarClient({ tools, totalStars, categoryCount }: Pr
         {filtered.length === 0 ? (
           <div className={styles.emptyState}>No tools match.</div>
         ) : (
-          filtered.map(tool => (
+          paged.map(tool => (
             <div key={tool.id} className={styles.card}>
               <div className={styles.cardTop}>
                 <span className={styles.cardName}>{tool.name}</span>
@@ -222,6 +231,20 @@ export default function ToolRadarClient({ tools, totalStars, categoryCount }: Pr
           ))
         )}
       </div>
+
+      {filtered.length > PER_PAGE && (
+        <div className={styles.toolPager}>
+          <button className={styles.toolPgBtn} disabled={pageSafe === 0}
+            onClick={() => { setPage(p => Math.max(0, p - 1)); window.scrollTo({ top: 0, behavior: 'smooth' }) }}>
+            ← prev
+          </button>
+          <span className={styles.toolPgInfo}>page {pageSafe + 1} of {totalToolPages}</span>
+          <button className={styles.toolPgBtn} disabled={pageSafe + 1 >= totalToolPages}
+            onClick={() => { setPage(p => Math.min(totalToolPages - 1, p + 1)); window.scrollTo({ top: 0, behavior: 'smooth' }) }}>
+            next →
+          </button>
+        </div>
+      )}
     </>
   )
 }
