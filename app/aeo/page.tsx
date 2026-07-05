@@ -369,7 +369,10 @@ export default function AeoPage() {
             <span className={styles.ctaDividerText}>go further</span>
             <span className={styles.ctaDividerLine} />
           </div>
-          {result.library ? (
+          {/* Library CTA shows ONLY for domains already curated into the library.
+              Not-in-library domains get no card/agent offer — the library is
+              curated + B2B-only (NORTH-STAR), not self-serve from free text. */}
+          {result.library && (
             <div className={styles.m3xCta}>
               <div className={styles.m3xCtaLeft}>
                 <div className={styles.m3xCtaTitle}>
@@ -389,19 +392,6 @@ export default function AeoPage() {
                 className={styles.m3xCtaBtn}
               >
                 {result.library.status === 'unclaimed' ? 'Claim your card free →' : 'View your card →'}
-              </a>
-            </div>
-          ) : (
-            <div className={styles.m3xCta}>
-              <div className={styles.m3xCtaLeft}>
-                <div className={styles.m3xCtaTitle}>Get {result.domain} into the M3X Library</div>
-                <div className={styles.m3xCtaSub}>
-                  One structured card AI agents can read instead of scraping your site.
-                  Control your facts · be findable by agents · get verified. Free.
-                </div>
-              </div>
-              <a href={`/register/business?domain=${result.domain}`} className={styles.m3xCtaBtn}>
-                Get your card →
               </a>
             </div>
           )}
