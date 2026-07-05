@@ -9,7 +9,6 @@ const ALL_EXTENDED = [...EXTENDED_MARKETS, ...NEW_MARKETS]
 
 const MCP_SNIPPET = `https://m3x.space/api/mcp?token=m3x_sk_your_token`
 
-const PLUGIN_URL = `https://m3x.space/tool-radar.plugin`
 
 const HOW_IT_WORKS = [
   {
@@ -36,7 +35,6 @@ export default function Home() {
     tools: number | null
   } | null>(null)
   const [copied, setCopied] = useState(false)
-  const [copiedPlugin, setCopiedPlugin] = useState(false)
   const [showAllMarkets, setShowAllMarkets] = useState(false)
 
   useEffect(() => {
@@ -52,11 +50,6 @@ export default function Home() {
     setTimeout(() => setCopied(false), 2000)
   }
 
-  const handleCopyPlugin = () => {
-    navigator.clipboard.writeText(PLUGIN_URL)
-    setCopiedPlugin(true)
-    setTimeout(() => setCopiedPlugin(false), 2000)
-  }
 
   return (
     <div className={styles.root}>
@@ -150,22 +143,6 @@ export default function Home() {
           </div>
           <div className={styles.mcpInstall}>
             <span className={styles.mcpInstallSub}>No install required · works in Claude Cowork, Claude Desktop, and any MCP client</span>
-          </div>
-        </div>
-      </section>
-      <section className={styles.section}>
-        <div className={styles.sectionLabel}><a href="/toolradar" style={{color: 'inherit', textDecoration: 'none'}}>Tool Radar ↗</a></div>
-        <div className={styles.mcpBlock}>
-          <div className={styles.mcpIntro}>Semantic tool discovery — built on M3X infrastructure. Claude calls it proactively mid-session when it detects you&apos;re building something. {stats?.tools ?? '—'} curated tools, hand-picked. No search required — the right tool surfaces before you think to look.</div>
-          <div className={styles.codeWrapper}>
-            <div className={styles.codeHeader}>
-              <span className={styles.codeFile}>Cowork plugin URL — paste into Cowork → Plugins</span>
-              <button className={styles.copyBtn} onClick={handleCopyPlugin}>{copiedPlugin ? '✓ Copied' : 'Copy'}</button>
-            </div>
-            <pre className={styles.code}>{PLUGIN_URL}</pre>
-          </div>
-          <div className={styles.mcpInstall}>
-            <span className={styles.mcpInstallSub}>Free · works in Claude Cowork · {stats?.tools ?? '—'} curated tools and growing</span>
           </div>
         </div>
       </section>
