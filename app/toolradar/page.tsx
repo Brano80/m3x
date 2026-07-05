@@ -6,12 +6,12 @@ import styles from './page.module.css'
 import SiteFooter from '@/app/components/SiteFooter'
 
 export const metadata: Metadata = {
-  title: 'Tool Radar — curated MCP tools | M3X',
+  title: 'Tool Radar — curated AI tools | M3X',
   description:
-    'Hand-picked MCP servers, semantically searchable and filterable by category. Find the right MCP tool for your Claude session.',
+    'Hand-picked MCP servers, Claude skills, and AI tools — semantically searchable and filterable by category. Find the right tool for your Claude session.',
   openGraph: {
-    title: 'Tool Radar — curated MCP tool library',
-    description: 'Hand-picked MCP servers. Searchable, filterable, updated daily.',
+    title: 'Tool Radar — curated AI tools',
+    description: 'Hand-picked MCP servers, Claude skills, and AI tools. Searchable, filterable, updated weekly.',
     url: 'https://m3x.space/toolradar',
     siteName: 'M3X',
   },

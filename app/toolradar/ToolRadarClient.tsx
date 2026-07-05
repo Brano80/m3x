@@ -100,9 +100,9 @@ export default function ToolRadarClient({ tools, totalStars, categoryCount }: Pr
       {/* Header */}
       <div className={styles.pageHeader}>
         <div className={styles.pageLabel}>Tool Radar</div>
-        <h1 className={styles.pageTitle}>MCP tool library</h1>
+        <h1 className={styles.pageTitle}>Curated AI tools</h1>
         <p className={styles.pageSub}>
-          Hand-picked MCP servers. Curated, not scraped — every tool was spotted and vetted by a human.
+          Hand-picked MCP servers, Claude skills, and AI tools — curated, not scraped. Every one spotted and vetted by a human.
         </p>
         <div className={styles.headerStats}>
           <div className={styles.statPill}>
