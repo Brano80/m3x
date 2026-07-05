@@ -41,6 +41,14 @@ export default function ToolRadarClient({ tools, totalStars, categoryCount }: Pr
   const [query, setQuery] = useState('')
   const [activeTag, setActiveTag] = useState('All')
   const [sort, setSort] = useState<'stars' | 'name' | 'recent'>('stars')
+  const [copied, setCopied] = useState(false)
+
+  const PLUGIN_URL = 'https://m3x.space/tool-radar.plugin'
+  function copyPlugin() {
+    navigator.clipboard.writeText(PLUGIN_URL)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
 
   // Build sorted tag list by frequency
   const allTags = useMemo(() => {
@@ -104,6 +112,25 @@ export default function ToolRadarClient({ tools, totalStars, categoryCount }: Pr
             <span className={styles.statNum}>Weekly</span>
             <span className={styles.statLabel}>Updated</span>
           </div>
+        </div>
+      </div>
+
+      {/* Install banner — explains the plugin before download (moved from homepage) */}
+      <div className={styles.installBanner}>
+        <div className={styles.installText}>
+          <div className={styles.installTitle}>Add Tool Radar to Claude Cowork</div>
+          <div className={styles.installSub}>
+            Semantic tool discovery, built on M3X. Claude calls it proactively mid-session when it
+            detects you&apos;re building something — the right tool surfaces before you think to look.
+            Free · works in Claude Cowork · {tools.length} curated tools and growing.
+          </div>
+        </div>
+        <div className={styles.installAction}>
+          <code className={styles.installUrl}>{PLUGIN_URL}</code>
+          <button className={styles.installBtn} onClick={copyPlugin}>
+            {copied ? '✓ Copied' : 'Copy plugin URL'}
+          </button>
+          <a className={styles.installDl} href={PLUGIN_URL} download>Download .plugin</a>
         </div>
       </div>
 
