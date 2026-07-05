@@ -384,7 +384,7 @@ export default function AeoPage() {
               </div>
               <a
                 href={result.library.status === 'unclaimed'
-                  ? `/register/business?domain=${result.domain}`
+                  ? `/library/${encodeURIComponent(result.library.urn)}/claim`
                   : `/library/${encodeURIComponent(result.library.urn)}`}
                 className={styles.m3xCtaBtn}
               >

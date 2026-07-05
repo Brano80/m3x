@@ -189,7 +189,7 @@ export default async function CardPage(
 
           <div className={styles.detailCtaRow}>
             {card.status === 'unclaimed' && (
-              <Link href="/register" className={styles.navCta}>
+              <Link href={`/library/${encodeURIComponent(card.urn)}/claim`} className={styles.navCta}>
                 Claim this card free →
               </Link>
             )}

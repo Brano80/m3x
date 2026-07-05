@@ -288,7 +288,7 @@ export default function LibraryClient({ initialCards, totalCount }: Props) {
                           {'{ }'} GET /api/library/card/{c.urn}
                         </span>
                         {c.status === 'unclaimed' && (
-                          <Link href="/register" className={styles.rowClaim}>
+                          <Link href={`/library/${encodeURIComponent(c.urn)}/claim`} className={styles.rowClaim}>
                             {c.type === 'tool'
                               ? 'Publisher? Claim this card →'
                               : 'Is this yours? Claim free →'}
