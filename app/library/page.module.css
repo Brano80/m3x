@@ -30,7 +30,17 @@
   position: sticky;
   top: 0;
   z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 60px;
+  padding: 0 40px;
 }
+.navLogo { font-size: 14px; font-weight: 700; letter-spacing: 0.08em; color: var(--lib-blue-bright); text-decoration: none; }
+.navSlash { color: rgba(255,255,255,0.2); font-size: 14px; }
+.navTitle { font-size: 13px; color: var(--lib-dim); letter-spacing: 0.02em; }
+.navCtaLink { margin-left: auto; font-size: 12px; color: var(--lib-blue-bright); text-decoration: none; opacity: 0.85; transition: opacity 0.15s; }
+.navCtaLink:hover { opacity: 1; }
 .navIn {
   max-width: 1180px;
   margin: 0 auto;

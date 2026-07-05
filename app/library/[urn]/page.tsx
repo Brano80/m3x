@@ -91,17 +91,10 @@ export default async function CardPage(
   return (
     <div className={styles.root}>
       <nav className={styles.nav}>
-        <div className={styles.navIn}>
-          <Link href="/" className={styles.logo} aria-label="M3X home">
-            M<b>3</b>X<span className={styles.logoLib}>Library</span>
-          </Link>
-          <div className={styles.navLinks}>
-            <Link href="/library" className={styles.navLink}>◈ Browse</Link>
-            <Link href="/" className={styles.navLink}>⬡ Match — private pool</Link>
-            <Link href="/toolradar" className={styles.navLink}>Tool Radar</Link>
-          </div>
-          <Link href="/register" className={styles.navCta}>Claim your card</Link>
-        </div>
+        <a href="/" className={styles.navLogo}>M3X</a>
+        <span className={styles.navSlash}>/</span>
+        <span className={styles.navTitle}>Library</span>
+        <a href="/register" className={styles.navCtaLink}>Get API Key →</a>
       </nav>
 
       <div className={styles.detailWrap}>
