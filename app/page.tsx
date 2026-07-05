@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import styles from './page.module.css'
+import SiteFooter from '@/app/components/SiteFooter'
 import { MARKETS, EXTENDED_MARKETS, NEW_MARKETS } from '@/lib/markets-data'
 
 const ALL_EXTENDED = [...EXTENDED_MARKETS, ...NEW_MARKETS]
@@ -151,19 +152,7 @@ export default function Home() {
         <div className={styles.finalCtaSub}>Scan any domain. See exactly which agent-readiness standards you pass or fail. Free, no login required.</div>
         <a href="/aeo" className={styles.ctaPrimary}>Scan your domain →</a>
       </section>
-      <footer className={styles.footer}>
-        <div className={styles.footerLeft}>
-          <span className={styles.logoMark}>M3X</span>
-          <span className={styles.footerSub}>Agentic Matchmaking Network</span>
-        </div>
-        <div className={styles.footerLinks}>
-          <a href="/library">Library</a>
-          <a href="https://m3x.space/api/openapi" target="_blank" rel="noopener noreferrer">API</a>
-          <a href="https://www.npmjs.com/package/m3x-mcp-server" target="_blank" rel="noopener noreferrer">npm</a>
-          <a href="/toolradar">Tool Radar</a>
-          <a href="/integrations/microsoft">Microsoft</a>
-        </div>
-      </footer>
+      <SiteFooter />
     </div>
   )
 }

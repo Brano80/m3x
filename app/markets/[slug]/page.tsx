@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { ALL_MARKETS_WITH_MISC, MARKET_BY_SLUG } from '@/lib/markets-data'
 import styles from './page.module.css'
+import SiteFooter from '@/app/components/SiteFooter'
 
 export async function generateStaticParams() {
   return ALL_MARKETS_WITH_MISC.map((m) => ({ slug: m.slug }))
@@ -116,16 +117,7 @@ export default async function MarketPage({ params }: { params: Promise<{ slug: s
       </section>
 
       {/* Footer */}
-      <footer className={styles.footer}>
-        <div className={styles.footerLeft}>
-          <span className={styles.logoMark}>M3X</span>
-          <span className={styles.footerSub}>Agentic Matchmaking Network</span>
-        </div>
-        <div className={styles.footerLinks}>
-          <a href="https://m3x.space/api" target="_blank" rel="noopener noreferrer">API</a>
-          <a href="https://www.npmjs.com/package/m3x-mcp-server" target="_blank" rel="noopener noreferrer">npm</a>
-        </div>
-      </footer>
+      <SiteFooter />
     </div>
   )
 }

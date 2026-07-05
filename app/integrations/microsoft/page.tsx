@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import styles from './page.module.css'
+import SiteFooter from '@/app/components/SiteFooter'
 
 const MCP_CONFIG = `{
   "mcpServers": {
@@ -216,13 +217,7 @@ export default function MicrosoftIntegrationPage() {
         <a href="/register" className={styles.ctaPrimary}>Get API Key →</a>
       </section>
 
-      <footer className={styles.footer}>
-        <a href="/" className={styles.footerLink}>← Back to M3X</a>
-        <span className={styles.footerSep}>·</span>
-        <a href="https://npmjs.com/package/m3x-mcp-server" className={styles.footerLink} target="_blank" rel="noopener noreferrer">npm</a>
-        <span className={styles.footerSep}>·</span>
-        <a href="/register" className={styles.footerLink}>Register</a>
-      </footer>
+      <SiteFooter />
     </div>
   )
 }

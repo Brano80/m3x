@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { getServiceClient } from '@/lib/supabase'
 import LibraryClient, { type CardRow } from './LibraryClient'
 import styles from './page.module.css'
+import SiteFooter from '@/app/components/SiteFooter'
 
 export const metadata: Metadata = {
   title: 'Library — verified cards for the agentic web | M3X',
@@ -46,19 +47,7 @@ export default async function LibraryPage() {
       <LibraryClient initialCards={cards} totalCount={totalCount} />
 
       {/* Footer */}
-      <footer className={styles.footer}>
-        <div className={styles.footerLeft}>
-          <span className={styles.logoMark}>M3X</span>
-          <span className={styles.footerSub}>Agentic Matchmaking Network</span>
-        </div>
-        <div className={styles.footerLinks}>
-          <a href="/library">Library</a>
-          <a href="https://m3x.space/api/openapi" target="_blank" rel="noopener noreferrer">API</a>
-          <a href="https://www.npmjs.com/package/m3x-mcp-server" target="_blank" rel="noopener noreferrer">npm</a>
-          <a href="/toolradar">Tool Radar</a>
-          <a href="/integrations/microsoft">Microsoft</a>
-        </div>
-      </footer>
+      <SiteFooter />
     </div>
   )
 }

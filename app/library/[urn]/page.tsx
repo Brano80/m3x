@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { getServiceClient } from '@/lib/supabase'
 import styles from '../page.module.css'
+import SiteFooter from '@/app/components/SiteFooter'
 
 const URN_RE = /^urn:air:[a-z0-9.-]{1,128}:(business|agent|tool):[a-z0-9-]{1,128}$/
 
@@ -197,19 +198,7 @@ export default async function CardPage(
         </div>
       </div>
 
-      <footer className={styles.footer}>
-        <div className={styles.footerLeft}>
-          <span className={styles.logoMark}>M3X</span>
-          <span className={styles.footerSub}>Agentic Matchmaking Network</span>
-        </div>
-        <div className={styles.footerLinks}>
-          <a href="/library">Library</a>
-          <a href="https://m3x.space/api/openapi" target="_blank" rel="noopener noreferrer">API</a>
-          <a href="https://www.npmjs.com/package/m3x-mcp-server" target="_blank" rel="noopener noreferrer">npm</a>
-          <a href="/toolradar">Tool Radar</a>
-          <a href="/integrations/microsoft">Microsoft</a>
-        </div>
-      </footer>
+      <SiteFooter />
     </div>
   )
 }

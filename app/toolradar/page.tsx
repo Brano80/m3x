@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { getServiceClient } from '@/lib/supabase'
 import ToolRadarClient from './ToolRadarClient'
 import styles from './page.module.css'
+import SiteFooter from '@/app/components/SiteFooter'
 
 export const metadata: Metadata = {
   title: 'Tool Radar — curated MCP tools | M3X',
@@ -45,16 +46,10 @@ export default async function ToolRadarPage() {
 
       {/* Nav */}
       <nav className={styles.nav}>
-        <div className={styles.navLeft}>
-          <Link href="/" className={styles.logoLink} aria-label="M3X home">
-            <span className={styles.logoMark}>M3X</span>
-          </Link>
-          <span className={styles.navSep} aria-hidden="true" />
-          <span className={styles.navCrumb}>Tool Radar</span>
-        </div>
-        <div className={styles.navRight}>
-          <Link href="/register" className={styles.navCta}>Get API Key →</Link>
-        </div>
+        <a href="/" className={styles.navLogo}>M3X</a>
+        <span className={styles.navSlash}>/</span>
+        <span className={styles.navTitle}>Tool Radar</span>
+        <a href="/register" className={styles.navCtaLink}>Get API Key →</a>
       </nav>
 
       {/* Main content */}
@@ -67,12 +62,7 @@ export default async function ToolRadarPage() {
       </main>
 
       {/* Footer */}
-      <footer className={styles.footer}>
-        <span className={styles.footerLeft}>
-          M3X · Tool Radar · {allTools.length} curated tools
-        </span>
-        <Link href="/" className={styles.footerLink}>← Back to M3X</Link>
-      </footer>
+      <SiteFooter />
     </div>
   )
 }

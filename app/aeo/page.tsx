@@ -2,6 +2,7 @@
 
 import { useState, useRef } from 'react'
 import styles from './page.module.css'
+import SiteFooter from '@/app/components/SiteFooter'
 
 interface Check {
   id: string
@@ -88,6 +89,25 @@ export default function AeoPage() {
   const [social, setSocial] = useState<{ platform: string; handle: string } | null>(null)
   const [copied, setCopied] = useState(false)
   const [copiedBadge, setCopiedBadge] = useState(false)
+  const [testEmail, setTestEmail] = useState('')
+  const [testTask, setTestTask] = useState('')
+  const [testSent, setTestSent] = useState(false)
+  const [testBusy, setTestBusy] = useState(false)
+
+  async function requestAgentTest(domain: string) {
+    if (!testEmail.trim() || testBusy) return
+    setTestBusy(true)
+    try {
+      const res = await fetch('/api/aeo/test-request', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ domain, email: testEmail, task: testTask }),
+      })
+      if (res.ok) setTestSent(true)
+    } finally {
+      setTestBusy(false)
+    }
+  }
   const [expandedCats, setExpandedCats] = useState<Set<string>>(new Set())
   const resultRef = useRef<HTMLDivElement>(null)
 
@@ -386,6 +406,52 @@ export default function AeoPage() {
             </div>
           )}
 
+          {/* Agent task test — test+fix funnel step 0. Honest: we run a real agent, show the replay. */}
+          <div className={styles.m3xCta}>
+            <div className={styles.m3xCtaLeft}>
+              <div className={styles.m3xCtaTitle}>
+                Passing checks is step one. Can an AI agent actually <em>do</em> something on your site?
+              </div>
+              <div className={styles.m3xCtaSub}>
+                Request a quote, book a call, add to cart — we run a real AI agent through your site
+                and send you the annotated replay: where it succeeds, where it gets stuck. If something
+                is broken for agents, you can order the fix at a fixed one-time price. Test is free
+                while in beta.
+              </div>
+              {testSent ? (
+                <div className={styles.m3xCtaSub} style={{ marginTop: 10, color: '#34d399' }}>
+                  ✓ Request received — the replay lands in your inbox within 48h.
+                </div>
+              ) : (
+                <div style={{ display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
+                  <input
+                    type="email"
+                    value={testEmail}
+                    onChange={e => setTestEmail(e.target.value)}
+                    placeholder="you@company.com"
+                    aria-label="Email for the agent test replay"
+                    style={{ flex: '1 1 180px', padding: '9px 12px', borderRadius: 8, border: '1px solid #2c3e5c', background: '#0d1420', color: '#e6ecf5', fontSize: 13 }}
+                  />
+                  <input
+                    type="text"
+                    value={testTask}
+                    onChange={e => setTestTask(e.target.value)}
+                    placeholder="task, e.g. request a quote"
+                    aria-label="Task the agent should attempt"
+                    style={{ flex: '1 1 180px', padding: '9px 12px', borderRadius: 8, border: '1px solid #2c3e5c', background: '#0d1420', color: '#e6ecf5', fontSize: 13 }}
+                  />
+                  <button
+                    className={styles.m3xCtaBtn}
+                    onClick={() => result && requestAgentTest(result.domain)}
+                    disabled={testBusy || !testEmail.trim()}
+                  >
+                    {testBusy ? '…' : 'Get the agent test →'}
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+
         </div>
       )}
 
@@ -412,13 +478,7 @@ export default function AeoPage() {
         </section>
       )}
 
-      <footer className={styles.footer}>
-        <span className={styles.footerLogo}>M3X</span>
-        <span className={styles.footerSep}>·</span>
-        <a href="/" className={styles.footerLink}>Agentic Matchmaking Network</a>
-        <span className={styles.footerSep}>·</span>
-        <a href="/register" className={styles.footerLink}>Get API Key</a>
-      </footer>
+      <SiteFooter />
     </div>
   )
 }
