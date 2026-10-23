@@ -5,7 +5,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServiceClient } from '@/lib/supabase'
 
-const URN_RE = /^urn:air:[a-z0-9.-]{1,128}:(business|agent|tool):[a-z0-9-]{1,128}$/
+// Tool cards (former Tool Radar) are no longer served (2026-10-23).
+const URN_RE = /^urn:air:[a-z0-9.-]{1,128}:(business|agent):[a-z0-9-]{1,128}$/
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/
 
 // naive in-memory rate limit: 10 starts / IP / hour (resets on cold start)

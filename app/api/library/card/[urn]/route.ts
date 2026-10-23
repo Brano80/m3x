@@ -14,6 +14,14 @@ export async function GET(
   const { urn: rawUrn } = await params
   const urn = decodeURIComponent(rawUrn)
 
+  // Tool cards (former Tool Radar) are no longer served (2026-10-23).
+  if (/^urn:air:[^:]+:tool:/.test(urn)) {
+    return NextResponse.json(
+      { error: { message: 'Card not found', code: 'CARD_NOT_FOUND' } },
+      { status: 404 }
+    )
+  }
+
   if (!URN_RE.test(urn)) {
     return NextResponse.json(
       { error: { message: 'Invalid URN format', code: 'INVALID_URN' } },

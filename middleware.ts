@@ -30,7 +30,7 @@ mutually accept a handshake.
 ## The Library — public verified cards
 
 Alongside the private pool, M3X hosts a public **library of verified JSON cards**
-(\`business | agent | tool\`) — structured, claim-verified, and readable by any agent.
+(\`business | agent\`) — structured, claim-verified, and readable by any agent.
 Cards carry provenance, credentials, claims, and a registry-set trust block with a
 visible receipt. Ranked by match and verification — never by payment.
 

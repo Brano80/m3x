@@ -4,14 +4,16 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServiceClient } from '@/lib/supabase'
 
-const VALID_TYPES = new Set(['business', 'agent', 'tool'])
+// Tool cards (former Tool Radar) are no longer served (2026-10-23).
+const VALID_TYPES = new Set(['business', 'agent'])
+const DEFAULT_TYPE = 'business'
 const MAX_LIMIT = 100
 
 export async function GET(req: NextRequest) {
   const sp = req.nextUrl.searchParams
 
   const typeParam = sp.get('type')
-  const cardType = typeParam && VALID_TYPES.has(typeParam) ? typeParam : null
+  const cardType = typeParam && VALID_TYPES.has(typeParam) ? typeParam : DEFAULT_TYPE
   const verifiedOnly = sp.get('verified_only') === 'true'
 
   const rawLimit = Number.parseInt(sp.get('limit') ?? '50', 10)

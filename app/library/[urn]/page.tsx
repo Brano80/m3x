@@ -5,7 +5,8 @@ import { getServiceClient } from '@/lib/supabase'
 import styles from '../page.module.css'
 import SiteFooter from '@/app/components/SiteFooter'
 
-const URN_RE = /^urn:air:[a-z0-9.-]{1,128}:(business|agent|tool):[a-z0-9-]{1,128}$/
+// Tool cards (former Tool Radar) are no longer served (2026-10-23). Tool URNs fail this check and 404.
+const URN_RE = /^urn:air:[a-z0-9.-]{1,128}:(business|agent):[a-z0-9-]{1,128}$/
 
 interface CredentialItem {
   issuer?: string
@@ -133,9 +134,7 @@ export default async function CardPage(
             <span className={styles.bRung}>● {card.callable ? 'callable' : 'readable'}</span>
             {card.status === 'unclaimed' && (
               <span className={styles.bUnc}>
-                {card.type === 'tool'
-                  ? '◌ unclaimed · curated via Tool Radar'
-                  : '◌ unclaimed — auto-generated card'}
+                ◌ unclaimed — auto-generated card
               </span>
             )}
             {(card.capabilities ?? []).map((cap: string) => (

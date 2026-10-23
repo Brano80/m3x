@@ -476,8 +476,12 @@ export async function POST(req: NextRequest) {
   try {
     const supabase = getServiceClient()
     const { data: match } = await supabase.rpc('library_find_by_domain', { p_domain: domain })
-    if (Array.isArray(match) && match[0]) {
-      library = { urn: match[0].urn, name: match[0].name, status: match[0].status, trust_score: match[0].trust_score }
+    // Tool cards (former Tool Radar) are no longer served (2026-10-23).
+    const hit = Array.isArray(match)
+      ? match.find((m: { urn?: string }) => !/:tool:/.test(m?.urn ?? ''))
+      : undefined
+    if (hit) {
+      library = { urn: hit.urn, name: hit.name, status: hit.status, trust_score: hit.trust_score }
     }
     await supabase.rpc('library_log_scan', {
       p_domain: domain,

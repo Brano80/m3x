@@ -33,7 +33,6 @@ export default function Home() {
   const [stats, setStats] = useState<{
     agents: number | null
     matches: number | null
-    tools: number | null
   } | null>(null)
   const [copied, setCopied] = useState(false)
   const [showAllMarkets, setShowAllMarkets] = useState(false)

@@ -41,7 +41,8 @@ interface Props {
   totalCount: number
 }
 
-const TYPES = ['all', 'business', 'agent', 'tool'] as const
+// Tool cards (former Tool Radar) are no longer served (2026-10-23).
+const TYPES = ['business', 'agent'] as const
 const PAGE_SIZE = 50
 
 function trustClass(score: number): string {
@@ -52,7 +53,7 @@ function trustClass(score: number): string {
 
 export default function LibraryClient({ initialCards, totalCount }: Props) {
   const [query, setQuery] = useState('')
-  const [type, setType] = useState<(typeof TYPES)[number]>('all')
+  const [type, setType] = useState<(typeof TYPES)[number]>('business')
   const [verifiedOnly, setVerifiedOnly] = useState(false)
   const [results, setResults] = useState<CardRow[]>([])
   const [browseCards, setBrowseCards] = useState<CardRow[]>(initialCards)
@@ -77,7 +78,7 @@ export default function LibraryClient({ initialCards, totalCount }: Props) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           query: q,
-          type: t === 'all' ? undefined : t,
+          type: t,
           verified_only: v,
           limit: 20,
         }),
@@ -102,7 +103,7 @@ export default function LibraryClient({ initialCards, totalCount }: Props) {
     setExpanded(null)
     try {
       const params = new URLSearchParams()
-      if (t !== 'all') params.set('type', t)
+      params.set('type', t)
       if (v) params.set('verified_only', 'true')
       params.set('limit', String(PAGE_SIZE))
       params.set('offset', String(p * PAGE_SIZE))
@@ -171,7 +172,7 @@ export default function LibraryClient({ initialCards, totalCount }: Props) {
                 className={t === type ? styles.chipOn : styles.chip}
                 onClick={() => onTypeChange(t)}
               >
-                {t === 'all' ? 'all types' : `type: ${t}`}
+                {`type: ${t}`}
               </button>
             ))}
             <label className={styles.vtoggle}>
@@ -233,9 +234,7 @@ export default function LibraryClient({ initialCards, totalCount }: Props) {
                     role="button"
                     aria-expanded={isOpen}
                   >
-                    <div className={c.type === 'tool' ? styles.rowGlyphTool : styles.rowGlyph}>
-                      {c.type === 'tool' ? '⬡' : '◈'}
-                    </div>
+                    <div className={styles.rowGlyph}>◈</div>
                     <div className={styles.rowName}>
                       <div className={styles.rowTitle}>
                         {searched && <span className={styles.rowRank}>#{i + 1}</span>}
@@ -256,7 +255,7 @@ export default function LibraryClient({ initialCards, totalCount }: Props) {
                       </span>
                     ) : (
                       <span className={styles.rowCredNone}>
-                        {c.type === 'tool' ? 'curated · Tool Radar' : 'unclaimed'}
+                        unclaimed
                       </span>
                     )}
                     {rightMeta && <span className={styles.rowGeo}>{rightMeta}</span>}
@@ -289,9 +288,7 @@ export default function LibraryClient({ initialCards, totalCount }: Props) {
                         </span>
                         {c.status === 'unclaimed' && (
                           <Link href={`/library/${encodeURIComponent(c.urn)}/claim`} className={styles.rowClaim}>
-                            {c.type === 'tool'
-                              ? 'Publisher? Claim this card →'
-                              : 'Is this yours? Claim free →'}
+                            Is this yours? Claim free →
                           </Link>
                         )}
                       </div>

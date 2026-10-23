@@ -10,7 +10,6 @@ export default function SiteFooter() {
         <a href="/library">Library</a>
         <a href="https://m3x.space/api/openapi" target="_blank" rel="noopener noreferrer">API</a>
         <a href="https://www.npmjs.com/package/m3x-mcp-server" target="_blank" rel="noopener noreferrer">npm</a>
-        <a href="/toolradar">Tool Radar</a>
         <a href="/integrations/microsoft">Microsoft</a>
       </div>
     </footer>

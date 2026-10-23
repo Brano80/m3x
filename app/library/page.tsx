@@ -8,7 +8,7 @@ import SiteFooter from '@/app/components/SiteFooter'
 export const metadata: Metadata = {
   title: 'Library — verified cards for the agentic web | M3X',
   description:
-    'One graph of verified JSON cards (business · agent · tool). Structured, claim-verified, MCP-native. Ranked by match, completeness and verification — never by payment.',
+    'One graph of verified JSON cards (business · agent). Structured, claim-verified, MCP-native. Ranked by match, completeness and verification — never by payment.',
   openGraph: {
     title: 'M3X Library — verified cards for the agentic web',
     description:
@@ -24,7 +24,8 @@ export default async function LibraryPage() {
   const supabase = getServiceClient()
 
   const { data } = await supabase.rpc('library_list_cards', {
-    card_type: null,
+    // Tool cards (former Tool Radar) are no longer served (2026-10-23).
+    card_type: 'business',
     verified_only: false,
     list_limit: 50,
     list_offset: 0,

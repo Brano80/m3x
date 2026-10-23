@@ -6,7 +6,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServiceClient } from '@/lib/supabase'
 
-const VALID_TYPES = ['business', 'agent', 'tool']
+// Tool cards (former Tool Radar) are no longer served (2026-10-23).
+const VALID_TYPES = ['business', 'agent']
 
 async function embedQuery(text: string): Promise<number[] | null> {
   const key = process.env.HUGGINGFACE_API_KEY
@@ -49,7 +50,7 @@ export async function POST(req: NextRequest) {
     }
     const query: string = body.query.trim().slice(0, 500)
     const cardType: string | null =
-      typeof body.type === 'string' && VALID_TYPES.includes(body.type) ? body.type : null
+      typeof body.type === 'string' && VALID_TYPES.includes(body.type) ? body.type : 'business'
     const verifiedOnly: boolean = body.verified_only === true
     const limit: number = Math.min(Math.max(parseInt(body.limit, 10) || 20, 1), 50)
 
